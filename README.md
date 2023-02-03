@@ -49,7 +49,7 @@ function dgm(rng, n, maxT;regimefun=int_0)
   end
   
   using Random
-  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun= regimefun)
+  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun= int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
