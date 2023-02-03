@@ -38,7 +38,7 @@ function dgm(rng, n, maxT;regimefun=int_0)
       for t in 1:maxT
           currIDX = (i-1)*maxT + t
           l = lprob(v,l,a) > rand(rng) ? 1 : 0
-          a = regimefun(v,l,a) > rand(rng) ? 1 : 0
+          a = regimefun(v,l,a) > int_0 ? 1 : 0
           y = yprob(v,l,a) > rand(rng) ? 1 : 0
           LAY[currIDX,:] .= [v,l,a,y]
           keep[currIDX] = lkeep
