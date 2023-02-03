@@ -38,7 +38,7 @@ function dgm(rng, n, maxT;regimefun=int_0)
       for t in 1:maxT
           currIDX = (i-1)*maxT + t
           l = lprob(v,l,a) > rand(rng) ? 1 : 0
-          a = regimefun(v,l,a) > int_0 ? 1 : 0
+          a = regimefun(v,l,a) > rand(rng) ? 1 : 0
           y = yprob(v,l,a) > rand(rng) ? 1 : 0
           LAY[currIDX,:] .= [v,l,a,y]
           keep[currIDX] = lkeep
@@ -49,7 +49,7 @@ function dgm(rng, n, maxT;regimefun=int_0)
   end
   
   using Random
-  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun=rand())
+  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun= regimefun)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
