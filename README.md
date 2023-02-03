@@ -8,6 +8,24 @@ These are some survival analysis functions that I was hoping to find in Julia an
 using Random, LSurvival, Distributions
 
 # generate some data
+  expit(mu) =  inv(1.0+exp(-mu))
+
+  function int_nc(v,l,a)
+    expit(-1.0 + 3*v + 2*l)
+  end
+  
+  function int_0(v,l,a)
+    0.1
+  end
+  
+  function lprob(v,l,a)
+    expit(-3 + 2*v + 0*l + 0*a)
+  end
+
+  function yprob(v,l,a)
+    expit(-3 + 2*v + 0*l + 2*a)
+  end
+
 function dgm(rng, n, maxT;regimefun=int_0)
     V = rand(rng, n)
     LAY = Array{Float64,2}(undef,n*maxT,4)
@@ -31,7 +49,7 @@ function dgm(rng, n, maxT;regimefun=int_0)
   end
   
   using Random
-  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun=int_0)
+  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun=rand())
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
