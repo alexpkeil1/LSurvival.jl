@@ -62,7 +62,8 @@ function dgm(rng, n, maxT;regimefun=int_0)
   hcat(beta, se, beta ./ se)
 
 # Kaplan-Meier estimator of the cumulative risk/survival
-kaplan_meier(int, outt,d; wt=nothing)
+res = kaplan_meier(int, outt,d; wt=nothing)
+hcat(res[1], res[2])
 
 
 # Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
@@ -88,7 +89,9 @@ end
 
 z, x, t, d, event, wt = dgm_comprisk(;n=100, rng=MersenneTwister())
 
+enter = t.*0.01
 
-aalen_johansen(int, outt,event;dvalues=[1.0, 2.0], wt=wt)
+res = aalen_johansen(enter, t,event;dvalues=[1.0, 2.0], wt=wt)
+hcat(res[1], res[3])
 
 ```
