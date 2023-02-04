@@ -224,7 +224,7 @@ Examples:
 ```julia-repl   
   using LSurvival, Random
 
-  z,x,t,d, event,wt = dgm_comprisk(n=10000, rng=MersenneTwister(1232));
+  z,x,t,d, event,wt = LSurvival.dgm_comprisk(1000);
   
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);

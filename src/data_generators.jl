@@ -99,4 +99,4 @@ function dgm_comprisk(rng, n)
   wt = wtu ./ mean(wtu)
   reshape(round.(z, digits=4), (n,1)), reshape(round.(x, digits=4), (n,1)) ,round.(t, digits=4),d, event, round.(wt, digits=4)
 end
-dgm_comprisk(n) = dgm_comprisk(MersenneTwister(), n=n)
+dgm_comprisk(n) = dgm_comprisk(MersenneTwister(), n)
