@@ -42,7 +42,7 @@ function dgm(rng, n, maxT;afun=int_0, yfun=yprob, lfun=lprob)
 end
 
 
-dgm(n, maxT;kwargs) = dgm(MersenneTwister(), n, maxT;kwargs...)
+dgm(n, maxT;kwargs...) = dgm(MersenneTwister(), n, maxT;kwargs...)
 
 """
 Generating continuous survival data with competing risks
