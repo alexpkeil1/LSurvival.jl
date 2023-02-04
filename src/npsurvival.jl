@@ -6,25 +6,25 @@
 Kaplan Meier for one observation per unit and no late entry
   (simple function)
 """
-function km(t,d; wt=nothing)
+function km(t,d; weights=nothing)
   # no ties allowed
-  if isnothing(wt) || isnan(wt[1])
-    wt = ones(length(t))
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(t))
   end
   censval = zero(eltype(d))
   orderedtimes = sortperm(t)
   _t = t[orderedtimes]
   _d = d[orderedtimes]
-  _wt = wt[orderedtimes]
+  _weights = weights[orderedtimes]
   whichd = findall( d .> zeros(eltype(d), 1))
   riskset = zeros(Float64, length(t)) # risk set size
  # _dtimes = _t[whichd] # event times
-  #_dw = wt[whichd]     # weights at times
+  #_dw = weights[whichd]     # weights at times
   _1mdovern = zeros(Float64, length(_t))
   for (_i,_ti) in enumerate(_t)
     R = findall(_t .>= _ti) # risk set
-    ni = sum(_wt[R]) # sum of weights in risk set
-    di = _wt[_i]*(_d[_i] .> censval)
+    ni = sum(_weights[R]) # sum of weights in risk set
+    di = _weights[_i]*(_d[_i] .> censval)
     riskset[_i] = ni
     _1mdovern[_i] = 1.0 - di/ni
   end
@@ -35,12 +35,12 @@ end
 Kaplan Meier with late entry, possibly multiple observations per unit
 (simple function)
 """
-function km(in,out,d; wt=nothing, eps = 0.00000001)
+function km(in,out,d; weights=nothing, eps = 0.00000001)
    # there is some bad floating point issue with epsilon that should be tracked
    # R handles this gracefully
   # ties allowed
-  if isnothing(wt) || isnan(wt[1])
-    wt = ones(length(in))
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(in))
   end
   censval = zero(eltype(d))
   times = unique(out)
@@ -50,8 +50,8 @@ function km(in,out,d; wt=nothing, eps = 0.00000001)
   _1mdovern = ones(length(orderedtimes))
   for (_i,tt) in enumerate(orderedtimes)
     R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
-    ni = sum(wt[R]) # sum of weights in risk set
-    di = sum(wt[R] .* (d[R] .> censval) .* (out[R] .== tt))
+    ni = sum(weights[R]) # sum of weights in risk set
+    di = sum(weights[R] .* (d[R] .> censval) .* (out[R] .== tt))
     _1mdovern[_i] = log(1.0 - di/ni)
     riskset[_i] = ni
   end
@@ -65,13 +65,13 @@ end
 Aalen-Johansen (survival) with late entry, possibly multiple observations per unit
   (simple function)
 """
-function aj(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
-  if isnothing(wt) || isnan(wt[1])
-    wt = ones(length(in))
+function aj(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(in))
   end
   nvals = length(dvalues)
   # overall survival via Kaplan-Meier
-  orderedtimes, S, riskset = km(in,out,d, wt=wt, eps=eps) # note ordered times are unique
+  orderedtimes, S, riskset = km(in,out,d, weights=weights, eps=eps) # note ordered times are unique
   Sm1 = vcat(1.0, S)
   ajest = zeros(length(orderedtimes), nvals)
   _d = zeros(length(out), nvals)
@@ -80,10 +80,10 @@ function aj(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
   end
   for (_i,tt) in enumerate(orderedtimes)
     R = findall((out .>= tt) .& (in .< (tt-eps))) # risk set
-    wtR = wt[R]
-    ni = sum(wtR) # sum of weights/weighted individuals in risk set
+    weightsR = weights[R]
+    ni = sum(weightsR) # sum of weights/weighted individuals in risk set
     for (jidx,j) in enumerate(dvalues)
-      dij = sum(wtR .* _d[R,jidx] .* (out[R] .== tt))
+      dij = sum(weightsR .* _d[R,jidx] .* (out[R] .== tt))
       ajest[_i, jidx] = Sm1[_i] * dij/ni
     end
   end
@@ -98,14 +98,14 @@ end
 """
 Kaplan Meier with late entry, possibly multiple observations per unit
 
-Usage: kaplan_meier(in,out,d; wt=nothing, eps = 0.00000001)
+Usage: kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
 
   - in = time at entry (numeric vector)
   - out = time at exit (numeric vector)
   - d = event indicator (numeric or boolean vector)
 
   keywords:
-  - wt = vector of observation weights, or nothing (default)
+  - weights = vector of observation weights, or nothing (default)
   - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
   
   Output: tuple with entries
@@ -115,12 +115,12 @@ Usage: kaplan_meier(in,out,d; wt=nothing, eps = 0.00000001)
   - names = vector of symbols [:times, :surv_overall, :riskset] used as a mnemonic for the function output
 
 """
-function kaplan_meier(in,out,d; wt=nothing, eps = 0.00000001)
+function kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
    # there is some bad floating point issue with epsilon that should be tracked
    # R handles this gracefully
   # ties allowed
-  if isnothing(wt) || isnan(wt[1])
-    wt = ones(length(in))
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(in))
   end
   censval = zero(eltype(d))
   times = unique(out)
@@ -130,8 +130,8 @@ function kaplan_meier(in,out,d; wt=nothing, eps = 0.00000001)
   _1mdovern = ones(length(orderedtimes))
   @inbounds for (_i,tt) in enumerate(orderedtimes)
     R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
-    ni = sum(wt[R]) # sum of weights in risk set
-    di = sum(wt[R] .* (d[R] .> censval) .* (out[R] .== tt))
+    ni = sum(weights[R]) # sum of weights in risk set
+    di = sum(weights[R] .* (d[R] .> censval) .* (out[R] .== tt))
     _1mdovern[_i] = log(1.0 - di/ni)
     riskset[_i] = ni
   end
@@ -141,7 +141,7 @@ end
 
 """
 Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit, non-repeatable events
-Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
+Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
 
   - in = time at entry (numeric vector)
   - out = time at exit (numeric vector)
@@ -149,7 +149,7 @@ Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
 
   keywords:
   - dvalues = (default = [1.0, 2.0]) a vector of the unique values of 'd' that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)
-  - wt = vector of observation weights, or nothing (default)
+  - weights = vector of observation weights, or nothing (default)
   - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
   
   Output: tuple with entries
@@ -161,13 +161,13 @@ Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
     - names: vector of symbols [:times, :surv_km_overall, :ci_aalenjohansen, :riskset, :events] used as a mnemonic for the function output
 
 """
-function aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
-  if isnothing(wt) || isnan(wt[1])
-    wt = ones(length(in))
+function aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(in))
   end
   nvals = length(dvalues)
   # overall survival via Kaplan-Meier
-  orderedtimes, S, riskset, _ = kaplan_meier(in,out,d, wt=wt, eps=eps) # note ordered times are unique
+  orderedtimes, S, riskset, _ = kaplan_meier(in,out,d, weights=weights, eps=eps) # note ordered times are unique
   Sm1 = vcat(1.0, S)
   ajest = zeros(length(orderedtimes), nvals)
   _dij = zeros(length(orderedtimes), nvals)
@@ -177,11 +177,11 @@ function aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.0000000
   end
   @inbounds for (_i,tt) in enumerate(orderedtimes)
     R = findall((out .>= tt) .& (in .< (tt-eps))) # risk set
-    wtR = wt[R]
-    ni = sum(wtR) # sum of weights/weighted individuals in risk set
+    weightsR = weights[R]
+    ni = sum(weightsR) # sum of weights/weighted individuals in risk set
     @inbounds for (jidx,j) in enumerate(dvalues)
         # = dij
-        _dij[_i,jidx] = sum(wtR .* _d[R,jidx] .* (out[R] .== tt))
+        _dij[_i,jidx] = sum(weightsR .* _d[R,jidx] .* (out[R] .== tt))
         ajest[_i, jidx] = Sm1[_i] * _dij[_i,jidx]/ni
     end
   end
@@ -197,7 +197,7 @@ end
  Non-parametric sub-distribution hazard estimator
   estimating cumulative incidence via the subdistribution hazard function
 
-Usage: subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
+Usage: subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
 
   - in = time at entry (numeric vector)
   - out = time at exit (numeric vector)
@@ -205,7 +205,7 @@ Usage: subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, ep
   
   keywords:
   - dvalues = (default = [1.0, 2.0]) a vector of the unique values of 'd' that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)
-  - wt = vector of observation weights, or nothing (default)
+  - weights = vector of observation weights, or nothing (default)
   - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
   
   Output: tuple with entries
@@ -224,18 +224,18 @@ Examples:
 ```julia-repl   
   using LSurvival, Random
 
-  z,x,t,d, event,wt = LSurvival.dgm_comprisk(1000);
+  z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
   
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   
 ```
 """
-function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
+function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
   # ties allowed
   dmain = dvalues[1]
-  if isnothing(wt) || isnan(wt[1])
-    wt = ones(length(in))
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(in))
   end
   censval = zero(eltype(d))
   times_dmain = unique(out[findall(d .== dmain)])
@@ -247,8 +247,8 @@ function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, 
     dmain_now = findall((out .== tt) .&& (d .== dmain))
     pseudoR = union(aliveandatriskidx, hadcompidx) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
     casesidx = intersect(dmain_now, aliveandatriskidx)
-    ni = sum(wt[pseudoR]) # sum of weights in risk set
-    di = sum(wt[casesidx])
+    ni = sum(weights[pseudoR]) # sum of weights in risk set
+    di = sum(weights[casesidx])
     _haz[_i] = di/ni
   end
   orderedtimes_dmain, cumsum(_haz), 1.0 .- exp.(.-cumsum(_haz)), [:times, :cumhaz, :ci]
@@ -260,7 +260,7 @@ Expected number of years of life lost due to cause k
 
   using Distributions, Plots, Random
   plotly()
-  z,x,t,d, event,wt = dgm_comprisk(n=200, rng=MersenneTwister(1232));
+  z,x,t,d, event,weights = dgm_comprisk(n=200, rng=MersenneTwister(1232));
   
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   times_aj, S, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);

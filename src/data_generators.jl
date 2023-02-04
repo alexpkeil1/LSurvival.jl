@@ -81,7 +81,7 @@ Example:
 ```julia-repl
 using LSurvival
   # 100 individuals with two competing events
-  z,x,t,d,event,wt = LSurvival.dgm_comprisk(100)
+  z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
   coxmodel
 
 ```
@@ -100,8 +100,8 @@ function dgm_comprisk(rng, n)
   end
   d = (t .== t0)
   event = (t .== t01) .+ 2.0.*(t .== t02)
-  wtu = rand(rng, n) .* 5.0
-  wt = wtu ./ mean(wtu)
-  reshape(round.(z, digits=4), (n,1)), reshape(round.(x, digits=4), (n,1)) ,round.(t, digits=4),d, event, round.(wt, digits=4)
+  weightsu = rand(rng, n) .* 5.0
+  weights = weightsu ./ mean(weightsu)
+  reshape(round.(z, digits=4), (n,1)), reshape(round.(x, digits=4), (n,1)) ,round.(t, digits=4),d, event, round.(weights, digits=4)
 end
 dgm_comprisk(n) = dgm_comprisk(MersenneTwister(), n)
