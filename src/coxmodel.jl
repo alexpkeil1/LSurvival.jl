@@ -19,7 +19,7 @@ calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
 
 function cox_summary(args; alpha=0.05, verbose=true)
   beta, ll, g, h, basehaz = args
-  std_err = diag(-inv(h2))
+  std_err = diag(-inv(h))
   z = beta./std_err
   zcrit = quantile.(Distributions.Normal(), [alpha/2.0, 1.0-alpha/2.0])
   lci = beta .+ zcrit[1]*std_err
@@ -27,7 +27,8 @@ function cox_summary(args; alpha=0.05, verbose=true)
   pval = calcp.(z)
   op = hcat(beta, std_err, lci, uci, z, pval)
   verbose ? true : return(op)
-  str = "-----------------------------------------------\n"
+  str = "Log Partial likelihood: $ll\n"
+  str *= "-----------------------------------------------\n"
   str *= "ln(HR)  Std.Err LCI     UCI     Z       P(>|Z|)\n"
   str *= "-----------------------------------------------"
   for r in eachrow(op)
@@ -258,7 +259,7 @@ basehaz: Matrix: baseline hazard at referent level of all covariates, weighted r
 
 Examples: 
 ```julia-repl   
-  using LSurvival, Random, LinearAlgebra
+  using LSurvival, Random
 
   id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0);
   
@@ -269,9 +270,10 @@ Examples:
   beta2, ll2, g2, h2, basehaz2 = coxmodel(args..., method="breslow")
 
 
-  # summarize results
-
-  coxsum = cox_summary((beta2, ll2, g2, h2, basehaz2), verbose=true);
+  # easier summary of results
+  args = (int, outt, d, X)
+  res = coxmodel(args..., method="efron")
+  coxsum = cox_summary(res, verbose=true);
     
 ```
 """
