@@ -43,9 +43,9 @@ function cox_summary(args; alpha=0.05, verbose=true)
     str *= " $(r[6])        "[1:8]
   end
   str *= "\n-----------------------------------------------\n"
-  str *= "Null Partial log-likelihood: $(ll[1])\n"
-  str *= "Log Partial log-likelihood: $(ll[end])\n"
-  str *= "LRT p-value (X^2=$chi2, df=$df): $lrtp\n"
+  str *= "Partial log-likelihood (null): $(ll[1])\n"
+  str *= "Partial log-likelihood (fitted): $(ll[end])\n"
+  str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $lrtp\n"
   str *= "Iterations to convergence: $(length(ll)-1)\n"
   println(str)
   op
@@ -272,14 +272,15 @@ Examples:
   
   d,X = data[:,4], data[:,1:3]
   
+  # getting raw values of output
   args = (int, outt, d, X)
   beta, ll, g, h, basehaz = coxmodel(args..., method="efron")
   beta2, ll2, g2, h2, basehaz2 = coxmodel(args..., method="breslow")
 
 
-  # easier summary of results
+  # nicer summary of results
   args = (int, outt, d, X)
-  res = coxmodel(args..., method="efron")
+  res = coxmodel(args..., method="efron");
   coxsum = cox_summary(res, alpha=0.05, verbose=true);
     
 ```
@@ -362,10 +363,11 @@ Examples
 
 
 if false
+  
+  using LSurvival
+  #=
   # comparison with R
   using RCall
-  
-  #=
   # commented out to avoid errors when trying to interpret macros without RCall dependency
   R"""
   library(survival)
@@ -468,7 +470,6 @@ if false
   sum(wt)
 
 
-  include("/Users/keilap/Projects/NCI/CPUM/ipw_policy/code/coxmodel.jl")
 
   # checking baseline hazard
   coxargs = (int, outt, d, X);
