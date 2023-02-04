@@ -31,23 +31,24 @@ function cox_summary(args; alpha=0.05, verbose=true)
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   str = "Maximum partial likelihood estimates (alpha=$alpha):\n"
-  str *= "-----------------------------------------------\n"
-  str *= "ln(HR)  Std.Err LCI     UCI     Z       P(>|Z|)\n"
-  str *= "-----------------------------------------------"
-  for r in eachrow(op)
-    str *= "\n$(r[1])       "[1:8]
+  str *= "-------------------------------------------------------\n"
+  str *= "     ln(HR)   Std.Err LCI     UCI     Z       P(>|Z|)\n"
+  str *= "-------------------------------------------------------"
+  for (i,r) in enumerate(eachrow(op))
+    str *= "\nb$i       "[1:6]
+    str *= "$(r[1])       "[1:8]
     str *= " $(r[2])        "[1:8]
     str *= " $(r[3])        "[1:8]
     str *= " $(r[4])        "[1:8]
     str *= " $(r[5])        "[1:8]
     str *= " $(r[6])        "[1:8]
   end
-  str *= "\n-----------------------------------------------\n"
+  str *= "\n-------------------------------------------------------\n"
   str *= "Partial log-likelihood (null): $(ll[1])\n"
   str *= "Partial log-likelihood (fitted): $(ll[end])\n"
   str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $lrtp\n"
-  str *= "Iterations to convergence: $(length(ll)-1)\n"
-  println(str)
+  str *= "Newton-Raphson iterations: $(length(ll)-1)\n"
+  print(str)
   op
 end
 
@@ -267,8 +268,8 @@ basehaz: Matrix: baseline hazard at referent level of all covariates, weighted r
 Examples: 
 ```julia-repl   
   using LSurvival
-
-  id, int, outt, data = LSurvival.dgm(1000, 10;afun=LSurvival.int_0);
+  # simulating discrete survival data for 20 individuals at 10 time points
+  id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
   
   d,X = data[:,4], data[:,1:3]
   
