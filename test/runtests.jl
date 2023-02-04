@@ -11,11 +11,17 @@ using Test
     coxsum = cox_summary(res, alpha=0.05, verbose=true);  
 
     kaplan_meier(int, outt, d)
+    #trivial case
+    times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, d, dvalues=[1.0])
+    times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, d, dvalues=[1.0])
 
 
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(100);
   
-    times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
-    times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
+    subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
+    subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
+    aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
+    aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
+    kaplan_meier(zeros(length(t)), t, d, weights=wt)
   
 end
