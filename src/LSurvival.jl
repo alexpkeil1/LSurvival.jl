@@ -2,9 +2,11 @@ module LSurvival
 
 using Distributions
 using LinearAlgebra
+using Random
 
 include("coxmodel.jl")
-include("kaplanmeier.jl")
+include("npsurvival.jl")
+include("data_generators.jl")
 
 
 export kaplan_meier, aalen_johansen, coxmodel, subdistribution_hazard_cuminc

@@ -1,30 +1,10 @@
 
-"""
-Generating data with competing risks
-"""
-function dgm_comprisk(;n=100, rng=MersenneTwister())
-  z = rand(rng, n) .*5
-  x = rand(rng, n) .*5
-  dt1 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))
-  dt2 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))
-  t01 = rand.(rng, dt1)
-  t02 = rand.(rng, dt2)
-  t0 = min.(t01, t02)
-  t = Array{Float64,1}(undef, n)
-  for i in 1:n
-    t[i] = t0[i] > 1.0 ? 1.0 : t0[i]
-  end
-  d = (t .== t0)
-  event = (t .== t01) .+ 2.0.*(t .== t02)
-  wtu = rand(rng, n) .* 5.0
-  wt = wtu ./ mean(wtu)
-  reshape(round.(z, digits=4), (n,1)), reshape(round.(x, digits=4), (n,1)) ,round.(t, digits=4),d, event, round.(wt, digits=4)
-end
 
 
 
 """
 Kaplan Meier for one observation per unit and no late entry
+  (simple function)
 """
 function km(t,d; wt=nothing)
   # no ties allowed
@@ -53,6 +33,7 @@ end
 
 """
 Kaplan Meier with late entry, possibly multiple observations per unit
+(simple function)
 """
 function km(in,out,d; wt=nothing, eps = 0.00000001)
    # there is some bad floating point issue with epsilon that should be tracked
@@ -82,6 +63,7 @@ end
 
 """
 Aalen-Johansen (survival) with late entry, possibly multiple observations per unit
+  (simple function)
 """
 function aj(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
   if isnothing(wt) || isnan(wt[1])
@@ -115,7 +97,23 @@ end
 
 """
 Kaplan Meier with late entry, possibly multiple observations per unit
-just a differently named function with more explicit output
+
+Usage: kaplan_meier(in,out,d; wt=nothing, eps = 0.00000001)
+
+  - in = time at entry (numeric vector)
+  - out = time at exit (numeric vector)
+  - d = event indicator (numeric or boolean vector)
+
+  keywords:
+  - wt = vector of observation weights, or nothing (default)
+  - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
+  
+  Output: tuple with entries
+  - times: unique event times
+  - survival: product limit estimator of survival 
+  - riskset: number of uncensored observations used in calculating survival at each event time
+  - names = vector of symbols [:times, :surv_overall, :riskset] used as a mnemonic for the function output
+
 """
 function kaplan_meier(in,out,d; wt=nothing, eps = 0.00000001)
    # there is some bad floating point issue with epsilon that should be tracked
@@ -142,8 +140,26 @@ end
 
 
 """
-Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit
-just a differently named function with more explicit output
+Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit, non-repeatable events
+Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
+
+  - in = time at entry (numeric vector)
+  - out = time at exit (numeric vector)
+  - d = event indicator (numeric or boolean vector)
+
+  keywords:
+  - dvalues = (default = [1.0, 2.0]) a vector of the unique values of 'd' that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)
+  - wt = vector of observation weights, or nothing (default)
+  - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
+  
+  Output: tuple with entries
+    - times: unique event times
+    - survival: product limit estimator of overall survival (e.g. cumulative probability that d is 0.0)
+    - ci: Aalen-Johansen estimators of cumulative incidence for each event type. 1-sum of the CI for all event types is equal to overall survival.
+    - riskset: number of uncensored observations used in calculating survival at each event time
+    - events: number of events of each type used in calculating survival and cumulative incidence at each event time
+    - names: vector of symbols [:times, :surv_km_overall, :ci_aalenjohansen, :riskset, :events] used as a mnemonic for the function output
+
 """
 function aalen_johansen(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
   if isnothing(wt) || isnan(wt[1])
@@ -180,17 +196,40 @@ end
 """
  Non-parametric sub-distribution hazard estimator
   estimating cumulative incidence via the subdistribution hazard function
-  using Distributions, Plots, BenchmarkTools
-  plotly()
+
+Usage: subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
+
+  - in = time at entry (numeric vector)
+  - out = time at exit (numeric vector)
+  - d = event indicator (numeric or boolean vector)
+  
+  keywords:
+  - dvalues = (default = [1.0, 2.0]) a vector of the unique values of 'd' that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)
+  - wt = vector of observation weights, or nothing (default)
+  - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
+  
+  Output: tuple with entries
+   - times: unique event times
+   - cumhaz: cumulative subdistrution hazard for each event type
+   - ci: Subdistrution hazard estimators of cumulative incidence for each event type. 1-sum of the CI for all event types is equal to overall survival.
+   - events: number of events of each type used in calculating survival and cumulative incidence at each event time
+   - names: vector of symbols [:times, :cumhaz, :ci] used as a mnemonic for the function output
+
+Note: 
+  For time specific subdistribution hazard given by 'sdhaz(t)', the cumulative incidence for a specific event type calculated over time is 
+  
+  1.0 .- exp.(.-cumsum(sdhaz(t)))
+
+Examples: 
+```julia-repl   
+  using LSurvival, Random
+
   z,x,t,d, event,wt = dgm_comprisk(n=10000, rng=MersenneTwister(1232));
   
-  @btime times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
-  @btime times_aj, _, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
+  times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
+  times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   
-  plot(times_aj, ajest[:,1], label="AJ", st=:step);
-  plot!(times_sd, ci_sd, label="SD", st=:step)  
-  
-  
+```
 """
 function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, eps = 0.00000001)
   # ties allowed
@@ -201,9 +240,6 @@ function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, 
   censval = zero(eltype(d))
   times_dmain = unique(out[findall(d .== dmain)])
   orderedtimes_dmain = sort(times_dmain)
-  #pseudo_riskset = zeros(Float64, length(times_dmain)) # risk set size
-  #cases = zeros(length(orderedtimes_dmain))
-  #_dt = zeros(length(orderedtimes))
   _haz = ones(length(orderedtimes_dmain))
   @inbounds for (_i,tt) in enumerate(orderedtimes_dmain)
     aliveandatriskidx = findall((in .< (tt-eps)) .&& (out .>= tt))
@@ -214,10 +250,7 @@ function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], wt=nothing, 
     ni = sum(wt[pseudoR]) # sum of weights in risk set
     di = sum(wt[casesidx])
     _haz[_i] = di/ni
-    #cases[_i] = di
-    #pseudo_riskset[_i] = ni
   end
-  #orderedtimes_dmain, cumsum(_haz), 1.0 .- exp.(.-cumsum(_haz)), cases, pseudo_riskset, [:times, :cumhaz, :ci, :cases, :pseudo_riskset]
   orderedtimes_dmain, cumsum(_haz), 1.0 .- exp.(.-cumsum(_haz)), [:times, :cumhaz, :ci]
 end
 ;

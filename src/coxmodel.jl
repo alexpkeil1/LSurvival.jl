@@ -214,12 +214,6 @@ Estimate parameters of an extended Cox model
 
 Using: Newton raphson algorithm with modified/adaptive step sizes
 
-id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun=int_0)
-d,X = data[:,4], data[:,1:3]
-
-args = (int, outt, d, X, nothing)
-beta, ll, g, h, basehaz = coxmodel(args, inits=nothing, tol=10e-4, maxiter=500)
-
 Keyword inputs:
 method="efron", 
 inits=nothing , # initial parameter values, set to zero if this is nothing
@@ -232,6 +226,28 @@ ll: log partial likelihood history (all iterations)
 g: gradient vector at MPLE
 h: hessian matrix at MPLE
 basehaz: Matrix: baseline hazard at referent level of all covariates, weighted risk set size, weighted # of cases, time
+
+
+Examples: 
+```julia-repl   
+  using LSurvival, Random, LinearAlgebra
+
+  using LSurvival
+  id, int, outt, data = Lsurvival.dgm(MersenneTwister(), 1000, 10;regimefun=Lsurvival.int_0)
+  
+  d,X = data[:,4], data[:,1:3]
+  
+  args = (int, outt, d, X)
+  beta, ll, g, h, basehaz = coxmodel(args..., method="efron")
+  beta2, ll2, g2, h2, basehaz = coxmodel(args..., method="breslow")
+
+
+  std_err = diag(-inv(h2))
+  # log-HR, std. error, z-statistic, p-value
+  hcat(beta2, std_err, beta2/std_err)
+    
+```
+
 
 """
 function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
@@ -312,7 +328,6 @@ Examples
 
 
 if false
-  include("/Users/keilap/Projects/NCI/CPUM/ipw_policy/code/coxmodel.jl")
   # comparison with R
   using RCall
   
@@ -372,8 +387,6 @@ if false
 
   =#
 
-  include("/Users/keilap/Projects/NCI/CPUM/ipw_policy/code/coxmodel.jl")
-
   coxargs = (cgd.tstart, cgd.tstop, cgd.status, Matrix(cgd[:,[:height,:propylac]]));
   beta, ll, g, h, basehaz = coxmodel(coxargs...,weights=cgd.weight,method="breslow", tol=1e-18, inits=zeros(2));
 
@@ -387,26 +400,7 @@ if false
 
 
   # new data comparing internal methods
-  include("/Users/keilap/Projects/NCI/CPUM/ipw_policy/code/coxmodel.jl")
 
-  expit(mu) =  inv(1.0+exp(-mu))
-
-  function int_nc(v,l,a)
-    expit(-1.0 + 3*v + 2*l)
-  end
-  
-  function int_0(v,l,a)
-    0.1
-  end
-  
-  function lprob(v,l,a)
-    expit(-3 + 2*v + 0*l + 0*a)
-  end
-
-  function yprob(v,l,a)
-    expit(-3 + 2*v + 0*l + 2*a)
-  end
-  
   function dgm(rng, n, maxT;regimefun=int_0)
     V = rand(rng, n)
     LAY = Array{Float64,2}(undef,n*maxT,4)
