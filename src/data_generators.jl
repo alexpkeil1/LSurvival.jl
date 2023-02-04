@@ -71,13 +71,18 @@ dgm(n, maxT;kwargs...) = dgm(MersenneTwister(), n, maxT;kwargs...)
 """
 Generating continuous survival data with competing risks
 
-Usage: dgm_comprisk(rng=MersenneTwister(), n=100)
-      dgm_comprisk(n=100)
+Usage: dgm_comprisk(rng, n)
+      dgm_comprisk(n)
+
+      - rng = random number generator    
+      - n = sample size
+
 Example:
 ```julia-repl
 using LSurvival
   # 100 individuals with two competing events
   z,x,t,d,event,wt = LSurvival.dgm_comprisk(100)
+  coxmodel
 
 ```
 """

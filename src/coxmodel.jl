@@ -15,6 +15,34 @@
 #= #################################################################################################################### 
 helper functions
 =# ####################################################################################################################
+calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
+
+function cox_summary(args; alpha=0.05, verbose=true)
+  beta, ll, g, h, basehaz = args
+  std_err = diag(-inv(h2))
+  z = beta./std_err
+  zcrit = quantile.(Distributions.Normal(), [alpha/2.0, 1.0-alpha/2.0])
+  lci = beta .+ zcrit[1]*std_err
+  uci = beta .+ zcrit[2]*std_err
+  pval = calcp.(z)
+  op = hcat(beta, std_err, lci, uci, z, pval)
+  verbose ? true : return(op)
+  str = "-----------------------------------------------\n"
+  str *= "ln(HR)  Std.Err LCI     UCI     Z       P(>|Z|)\n"
+  str *= "-----------------------------------------------"
+  for r in eachrow(op)
+    str *= "\n$(r[1])       "[1:8]
+    str *= " $(r[2])        "[1:8]
+    str *= " $(r[3])        "[1:8]
+    str *= " $(r[4])        "[1:8]
+    str *= " $(r[5])        "[1:8]
+    str *= " $(r[6])        "[1:8]
+  end
+  str *= "\n-----------------------------------------------\n"
+  println(str)
+  op
+end
+
 function containers(in, out, d, X, wt, inits)
   @assert length(size(X))==2
   n,p = size(X)
@@ -222,9 +250,9 @@ maxiter=500    # maximum number of iterations for Newton Raphson algorithm (set 
 
 Outputs:
 beta: coefficients 
-ll: log partial likelihood history (all iterations)
-g: gradient vector at MPLE
-h: hessian matrix at MPLE
+ll: log partial likelihood history (all iterations), with final value being the (log) maximum partial likelihood (log-MPL)
+g: gradient vector (first derivative of log partial likelihood) at log-MPL
+h: hessian matrix (second derivative of log partial likelihood) at log-MPL
 basehaz: Matrix: baseline hazard at referent level of all covariates, weighted risk set size, weighted # of cases, time
 
 
@@ -232,23 +260,20 @@ Examples:
 ```julia-repl   
   using LSurvival, Random, LinearAlgebra
 
-  using LSurvival
-  id, int, outt, data = Lsurvival.dgm(MersenneTwister(), 1000, 10;regimefun=Lsurvival.int_0)
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0);
   
   d,X = data[:,4], data[:,1:3]
   
   args = (int, outt, d, X)
   beta, ll, g, h, basehaz = coxmodel(args..., method="efron")
-  beta2, ll2, g2, h2, basehaz = coxmodel(args..., method="breslow")
+  beta2, ll2, g2, h2, basehaz2 = coxmodel(args..., method="breslow")
 
 
-  std_err = diag(-inv(h2))
-  # log-HR, std. error, z-statistic, p-value
-  hcat(beta2, std_err, beta2/std_err)
+  # summarize results
+
+  coxsum = cox_summary((beta2, ll2, g2, h2, basehaz2), verbose=true);
     
 ```
-
-
 """
 function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
   #(_in::Array{Float64}, _out::Array{Float64}, d, X::Array{Float64,2}, _wt::Array{Float64})=args
@@ -320,7 +345,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
   (_B, _llhistory, _grad, _hess, bh)
 end
 ;
-coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2};kwargs...) = coxmodel(zeros(typeof(_out), length(_out)), _out, d, X;kwargs)
+coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2};kwargs...) = coxmodel(zeros(typeof(_out), length(_out)), _out, d, X;kwargs...)
 
 #= #################################################################################################################### 
 Examples
