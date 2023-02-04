@@ -27,7 +27,13 @@ function cox_summary(args; alpha=0.05, verbose=true)
   pval = calcp.(z)
   op = hcat(beta, std_err, lci, uci, z, pval)
   verbose ? true : return(op)
-  str = "Log Partial likelihood: $ll\n"
+  chi2 =  ll[end] - ll[1] 
+  df = length(beta)
+  lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
+  str = "Null Partial likelihood: $(ll[1])\n"
+  str *= "Log Partial likelihood: $(ll[end])\n"
+  str *= "LRT p-value (df=$df): $lrtp\n"
+  str *= "Iterations to convergence: $(length(ll)-1)\n"
   str *= "-----------------------------------------------\n"
   str *= "ln(HR)  Std.Err LCI     UCI     Z       P(>|Z|)\n"
   str *= "-----------------------------------------------"
@@ -259,9 +265,9 @@ basehaz: Matrix: baseline hazard at referent level of all covariates, weighted r
 
 Examples: 
 ```julia-repl   
-  using LSurvival, Random
+  using LSurvival
 
-  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0);
+  id, int, outt, data = LSurvival.dgm(1000, 10;afun=LSurvival.int_0);
   
   d,X = data[:,4], data[:,1:3]
   
