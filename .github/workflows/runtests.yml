@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        julia-version: [stable]
+        julia-version: [stable, lts]
         julia-arch: [x64, x86]
         os: [macOS-latest]
         exclude:
