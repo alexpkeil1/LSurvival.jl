@@ -30,10 +30,7 @@ function cox_summary(args; alpha=0.05, verbose=true)
   chi2 =  ll[end] - ll[1] 
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
-  str = "Null Partial likelihood: $(ll[1])\n"
-  str *= "Log Partial likelihood: $(ll[end])\n"
-  str *= "LRT p-value (df=$df): $lrtp\n"
-  str *= "Iterations to convergence: $(length(ll)-1)\n"
+  str = "Maximum partial likelihood estimates (alpha=$alpha):\n"
   str *= "-----------------------------------------------\n"
   str *= "ln(HR)  Std.Err LCI     UCI     Z       P(>|Z|)\n"
   str *= "-----------------------------------------------"
@@ -46,6 +43,10 @@ function cox_summary(args; alpha=0.05, verbose=true)
     str *= " $(r[6])        "[1:8]
   end
   str *= "\n-----------------------------------------------\n"
+  str *= "Null Partial log-likelihood: $(ll[1])\n"
+  str *= "Log Partial log-likelihood: $(ll[end])\n"
+  str *= "LRT p-value (X^2=$chi2, df=$df): $lrtp\n"
+  str *= "Iterations to convergence: $(length(ll)-1)\n"
   println(str)
   op
 end
@@ -279,7 +280,7 @@ Examples:
   # easier summary of results
   args = (int, outt, d, X)
   res = coxmodel(args..., method="efron")
-  coxsum = cox_summary(res, verbose=true);
+  coxsum = cox_summary(res, alpha=0.05, verbose=true);
     
 ```
 """
