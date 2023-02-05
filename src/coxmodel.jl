@@ -255,16 +255,16 @@ Newton raphson wrapper functions
 =# ####################################################################################################################
 function checkconverged!(tol, _grad, lastLL, _LL, oldQ, λ)
   Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
-  likrat = abs(lastLL/_LL[1])
-  absdiff = abs(lastLL-_LL[1])
-  reldiff = max(likrat, inv(likrat)) -1.0
-  converged = (reldiff < tol) || (absdiff < sqrt(tol))
   if Q > oldQ
     λ *= 0.8  # tempering
   else
     λ = min(2.0λ, 1.) # de-tempering
   end
   isnan(_LL[1]) ? throw("LL is NaN") : true
+  likrat = abs(lastLL/_LL[1])
+  absdiff = abs(lastLL-_LL[1])
+  reldiff = max(likrat, inv(likrat)) -1.0
+  converged = (reldiff < tol) || (absdiff < sqrt(tol))
   Q, λ, converged
 end
 
