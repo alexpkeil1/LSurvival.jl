@@ -53,23 +53,34 @@ function cox_summary(args; alpha=0.05, verbose=true)
 end
 
 function containers(in, out, d, X, wt, inits)
+  if size(out,1)==0
+    throw("error in function call")
+   end
+  if isnothing(wt)
+    wt = ones(size(_in, 1))
+  end
   @assert length(size(X))==2
   n,p = size(X)
   # indexes,counters
-  eventidx = findall(d .> 0)
   eventtimes = sort(unique(out[findall(d .> 0)]))
-  nevents = length(eventidx);
   # containers
   _B = isnothing(inits) ? zeros(p) : copy(inits)
-  _r = zeros(Float64,n)
-  _basehaz = zeros(Float64, nevents) # baseline hazard estimate
-  _riskset = zeros(Int64, nevents) # baseline hazard estimate
+  _r = ones(Float64,n)
   _LL = zeros(1)
   _grad = zeros(p)
   _hess = zeros(p, p) #initialize
-  (n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess)
+  (n,p, eventtimes,_B,_r,_LL,_grad,_hess, wt)
 end
 
+function tune(_LL)
+  totiter=0
+  λ=1.0
+  absdiff = tol*2.
+  oldQ = floatmax()
+  lastLL = -floatmax()
+  converged = false
+  totiter, λ, absdiff, oldQ, lastLL, converged, [_LL[1]]
+end
 
 function _coxrisk!(_r, X, B)
 	map!(z -> exp(z),_r, X*B)
@@ -80,6 +91,14 @@ function _coxrisk(X, B)
   _r = ones(size(X,1))
 	_coxrisk!(_r, X, B)
 end
+
+function _zeroout!(_LL, _grad, _hess)
+  _LL *= 0.0
+  _grad *= 0.0
+  _hess *= 0.0
+  nothing
+end
+
 
 
 #= #################################################################################################################### 
@@ -103,9 +122,9 @@ partial likelihood/gradient/hessian functions for tied events
  _grad = zeros(p)
  _hess = zeros(p,p)
  _den = zeros(j)
- LGH_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+ update_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
  """
-function LGH_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+function update_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
   den = sum(_rriskset.* _wtriskset)
   _LL .+= sum(_wtcases .* log.(_rcases)) .- log(den)*sum(_wtcases)
   #
@@ -118,7 +137,7 @@ function LGH_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, 
   _hess .+=  - (xxbar -xbar*xbar') * sum(_wtcases)
   _den[j] = den
   nothing
-  #(_ll, _grad, _hess)
+  #updates (_ll, _grad, _hess)
 end
 
 
@@ -143,19 +162,10 @@ _LL = [0.0]
 _grad = zeros(p)
 _hess = zeros(p,p)
 _den = zeros(j)
-LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
+update_efron!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset,  _wtcases, _wtriskset)
 """
-function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtcases, _wt, caseidx, risksetidx)
-  # things to drop
-  #risksetnotcaseidx = setdiff(risksetidx, caseidx) # move out
-  #_rnotcase  = _r[risksetnotcaseidx] # move out
-  
-  # things to move out of here
-  Xriskset = X[risksetidx,:]
-  _rriskset = _r[risksetidx]
-  _wtriskset = _wt[risksetidx]
-
-  nties = length(caseidx)
+function update_efron!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset,  _wtcases, _wtriskset)
+  nties = size(Xcases,1)
   effwts = efron_weights(nties)
   den = sum(_wtriskset .* _rriskset)
   denc = sum(_wtcases .* _rcases)
@@ -179,7 +189,7 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
   end
   _den[j] = den # using Breslow estimator
   nothing
-  #(_ll, _grad, _hess)
+  #updates: (_ll, _grad, _hess)
 end
 
 """
@@ -187,15 +197,16 @@ wrapper: calculate log partial likelihood, gradient, hessian contributions for a
           under a specified method for handling ties
 (efron and breslow estimators only)
 """
-function LGH!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+function update!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
   whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
   isnothing(whichmeth) ? throw("Method not recognized") : true
   if whichmeth == 1
-    LGH_efron!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X, _r[caseidx], _r, _wt[caseidx], _wt, caseidx, risksetidx)
+     update_efron!(_den, _LL, _grad, _hess, j, p, X[caseidx,:],  X[risksetidx,:], _r[caseidx], _r[risksetidx], _wt[caseidx], _wt[risksetidx])
   elseif whichmeth == 2
-    LGH_breslow!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X[risksetidx,:], _r[caseidx], _r[risksetidx], _wt[caseidx], _wt[risksetidx])
+    update_breslow!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X[risksetidx,:], _r[caseidx], _r[risksetidx], _wt[caseidx], _wt[risksetidx])
   end
 end
+
 
 # calculate log likelihood, gradient, hessian at set value of _B
 """
@@ -226,16 +237,14 @@ function _stepcox!(
          _r::Vector
                   )
   _coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
+  _zeroout!(_LL, _grad, _hess)
   # loop over event times
   den,wtdriskset,wtdcases = zeros(length(eventtimes)), zeros(length(eventtimes)), zeros(length(eventtimes))
-  _LL .*= 0.0
-  _grad .*= 0.0
-  _hess .*= 0.0
   @inbounds for (j,_outj) in enumerate(eventtimes)
     #j=13; _outj = eventtimes[j]
     risksetidx = findall((_in .< _outj) .&& (_out .>= _outj))
     caseidx = findall((_in .< _outj) .&& isapprox.(_out, _outj) .&& (d .> 0))
-    LGH!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+    update!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     wtdriskset[j] = sum(_wt[risksetidx])
     wtdcases[j] = sum(_wt[caseidx])
   end # (j,_outj)
@@ -243,8 +252,22 @@ function _stepcox!(
 end #function _stepcox!
 
 #= #################################################################################################################### 
-Newton raphson wrapper function
+Newton raphson wrapper functions
 =# ####################################################################################################################
+function checkconverged(_grad, lastLL, _LL, oldQ, λ)
+  Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
+  likrat = abs(lastLL/_LL[1])
+  absdiff = abs(lastLL-_LL[1])
+  reldiff = max(likrat, inv(likrat)) -1.0
+  converged = (reldiff < tol) || (absdiff < sqrt(tol))
+  if Q > oldQ
+    λ *= 0.8  # tempering
+  else
+    λ = min(2.0λ, 1.) # de-tempering
+  end
+  isnan(_LL[1]) ? throw("LL is NaN") : true
+  Q, λ, converged
+end
 
 """
 Estimate parameters of an extended Cox model
@@ -287,63 +310,33 @@ Examples:
 ```
 """
 function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
-  #(_in::Array{Float64}, _out::Array{Float64}, d, X::Array{Float64,2}, _wt::Array{Float64})=args
-  #### move #####
-   if isnothing(weights)
-    weights = ones(size(_in, 1))
-   end
-   if size(_out,1)==0
-    throw("error in function call")
-   end
    conts = containers(_in, _out, d, X, weights, inits)
-   (n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess) = conts
-   #
+   (n,p, eventtimes,_B,_r,_LL,_grad,_hess,weights) = conts
    lowermethod3 = lowercase(method[1:3])
-   # tuning params
-   totiter=0
-   λ=1.0
-   #g = h = xn = ll = 0.
-   absdiff = tol*2.
-   oldQ = floatmax()
- 
-   bn1 = _B
-   bestb = _B
-   lastLL = -floatmax()
    den, _wtriskset, _wtcase = _stepcox!(lowermethod3, 
       _LL, _grad, _hess,
       _in, _out, d, X, weights,
       _B, p, n, eventtimes,_r)
-  _llhistory = [_LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
-  converged = false
+   # tuning params
+   totiter, λ, absdiff, oldQ, lastLL, converged, _llhistory, = tune(_LL)
+  
   # repeat newton raphson steps until convergence or max iterations
-  while totiter<maxiter
+  @inbounds while totiter<maxiter
     totiter +=1
     ######
     # update 
     #######
-    Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
-    likrat = abs(lastLL/_LL[1])
-    absdiff = abs(lastLL-_LL[1])
-    reldiff = max(likrat, inv(likrat)) -1.0
-    converged = (reldiff < tol) || (absdiff < sqrt(tol))
+    Q, λ, converged = checkconverged!(_grad, lastLL, _LL, oldQ, λ)
     if converged
       break
-    end
-    if Q > oldQ
-      λ *= 0.8  # tempering
-    else
-      λ = min(2.0λ, 1.) # de-tempering
-      bestb = _B
-    end
-    isnan(_LL[1]) ? throw("LL is NaN") : true
-    if abs(_LL[1]) != Inf
+    elseif abs(_LL[1]) != Inf
       _B .+= inv(-(_hess))*_grad.*λ # newton raphson step
       oldQ=Q
     else
        throw("log-likelihood is infinite")
     end
     lastLL = _LL[1]
-    den, _, _ = _stepcox!(lowermethod3,
+    den, _ = _stepcox!(lowermethod3,
       _LL, _grad, _hess,
       _in, _out, d, X, weights,
       _B, p, n, eventtimes,_r)
