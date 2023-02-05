@@ -254,7 +254,7 @@ end #function _stepcox!
 #= #################################################################################################################### 
 Newton raphson wrapper functions
 =# ####################################################################################################################
-function checkconverged(_grad, lastLL, _LL, oldQ, λ)
+function checkconverged!(_grad, lastLL, _LL, oldQ, λ)
   Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
   likrat = abs(lastLL/_LL[1])
   absdiff = abs(lastLL-_LL[1])
