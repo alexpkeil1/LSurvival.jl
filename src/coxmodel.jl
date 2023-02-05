@@ -320,7 +320,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
    bestb = _B
    lastLL = -floatmax()
    risksetidxs, caseidxs = [], []
-   @inbounds for outj in eventtimes
+   @inbounds for _outj in eventtimes
      push!(risksetidxs, findall((_in .< _outj) .&& (_out .>= _outj)))
      push!(caseidxs, findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj)))
    end
