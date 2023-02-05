@@ -338,7 +338,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
     # update 
     #######
     Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
-    likrat = abs(lastLL/_LL[1])
+    likrat = (lastLL/_LL[1])
     absdiff = abs(lastLL-_LL[1])
     reldiff = max(likrat, inv(likrat)) -1.0
     converged = (reldiff < tol) || (absdiff < sqrt(tol))
@@ -351,12 +351,12 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
       λ = min(2.0λ, 1.) # de-tempering
       bestb = _B
     end
-    isnan(_LL[1]) ? throw("LL is NaN") : true
+    isnan(_LL[1]) ? throw("Log-partial-likelihood is NaN") : true
     if abs(_LL[1]) != Inf
       _B .+= inv(-(_hess))*_grad.*λ # newton raphson step
       oldQ=Q
     else
-       throw("log-likelihood is infinite")
+       throw("log-partial-likelihood is infinite")
     end
     lastLL = _LL[1]
     den, _, _ = _stepcox!(lowermethod3,
