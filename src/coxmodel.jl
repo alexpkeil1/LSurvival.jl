@@ -75,11 +75,10 @@ end
 function tune(_LL, tol)
   totiter=0
   λ=1.0
-  absdiff = tol*2.
   oldQ = floatmax()
   lastLL = -floatmax()
   converged = false
-  totiter, λ, absdiff, oldQ, lastLL, converged, [_LL[1]]
+  totiter, λ, oldQ, lastLL, converged, [_LL[1]]
 end
 
 function _coxrisk!(_r, X, B)
@@ -254,7 +253,7 @@ end #function _stepcox!
 #= #################################################################################################################### 
 Newton raphson wrapper functions
 =# ####################################################################################################################
-function checkconverged!(_grad, lastLL, _LL, oldQ, λ)
+function checkconverged!(tol, _grad, lastLL, _LL, oldQ, λ)
   Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
   likrat = abs(lastLL/_LL[1])
   absdiff = abs(lastLL-_LL[1])
@@ -318,7 +317,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
       _in, _out, d, X, weights,
       _B, p, n, eventtimes,_r)
    # tuning params
-   totiter, λ, absdiff, oldQ, lastLL, converged, _llhistory, = tune(_LL, tol)
+   totiter, λ, oldQ, lastLL, converged, _llhistory, = tune(_LL, tol)
   
   # repeat newton raphson steps until convergence or max iterations
   @inbounds while totiter<maxiter
@@ -326,7 +325,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
     ######
     # update 
     #######
-    Q, λ, converged = checkconverged!(_grad, lastLL, _LL, oldQ, λ)
+    Q, λ, converged = checkconverged!(tol, _grad, lastLL, _LL, oldQ, λ)
     if converged
       break
     elseif abs(_LL[1]) != Inf
@@ -440,7 +439,7 @@ if false
   wt ./= (sum(wt)/length(wt))
   
   #=
-  using RCall, BenchmarkTools
+  using RCall, BenchmarkTools, Random, LSurvival
   id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
