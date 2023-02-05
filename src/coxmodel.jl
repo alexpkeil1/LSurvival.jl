@@ -72,7 +72,7 @@ function containers(in, out, d, X, wt, inits)
   (n,p, eventtimes,_B,_r,_LL,_grad,_hess, wt)
 end
 
-function tune(_LL)
+function tune(_LL, tol)
   totiter=0
   λ=1.0
   absdiff = tol*2.
@@ -318,7 +318,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
       _in, _out, d, X, weights,
       _B, p, n, eventtimes,_r)
    # tuning params
-   totiter, λ, absdiff, oldQ, lastLL, converged, _llhistory, = tune(_LL)
+   totiter, λ, absdiff, oldQ, lastLL, converged, _llhistory, = tune(_LL, tol)
   
   # repeat newton raphson steps until convergence or max iterations
   @inbounds while totiter<maxiter
@@ -432,23 +432,24 @@ if false
   # new data comparing internal methods
 
   #####
-  using Random
+  using Random, LSurvival
   id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
   wt ./= (sum(wt)/length(wt))
-  #wt = round.(wt,digits=3)
-  sum(wt)
+  
   #=
-
+  using RCall, BenchmarkTools
   id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
+  d,X = data[:,4], data[:,1:3]
+  wt = rand(length(d))
+  wt ./= (sum(wt)/length(wt))
 
   # benchmark vs. R
-  function rfun(int outt d X wt)
+  function rfun(int, outt, d, X, wt)
       @rput int outt d X wt ;
-  
       R"""
          library(survival)
          df = data.frame(int=int, outt=outt, d=d, X=X)
@@ -458,12 +459,12 @@ if false
         @rget coxcoefs_cr 
   end
 
-  function jfun(int outt d X wt)
-    coxmodel(int outt d X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+  function jfun(int, outt, d, X, wt)
+    coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
   end
 
-  @btime rfun(int outt d X wt)
-  @btime jfun(int outt d X wt)
+  @btime rfun(int, outt, d, X, wt)
+  @btime jfun(int, outt, d, X, wt)
 
 
   @rput int outt d X wt
