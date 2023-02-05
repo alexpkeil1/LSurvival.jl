@@ -57,7 +57,7 @@ function containers(in, out, d, X, wt, inits)
     throw("error in function call")
    end
   if isnothing(wt)
-    wt = ones(size(_in, 1))
+    wt = ones(size(in, 1))
   end
   @assert length(size(X))==2
   n,p = size(X)
@@ -431,50 +431,41 @@ if false
 
   # new data comparing internal methods
 
-  function dgm(rng, n, maxT;regimefun=int_0)
-    V = rand(rng, n)
-    LAY = Array{Float64,2}(undef,n*maxT,4)
-    keep = ones(Bool, n*maxT)
-    id = sort(reduce(vcat, fill(collect(1:n), maxT)))
-    time = (reduce(vcat, fill(collect(1:maxT), n)))
-    for i in 1:n
-      v=V[i]; l = 0; a=0;
-      lkeep = true
-      for t in 1:maxT
-          currIDX = (i-1)*maxT + t
-          l = lprob(v,l,a) > rand(rng) ? 1 : 0
-          a = regimefun(v,l,a) > rand(rng) ? 1 : 0
-          y = yprob(v,l,a) > rand(rng) ? 1 : 0
-          LAY[currIDX,:] .= [v,l,a,y]
-          keep[currIDX] = lkeep
-          lkeep = (!lkeep || (y==1)) ? false : true
-      end
-    end 
-    id[findall(keep)], time[findall(keep)] .- 1, time[findall(keep)],LAY[findall(keep),:]
-  end
-
   #####
   using Random
-  id, int, outt, data = dgm(MersenneTwister(), 1000, 10;regimefun=int_0)
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
   wt ./= (sum(wt)/length(wt))
   #wt = round.(wt,digits=3)
   sum(wt)
-
-
-
-  # checking baseline hazard
-  coxargs = (int, outt, d, X);
-  beta, ll, g, h, basehaz = coxmodel(coxargs..., weights=wt, method="breslow", tol=1e-9, inits=nothing);
-  beta2, ll2, g2, h2, basehaz2 = coxmodel(coxargs..., weights=wt, method="efron", tol=1e-9, inits=nothing);
-  se = sqrt.(diag(-inv(h)));
-  hcat(beta, se, beta ./ se)
-
-
-
   #=
+
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
+  data[:,1] = round.(  data[:,1] ,digits=3)
+
+  # benchmark vs. R
+  function rfun(int outt d X wt)
+      @rput int outt d X wt ;
+  
+      R"""
+         library(survival)
+         df = data.frame(int=int, outt=outt, d=d, X=X)
+         cfit = coxph(Surv(int,outt,d)~., weights=wt, data=df, ties="breslow")
+         coxcoefs_cr = coef(cfit)
+      """
+        @rget coxcoefs_cr 
+  end
+
+  function jfun(int outt d X wt)
+    coxmodel(int outt d X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+  end
+
+  @btime rfun(int outt d X wt)
+  @btime jfun(int outt d X wt)
+
+
   @rput int outt d X wt
   R"""
   library(survival)
@@ -496,6 +487,7 @@ if false
   hcat(diff(bh2.hazard), basehaz2[2:end,1])
   =#
   
+
   
 
   
