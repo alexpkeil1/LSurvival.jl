@@ -229,7 +229,9 @@ function _stepcox!(
          # indexs
          p, n, eventtimes,
          # containers
-         _r::Vector
+         _r::Vector,
+         # big indexes
+         risksetidxs, caseidxs
                   )
   _coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
   # loop over event times
@@ -239,8 +241,10 @@ function _stepcox!(
   _hess .*= 0.0
   @inbounds for (j,_outj) in enumerate(eventtimes)
     #j=13; _outj = eventtimes[j]
-    risksetidx = findall((_in .< _outj) .&& (_out .>= _outj))
-    caseidx = findall((_in .< _outj) .&& isapprox.(_out, _outj) .&& (d .> 0))
+    #risksetidx = findall((_in .< _outj) .&& (_out .>= _outj))
+    #caseidx = findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj))
+    risksetidx =risksetidxs[j]
+    caseidx = caseidxs[j]
     LGH!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     wtdriskset[j] = sum(_wt[risksetidx])
     wtdcases[j] = sum(_wt[caseidx])
@@ -315,10 +319,16 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
    bn1 = _B
    bestb = _B
    lastLL = -floatmax()
+   risksetidxs, caseidxs = [], []
+   @inbounds for outj in eventtimes
+     push!(risksetidxs, findall((_in .< _outj) .&& (_out .>= _outj)))
+     push!(caseidxs, findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj)))
+   end
    den, _wtriskset, _wtcase = _stepcox!(lowermethod3, 
       _LL, _grad, _hess,
       _in, _out, d, X, weights,
-      _B, p, n, eventtimes,_r)
+      _B, p, n, eventtimes,_r, 
+      risksetidxs, caseidxs)
   _llhistory = [_LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
   converged = false
   # repeat newton raphson steps until convergence or max iterations
@@ -352,7 +362,8 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
     den, _, _ = _stepcox!(lowermethod3,
       _LL, _grad, _hess,
       _in, _out, d, X, weights,
-      _B, p, n, eventtimes,_r)
+      _B, p, n, eventtimes,_r, 
+      risksetidxs, caseidxs)
     push!(_llhistory, _LL[1])
   end
   if totiter==maxiter
