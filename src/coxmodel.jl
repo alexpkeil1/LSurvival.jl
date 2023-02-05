@@ -460,6 +460,9 @@ if false
   wt = rand(length(d))
   wt ./= (sum(wt)/length(wt))
 
+    beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+
+
   # benchmark vs. R
   function rfun(int, outt, d, X, wt)
       @rput int outt d X wt ;
@@ -471,9 +474,6 @@ if false
       """
         @rget coxcoefs_cr 
   end
-
-    beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
-
 
   function jfun(int, outt, d, X, wt)
     coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
