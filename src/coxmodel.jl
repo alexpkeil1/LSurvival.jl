@@ -253,6 +253,20 @@ end #function _stepcox!
 #= #################################################################################################################### 
 Newton raphson wrapper functions
 =# ####################################################################################################################
+function checkconverged!(tol, _grad, lastLL, thisLL, oldQ, λ)
+  Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
+  if Q > oldQ
+    λ *= 0.8  # tempering
+  else
+    λ = min(2.0λ, 1.) # de-tempering
+  end
+  isnan(thisLL) ? throw("LL is NaN") : true
+  likrat = abs(lastLL/thisLL)
+  absdiff = abs(lastLL-thisLL)
+  reldiff = max(likrat, inv(likrat)) -1.0
+  converged = (reldiff < tol) || (absdiff < sqrt(tol))
+  Q, λ, converged
+end
 
 """
 Estimate parameters of an extended Cox model
@@ -306,22 +320,12 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
    totiter, λ, oldQ, lastLL, converged, _llhistory, = tune(_LL, tol)
   
   # repeat newton raphson steps until convergence or max iterations
-  @inbounds while totiter<maxiter
+  while totiter<maxiter
     totiter +=1
     ######
     # update 
     #######
-    Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
-    if Q > oldQ
-      λ *= 0.8  # tempering
-    else
-      λ = min(2.0λ, 1.) # de-tempering
-    end
-    isnan(_LL[1]) ? throw("LL is NaN") : true
-    likrat = abs(lastLL/_LL[1])
-    absdiff = abs(lastLL-_LL[1])
-    reldiff = max(likrat, inv(likrat)) -1.0
-    converged = (reldiff < tol) || (absdiff < sqrt(tol))
+    Q, λ, converged = checkconverged!(tol, _grad, lastLL, _LL[1], oldQ, λ)
     if converged
       break
     elseif abs(_LL[1]) != Inf
