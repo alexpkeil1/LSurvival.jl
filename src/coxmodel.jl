@@ -33,21 +33,21 @@ function cox_summary(args; alpha=0.05, verbose=true)
   str = """
   Maximum partial likelihood estimates (alpha=$alpha):\n
 -------------------------------------------------------\n
-     ln(HR)   Std.Err LCI     UCI     Z       P(>|Z|)\n
+     ln(HR)   StdErr  LCI     UCI     Z       P(>|Z|)\n
 -------------------------------------------------------"""
   for (i,r) in enumerate(eachrow(op))
-    str *= "\nb$i       "[1:6]
-    str *= """ $(@printf("%8g", r[1]))       """[1:8]
-    str *= """ $(@printf("%8g", r[2]))        """[1:8]
-    str *= """ $(@printf("%8g", r[3]))        """[1:8]
-    str *= """ $(@printf("%8g", r[4]))        """[1:8]
-    str *= """ $(@printf("%8g", r[5]))        """[1:8]
-    str *= """ $(@printf("%8g", r[6]))        """[1:8]
+    str *= "\nb$i       "[1:4]
+    str *= """ $(@sprintf("%7g", r[1]))       """[1:8]
+    str *= """ $(@sprintf("%7g", r[2]))        """[1:8]
+    str *= """ $(@sprintf("%7g", r[3]))        """[1:8]
+    str *= """ $(@sprintf("%7g", r[4]))        """[1:8]
+    str *= """ $(@sprintf("%7g", r[5]))        """[1:8]
+    str *= """ $(@sprintf("%7g", r[6]))        """[1:8]
   end
   str *= "\n-------------------------------------------------------\n"
-  str *= "Partial log-likelihood (null): $(ll[1])\n"
-  str *= "Partial log-likelihood (fitted): $(ll[end])\n"
-  str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $lrtp\n"
+  str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
+  str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll[end]))\n"
+  str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%5g", lrtp))\n"
   str *= "Newton-Raphson iterations: $(length(ll)-1)\n"
   print(str)
   op
