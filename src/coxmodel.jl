@@ -19,7 +19,7 @@ calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
 
 function cox_summary(args; alpha=0.05, verbose=true)
   beta, ll, g, h, basehaz = args
-  std_err = diag(-inv(h))
+  std_err = sqrt.(diag(-inv(h)))
   z = beta./std_err
   zcrit = quantile.(Distributions.Normal(), [alpha/2.0, 1.0-alpha/2.0])
   lci = beta .+ zcrit[1]*std_err
@@ -485,11 +485,20 @@ if false
       """
         @rget coxcoefs_cr 
   end
+  function rfun2(int, outt, d, X, wt)
+      R"""
+         library(survival)
+         df = data.frame(int=int, outt=outt, d=d, X=X)
+         cfit = coxph(Surv(int,outt,d)~., weights=wt, data=df, ties="breslow")
+         coxcoefs_cr = coef(cfit)
+      """
+  end
 
   function jfun(int, outt, d, X, wt)
     coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
   end
 
+  @btime rfun2(int, outt, d, X, wt)
   @btime rfun(int, outt, d, X, wt)
   @btime jfun(int, outt, d, X, wt)
 

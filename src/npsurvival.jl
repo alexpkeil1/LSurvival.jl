@@ -226,6 +226,7 @@ Examples:
 
   z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
   
+  # compare these two approaches, where Aalen-Johansen method requires having cause specific hazards for every event type
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   
@@ -245,7 +246,7 @@ function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=noth
     aliveandatriskidx = findall((in .< (tt-eps)) .&& (out .>= tt))
     hadcompidx = findall((out .<= tt) .&& (d .!= dmain))
     dmain_now = findall((out .== tt) .&& (d .== dmain))
-    pseudoR = union(aliveandatriskidx, hadcompidx) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
+    pseudoR = union(aliveandatriskidx, hadcompidx) 
     casesidx = intersect(dmain_now, aliveandatriskidx)
     ni = sum(weights[pseudoR]) # sum of weights in risk set
     di = sum(weights[casesidx])

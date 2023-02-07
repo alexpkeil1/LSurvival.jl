@@ -1,8 +1,10 @@
 using LSurvival
 using Test
+using Random
 
 @testset "LSurvival.jl" begin
-    id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
+    
+    id, int, outt, data = LSurvival.dgm(MersenneTwister(1212), 20, 5;afun=LSurvival.int_0);
   
     d,X = data[:,4], data[:,1:3];
     
@@ -16,7 +18,7 @@ using Test
     times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(int, outt, d, dvalues=[1.0])
 
 
-    z,x,t,d, event,wt = LSurvival.dgm_comprisk(100);
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
   
     subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
     subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
