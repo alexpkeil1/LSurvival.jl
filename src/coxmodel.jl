@@ -31,9 +31,9 @@ function cox_summary(args; alpha=0.05, verbose=true)
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   str = """
-  Maximum partial likelihood estimates (alpha=$alpha):\n
--------------------------------------------------------\n
-     ln(HR)   StdErr  LCI     UCI     Z       P(>|Z|)\n
+Maximum partial likelihood estimates (alpha=$alpha):
+-------------------------------------------------------
+     ln(HR)   StdErr  LCI     UCI     Z       P(>|Z|)
 -------------------------------------------------------"""
   for (i,r) in enumerate(eachrow(op))
     str *= "\nb$i       "[1:4]
