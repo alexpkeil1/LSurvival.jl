@@ -3,6 +3,7 @@ module LSurvival
 using Distributions
 using LinearAlgebra
 using Random
+using Printf
 
 include("coxmodel.jl")
 include("npsurvival.jl")

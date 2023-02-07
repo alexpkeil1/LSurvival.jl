@@ -30,18 +30,19 @@ function cox_summary(args; alpha=0.05, verbose=true)
   chi2 =  ll[end] - ll[1] 
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
-  str = "Maximum partial likelihood estimates (alpha=$alpha):\n"
-  str *= "-------------------------------------------------------\n"
-  str *= "     ln(HR)   Std.Err LCI     UCI     Z       P(>|Z|)\n"
-  str *= "-------------------------------------------------------"
+  str = """
+  Maximum partial likelihood estimates (alpha=$alpha):\n
+-------------------------------------------------------\n
+     ln(HR)   Std.Err LCI     UCI     Z       P(>|Z|)\n
+-------------------------------------------------------"""
   for (i,r) in enumerate(eachrow(op))
     str *= "\nb$i       "[1:6]
-    str *= "$(r[1])       "[1:8]
-    str *= " $(r[2])        "[1:8]
-    str *= " $(r[3])        "[1:8]
-    str *= " $(r[4])        "[1:8]
-    str *= " $(r[5])        "[1:8]
-    str *= " $(r[6])        "[1:8]
+    str *= """ $(@printf("%8g", r[1]))       """[1:8]
+    str *= """ $(@printf("%8g", r[2]))        """[1:8]
+    str *= """ $(@printf("%8g", r[3]))        """[1:8]
+    str *= """ $(@printf("%8g", r[4]))        """[1:8]
+    str *= """ $(@printf("%8g", r[5]))        """[1:8]
+    str *= """ $(@printf("%8g", r[6]))        """[1:8]
   end
   str *= "\n-------------------------------------------------------\n"
   str *= "Partial log-likelihood (null): $(ll[1])\n"
