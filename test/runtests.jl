@@ -15,7 +15,7 @@ using Random
     kaplan_meier(int, outt, d)
     #trivial case of non-competing events with late entry
     times_aj, surv, ajest, riskset, events = aalen_johansen(int, outt, d, dvalues=[1.0])
-    times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(int, outt, d, dvalues=[1.0])
+    #times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(int, outt, d, dvalues=[1.0])
 
 
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
