@@ -422,7 +422,7 @@ function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=n
     lsurv = surv[i]
     lci = ci[i,:]
   end
-  ci, surv
+  ci, surv, bh[:,end]
 end
 
 
