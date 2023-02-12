@@ -20,10 +20,27 @@ using Random
 
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
   
-    subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
-    subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
+    #subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
+    #subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
     aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
     aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
-    kaplan_meier(zeros(length(t)), t, d, weights=wt)
+    kms = kaplan_meier(zeros(length(t)), t, d, weights=wt)
   
+    X = hcat(z,x)
+    int = zeros(100)
+    d1  = d .* Int.(event.== 1)
+    d2  = d .* Int.(event.== 2)
+    mean(d)
+    
+    
+    lnhr1, ll1, g1, h1, bh1 = coxmodel(int, t, d1, X, method="efron");
+    lnhr2, ll2, g2, h2, bh2 = coxmodel(int, t, d2, X, method="efron");
+    bhlist = [bh1, bh2]
+    coeflist = [lnhr1, lnhr2]
+    covarmat = mean(X, dims=1)
+    ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)
+  
+    kms
+    surv
+
 end
