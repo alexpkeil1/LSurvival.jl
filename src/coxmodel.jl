@@ -383,14 +383,14 @@ coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2};kwargs...
   int = zeros(100)
   d1  = d .* Int.(event.== 1)
   d2  = d .* Int.(event.== 2)
-  mean(d)
+  sum(d)/length(d)
   
   
   lnhr1, ll1, g1, h1, bh1 = coxmodel(int, outt, d1, X, method="efron");
   lnhr2, ll2, g2, h2, bh2 = coxmodel(int, outt, d2, X, method="efron");
   bhlist = [bh1, bh2]
   coeflist = [lnhr1, lnhr2]
-  covarmat = mean(X, dims=1)
+  covarmat = sum(X, dims=1) ./ size(X,1)
   ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)
   """
 function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
