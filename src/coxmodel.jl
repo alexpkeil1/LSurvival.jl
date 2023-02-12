@@ -167,7 +167,6 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
   den = sum(_wtriskset .* _rriskset)
   denc = sum(_wtcases .* _rcases)
   dens = [den - denc*ew for ew in effwts]
-  # too low when weighted
   _LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1/nties * sum(_wtcases) # gives same answer as R with weights
   #
   numg = Xriskset' * (_wtriskset .* _rriskset) 
@@ -493,14 +492,19 @@ if false
   =#
 
   coxargs = (cgd.tstart, cgd.tstop, cgd.status, Matrix(cgd[:,[:height,:propylac]]));
-  beta, ll, g, h, basehaz = coxmodel(coxargs...,weights=cgd.weight,method="breslow", tol=1e-18, inits=zeros(2));
+  beta, ll, g, h, basehaz = coxmodel(coxargs...,weights=cgd.weight,method="efron", tol=1e-18, inits=zeros(2));
+  beta2, ll2, g2, h2, basehaz2 = coxmodel(coxargs...,weights=cgd.weight,method="breslow", tol=1e-18, inits=zeros(2));
 
-  vcat(beta, coxcoef)
+  hcat(beta, coxcoef)
+  hcat(beta2, coxcoef2)
   lls = vcat(ll[end], coxll[end])
+  lls2 = vcat(ll2[end], coxll2[end])
   argmax(lls)
-  sqrt.(diag(-inv(h)))
-  sqrt.(diag(coxvcov2))
-  (coxvcov2)
+  argmax(lls2)
+  hcat(sqrt.(diag(-inv(h))), sqrt.(diag(coxvcov)))
+  hcat(sqrt.(diag(-inv(h2))), sqrt.(diag(coxvcov2)))
+  hcat(-inv(h), coxvcov)
+  hcat(-inv(h2), coxvcov2)
 
 
 
@@ -523,6 +527,7 @@ if false
   wt ./= (sum(wt)/length(wt))
 
     beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+    beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
 
 
   # benchmark vs. R
@@ -549,9 +554,10 @@ if false
     coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
   end
 
-  @btime rfun2(int, outt, d, X, wt)
-  @btime rfun(int, outt, d, X, wt)
-  @btime jfun(int, outt, d, X, wt)
+  @rput int outt d X wt ;
+  @btime rfun2(int, outt, d, X, wt);
+  @btime rfun(int, outt, d, X, wt);
+  @btime jfun(int, outt, d, X, wt);
 
 
   @rput int outt d X wt
@@ -563,11 +569,13 @@ if false
   bh = basehaz(cfit, centered=FALSE)
   bh2 = basehaz(cfit2, centered=FALSE)
   coxcoef = cfit$coefficients
+  coxcoef2 = cfit2$coefficients
   coxll = cfit$loglik
   coxvcov = vcov(cfit)
   cfit
   """
   @rget coxcoef;
+  @rget coxcoef2;
   @rget coxll;
   @rget bh;
   @rget bh2;
