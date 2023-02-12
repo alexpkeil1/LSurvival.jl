@@ -233,6 +233,7 @@ Examples:
 ```
 """
 function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+  @warn "This function is not appropriate for data with censoring"
   # ties allowed
   dmain = dvalues[1]
   if isnothing(weights) || isnan(weights[1])

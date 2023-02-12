@@ -82,7 +82,7 @@ Example:
 using LSurvival
   # 100 individuals with two competing events
   z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
-  coxmodel
+  
 
 ```
 """

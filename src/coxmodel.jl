@@ -376,6 +376,56 @@ end
 ;
 coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2};kwargs...) = coxmodel(zeros(typeof(_out), length(_out)), _out, d, X;kwargs...)
 
+
+"""
+  z,x,outt,d,event,weights = LSurvival.dgm_comprisk(100)
+  X = hcat(z,x)
+  int = zeros(100)
+  d1  = d .* Int.(event.== 1)
+  d2  = d .* Int.(event.== 2)
+  mean(d)
+  
+  
+  lnhr1, ll1, g1, h1, bh1 = coxmodel(int, outt, d1, X, method="efron");
+  lnhr2, ll2, g2, h2, bh2 = coxmodel(int, outt, d2, X, method="efron");
+  bhlist = [bh1, bh2]
+  coeflist = [lnhr1, lnhr2]
+  covarmat = mean(X, dims=1)
+  ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)
+  """
+function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
+  bhlist = [hcat(bh, fill(eventtypes[i], size(bh,1))) for (i,bh) in enumerate(bhlist)]
+  bh = reduce(vcat, bhlist)
+  sp = sortperm(bh[:,4])
+  bh = bh[sp,:]
+  ntimes = size(bh,1)
+  ci, surv, hr = zeros(ntimes, length(eventtypes)), fill(1.0, ntimes), zeros(length(eventtypes))
+  ch = 0.0
+  lsurv = 1.0
+  if !isnothing(coeflist)
+    for (j,d) in enumerate(eventtypes)
+      hr[j] = exp(dot(covarmat, coeflist[j]))
+    end 
+  end
+  lci = zeros(length(eventtypes))
+  for i in 1:ntimes
+    for (j,d) in enumerate(eventtypes)
+      if bh[i,5] == d
+        bh[i,1] *= hr[j]
+        ci[i,j] =  lci[j] + bh[i,1] * lsurv 
+      else 
+        ci[i,j] =  lci[j]
+      end
+    end
+    ch += bh[i,1]
+    surv[i] = exp(-ch)
+    lsurv = surv[i]
+    lci = ci[i,:]
+  end
+  ci, surv
+end
+
+
 #= #################################################################################################################### 
 Examples
 =# ####################################################################################################################

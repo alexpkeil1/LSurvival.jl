@@ -10,6 +10,7 @@ include("npsurvival.jl")
 include("data_generators.jl")
 
 
-export kaplan_meier, aalen_johansen, coxmodel, subdistribution_hazard_cuminc, cox_summary
+export kaplan_meier, aalen_johansen, coxmodel, cox_summary, ci_from_coxmodels
+# export subdistribution_hazard_cuminc
 
 end
