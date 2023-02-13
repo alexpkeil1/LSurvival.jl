@@ -185,8 +185,9 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
     _hess .-= (xxbars[i] - xbars[i]*xbars[i]') .* sum(_wtcases)/nties
   end
   #_den[j] = den # Breslow estimator
-  ss = sum(_wtcases)
-  _den[j] = 1.0  / (sum( ss / dens)) # using Efron estimator
+  sw = sum(_wtcases)
+  aw = sw / nties
+  _den[j] = aw / (sum( sw / dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
@@ -375,7 +376,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
   if lowermethod3 == "bre"
     bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   elseif lowermethod3 == "efr"
-    bh = [1.0 ./ den _sumwtriskset _sumwtcase eventtimes]
+    bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   end
   (_B, _llhistory, _grad, _hess, bh)
 end
@@ -602,6 +603,9 @@ if false
   @rget bh2;
   hcat(diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())], basehaz[2:end,1])
   hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())], basehaz2[2:end,1])
+  hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())] ./  basehaz2[2:end,1], basehaz2[2:end,2:end])
+
+  findall(outt .== 2 .&& d .== 1)
   =#
   
 
