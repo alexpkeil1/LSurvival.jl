@@ -63,18 +63,19 @@ function containers(in, out, d, X, wt, inits)
   @assert length(size(X))==2
   n,p = size(X)
   # indexes,counters
-  eventidx = findall(d .> 0)
+  #eventidx = findall(d .> 0)
   eventtimes = sort(unique(out[findall(d .> 0)]))
-  nevents = length(eventidx);
+  #nevents = length(eventidx);
   # containers
   _B = isnothing(inits) ? zeros(p) : copy(inits)
   _r = zeros(Float64,n)
-  _basehaz = zeros(Float64, nevents) # baseline hazard estimate
-  _riskset = zeros(Int64, nevents) # baseline hazard estimate
+  #_basehaz = zeros(Float64, nevents) # baseline hazard estimate
+  #_riskset = zeros(Int64, nevents) # baseline hazard estimate
   _LL = zeros(1)
   _grad = zeros(p)
   _hess = zeros(p, p) #initialize
-  (n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess)
+  #(n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess)
+  n,p, eventtimes,_B,_r,_LL,_grad,_hess
 end
 
 
@@ -306,18 +307,16 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
     throw("error in function call")
    end
    conts = containers(_in, _out, d, X, weights, inits)
-   (n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess) = conts
+   #(n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess) = conts
+   (n,p, eventtimes,_B,_r,_LL,_grad,_hess) = conts
    #
    lowermethod3 = lowercase(method[1:3])
    # tuning params
    totiter=0
    λ=1.0
-   #g = h = xn = ll = 0.
    absdiff = tol*2.
-   oldQ = floatmax()
- 
-   bn1 = _B
-   bestb = _B
+   oldQ = floatmax() 
+   #bestb = _B
    lastLL = -floatmax()
    risksetidxs, caseidxs = [], []
    @inbounds for _outj in eventtimes
@@ -346,10 +345,11 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
       break
     end
     if Q > oldQ
-      λ *= 0.8  # tempering
+      λ *= 0.5  # step-halving
     else
-      λ = min(2.0λ, 1.) # de-tempering
-      bestb = _B
+      λ = min(2.0λ, 1.) # de-halving
+      #bestb = _B
+      nothing
     end
     isnan(_LL[1]) ? throw("Log-partial-likelihood is NaN") : true
     if abs(_LL[1]) != Inf
