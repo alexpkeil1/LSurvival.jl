@@ -185,7 +185,7 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
     _hess .-= (xxbars[i] - xbars[i]*xbars[i]') .* sum(_wtcases)/nties
   end
   #_den[j] = den # Breslow estimator
-  _den[j] = 1.0/(sum(_wtcases) * sum( 1. /dens)) # using Efron estimator
+  _den[j] = 1.0/(sum( 1. /dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
@@ -325,7 +325,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
      push!(risksetidxs, findall((_in .< _outj) .&& (_out .>= _outj)))
      push!(caseidxs, findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj)))
    end
-   den, _wtriskset, _wtcase = _stepcox!(lowermethod3, 
+   den, _sumwtriskset, _sumwtcase = _stepcox!(lowermethod3, 
       _LL, _grad, _hess,
       _in, _out, d, X, weights,
       _B, p, n, eventtimes,_r, 
@@ -372,9 +372,9 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
     @warn "Algorithm did not converge after $totiter iterations"
   end
   if lowermethod3 == "bre"
-    bh = [_wtcase ./ den _wtriskset _wtcase eventtimes]
+    bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   elseif lowermethod3 == "efr"
-    bh = [1.0 ./ den _wtriskset _wtcase eventtimes]
+    bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   end
   (_B, _llhistory, _grad, _hess, bh)
 end
@@ -569,7 +569,14 @@ if false
 
 
   # checking baseline hazard against R
-  wt = wt ./ wt
+  using RCall, Random, LSurvival
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100;afun=LSurvival.int_0)
+  data[:,1] = round.(  data[:,1] ,digits=3)
+  d,X = data[:,4], data[:,1:3]
+  wt = rand(length(d))
+  wt ./= (sum(wt)/length(wt))
+
+  #wt = wt ./ wt
   @rput int outt d X wt
   R"""
   library(survival)
@@ -592,8 +599,8 @@ if false
   @rget coxll;
   @rget bh;
   @rget bh2;
-  hcat(diff(bh.hazard), basehaz[2:end,1])
-  hcat(diff(bh2.hazard), basehaz2[2:end,1])
+  hcat(diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())], basehaz[2:end,1])
+  hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())], basehaz2[2:end,1])
   =#
   
 
