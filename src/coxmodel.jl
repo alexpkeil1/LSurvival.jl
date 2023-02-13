@@ -187,7 +187,7 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
   #_den[j] = den # Breslow estimator
   sw = sum(_wtcases)
   aw = sw / nties
-  _den[j] = sw / (sum( aw / dens)) # using Efron estimator
+  _den[j] = 1 / (sum( aw / dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
@@ -376,7 +376,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
   if lowermethod3 == "bre"
     bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   elseif lowermethod3 == "efr"
-    bh = [1 ./ den _sumwtriskset _sumwtcase eventtimes]
+    bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   end
   (_B, _llhistory, _grad, _hess, bh)
 end
