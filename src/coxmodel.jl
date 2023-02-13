@@ -402,13 +402,13 @@ function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=n
   ch = 0.0
   lsurv = 1.0
   if !isnothing(coeflist)
-    for (j,d) in enumerate(eventtypes)
+    @inbounds for (j,d) in enumerate(eventtypes)
       hr[j] = exp(dot(covarmat, coeflist[j]))
     end 
   end
   lci = zeros(length(eventtypes))
-  for i in 1:ntimes
-    for (j,d) in enumerate(eventtypes)
+  @inbounds for i in 1:ntimes
+    @inbounds for (j,d) in enumerate(eventtypes)
       if bh[i,5] == d
         bh[i,1] *= hr[j]
         ci[i,j] =  lci[j] + bh[i,1] * lsurv 
