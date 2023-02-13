@@ -397,10 +397,10 @@ function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=n
   bh = reduce(vcat, bhlist)
   sp = sortperm(bh[:,4])
   bh = bh[sp,:]
-  ntimes = size(bh,1)
-  ci, surv, hr = zeros(ntimes, length(eventtypes)), fill(1.0, ntimes), zeros(length(eventtypes))
-  ch = 0.0
-  lsurv = 1.0
+  ntimes::Int64 = size(bh,1)
+  ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes), zeros(Float64,length(eventtypes))
+  ch::Float64 = 0.0
+  lsurv::Float64 = 1.0
   if !isnothing(coeflist)
     @inbounds for (j,d) in enumerate(eventtypes)
       hr[j] = exp(dot(covarmat, coeflist[j]))
@@ -519,6 +519,7 @@ if false
   wt ./= (sum(wt)/length(wt))
   
   #=
+
   using RCall, BenchmarkTools, Random, LSurvival
   id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
