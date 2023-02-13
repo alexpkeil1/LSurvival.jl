@@ -187,7 +187,7 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
   #_den[j] = den # Breslow estimator
   sw = sum(_wtcases)
   aw = sw / nties
-  _den[j] = aw / (sum( sw / dens)) # using Efron estimator
+  _den[j] = sw / (sum( aw / dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
@@ -605,7 +605,9 @@ if false
   hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())], basehaz2[2:end,1])
   hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())] ./  basehaz2[2:end,1], basehaz2[2:end,2:end])
 
-  findall(outt .== 2 .&& d .== 1)
+
+  hcat(bh2.hazard[1:1], basehaz2[1:1,:])
+  length(findall(outt .== 1 .&& d .== 1))
   =#
   
 
