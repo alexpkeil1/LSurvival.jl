@@ -185,7 +185,7 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
     _hess .-= (xxbars[i] - xbars[i]*xbars[i]') .* sum(_wtcases)/nties
   end
   #_den[j] = den # Breslow estimator
-  _den[j] = 1.0/(sum( 1. /dens)) # using Efron estimator
+  _den[j] = 1.0/(sum(_wtcases) * sum( 1. /dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
@@ -371,7 +371,11 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
   if totiter==maxiter
     @warn "Algorithm did not converge after $totiter iterations"
   end
-  bh = [_wtcase ./ den _wtriskset _wtcase eventtimes]
+  if lowermethod3 == "bre"
+    bh = [_wtcase ./ den _wtriskset _wtcase eventtimes]
+  elseif lowermethod3 == "efr"
+    bh = [1.0 ./ den _wtriskset _wtcase eventtimes]
+  end
   (_B, _llhistory, _grad, _hess, bh)
 end
 ;
@@ -523,7 +527,7 @@ if false
   #=
 
   using RCall, BenchmarkTools, Random, LSurvival
-  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 100000, 1000;afun=LSurvival.int_0)
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
@@ -533,7 +537,7 @@ if false
     beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
 
 
-  # benchmark vs. R
+  # benchmark runtimes vs. calling R
   function rfun(int, outt, d, X, wt)
       @rput int outt d X wt ;
       R"""
@@ -563,6 +567,9 @@ if false
   tj = @btime jfun(int, outt, d, X, wt);
 
 
+
+  # checking baseline hazard against R
+  wt = wt ./ wt
   @rput int outt d X wt
   R"""
   library(survival)
@@ -577,6 +584,9 @@ if false
   coxvcov = vcov(cfit)
   cfit
   """
+    beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+    beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
+
   @rget coxcoef;
   @rget coxcoef2;
   @rget coxll;
