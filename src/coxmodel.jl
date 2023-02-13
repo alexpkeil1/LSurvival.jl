@@ -18,6 +18,9 @@ helper functions
 calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
 
 function formatp(pvalue)
+  if pvalue < eps(typeof(pvalue))
+    @sprintf("<%4.4g", eps(typeof(pvalue)))
+  end
   str1 = @sprintf("%4.5g", pvalue)
   str1
 end
