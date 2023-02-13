@@ -375,7 +375,7 @@ function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1
   if lowermethod3 == "bre"
     bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
   elseif lowermethod3 == "efr"
-    bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
+    bh = [1.0 ./ den _sumwtriskset _sumwtcase eventtimes]
   end
   (_B, _llhistory, _grad, _hess, bh)
 end
@@ -577,7 +577,7 @@ if false
   wt = rand(length(d))
   wt ./= (sum(wt)/length(wt))
 
-  wt = wt ./ wt
+  #wt = wt ./ wt
   @rput int outt d X wt
   R"""
   library(survival)
