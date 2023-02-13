@@ -185,7 +185,8 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
     _hess .-= (xxbars[i] - xbars[i]*xbars[i]') .* sum(_wtcases)/nties
   end
   #_den[j] = den # Breslow estimator
-  _den[j] = (sum( 1. / dens)) # using Efron estimator
+  ss = sum(_wtcases)/nties
+  _den[j] = 1.0  / (sum( ss / dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
