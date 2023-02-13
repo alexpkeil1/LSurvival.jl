@@ -17,6 +17,11 @@ helper functions
 =# ####################################################################################################################
 calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
 
+function formatp(pvalue)
+  str1 = @sprintf("%4.5g", pvalue)
+  str1
+end
+
 function cox_summary(args; alpha=0.05, verbose=true)
   beta, ll, g, h, basehaz = args
   std_err = sqrt.(diag(-inv(h)))
@@ -32,9 +37,10 @@ function cox_summary(args; alpha=0.05, verbose=true)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   str = """
 Maximum partial likelihood estimates (alpha=$alpha):
--------------------------------------------------------
-     ln(HR)   StdErr  LCI     UCI     Z       P(>|Z|)
--------------------------------------------------------"""
+
+---------------------------------------------------------
+    ln(HR)  StdErr  LCI     UCI     Z       P(>|Z|)
+---------------------------------------------------------"""
   for (i,r) in enumerate(eachrow(op))
     str *= "\nb$i       "[1:4]
     str *= """ $(@sprintf("%7g", r[1]))       """[1:8]
@@ -42,9 +48,9 @@ Maximum partial likelihood estimates (alpha=$alpha):
     str *= """ $(@sprintf("%7g", r[3]))        """[1:8]
     str *= """ $(@sprintf("%7g", r[4]))        """[1:8]
     str *= """ $(@sprintf("%7g", r[5]))        """[1:8]
-    str *= """ $(@sprintf("%7g", r[6]))        """[1:8]
+    str *= """ $(formatp(r[6]))        """
   end
-  str *= "\n-------------------------------------------------------\n"
+  str *= "\n---------------------------------------------------------\n"
   str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
   str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll[end]))\n"
   str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%5g", lrtp))\n"
@@ -572,13 +578,19 @@ if false
 
   # checking baseline hazard against R
   using RCall, Random, LSurvival
-  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100;afun=LSurvival.int_0)
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 100, 100;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
   wt ./= (sum(wt)/length(wt))
-
   #wt = wt ./ wt
+
+    beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+    beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
+
+
+
+
   @rput int outt d X wt
   R"""
   library(survival)
@@ -593,8 +605,7 @@ if false
   coxvcov = vcov(cfit)
   cfit
   """
-    beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
-    beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
+
 
   @rget coxcoef;
   @rget coxcoef2;
