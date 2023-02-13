@@ -184,7 +184,8 @@ function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtc
   for i in 1:nties
     _hess .-= (xxbars[i] - xbars[i]*xbars[i]') .* sum(_wtcases)/nties
   end
-  _den[j] = den # using Breslow estimator
+  #_den[j] = den # Breslow estimator
+  _den[j] = 1.0/(sum( 1. /dens)) # using Efron estimator
   nothing
   #(_ll, _grad, _hess)
 end
@@ -236,12 +237,13 @@ function _stepcox!(
                   )
   _coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
   # loop over event times
-  den,wtdriskset,wtdcases = zeros(length(eventtimes)), zeros(length(eventtimes)), zeros(length(eventtimes))
+  ne = length(eventtimes)
+  den,wtdriskset,wtdcases = zeros(ne), zeros(ne), zeros(ne)
   _LL .*= 0.0
   _grad .*= 0.0
   _hess .*= 0.0
-  @inbounds for (j,_outj) in enumerate(eventtimes)
-    #j=13; _outj = eventtimes[j]
+  @inbounds for j in 1:ne
+    #j=2; _outj = eventtimes[j]
     #risksetidx = findall((_in .< _outj) .&& (_out .>= _outj))
     #caseidx = findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj))
     risksetidx =risksetidxs[j]
@@ -249,7 +251,7 @@ function _stepcox!(
     LGH!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     wtdriskset[j] = sum(_wt[risksetidx])
     wtdcases[j] = sum(_wt[caseidx])
-  end # (j,_outj)
+  end # j
   den, wtdriskset,wtdcases
 end #function _stepcox!
 
@@ -521,7 +523,7 @@ if false
   #=
 
   using RCall, BenchmarkTools, Random, LSurvival
-  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 10;afun=LSurvival.int_0)
+  id, int, outt, data = LSurvival.dgm(MersenneTwister(), 100000, 1000;afun=LSurvival.int_0)
   data[:,1] = round.(  data[:,1] ,digits=3)
   d,X = data[:,4], data[:,1:3]
   wt = rand(length(d))
@@ -557,8 +559,8 @@ if false
 
   @rput int outt d X wt ;
   @btime rfun2(int, outt, d, X, wt);
-  @btime rfun(int, outt, d, X, wt);
-  @btime jfun(int, outt, d, X, wt);
+  tr = @btime rfun(int, outt, d, X, wt);
+  tj = @btime jfun(int, outt, d, X, wt);
 
 
   @rput int outt d X wt
