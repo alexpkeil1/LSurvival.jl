@@ -115,7 +115,7 @@ Usage: kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
   - names = vector of symbols [:times, :surv_overall, :riskset] used as a mnemonic for the function output
 
 """
-function kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
+function kaplan_meier(in,out,d; weights=nothing, eps = 0.0)
    # there is some bad floating point issue with epsilon that should be tracked
    # R handles this gracefully
   # ties allowed
@@ -161,7 +161,7 @@ Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.0000
     - names: vector of symbols [:times, :surv_km_overall, :ci_aalenjohansen, :riskset, :events] used as a mnemonic for the function output
 
 """
-function aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+function aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.0)
   if isnothing(weights) || isnan(weights[1])
     weights = ones(length(in))
   end
@@ -232,7 +232,7 @@ Examples:
   
 ```
 """
-function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.0)
   @warn "This function is not appropriate for data with censoring"
   # ties allowed
   dmain = dvalues[1]
