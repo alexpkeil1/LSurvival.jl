@@ -5,11 +5,12 @@
 These are some survival analysis functions that I was hoping to find in Julia and never did. They don't interface with the existing Julia model fitting modules (e.g. StatsModels). I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
 
 This module handles:
-- Cox proportional hazards model with Ephron's method or Breslow's method for ties
+- Cox proportional hazards model with Efron's method or Breslow's method for ties
 - Non-parametric survival function estimation via Kaplan-Meier
-- Non-parametric survival function estimation under competing risks via Aalen-Johansen and Subdistribution hazard estimators
+- Non-parametric survival function estimation under competing risks via Aalen-Johansen estimator
 - Late entry/left trunctation and right censoring (all estimators)
-- Breslow's baseline hazard estimator from a Cox model
+- Baseline hazard estimator from a Cox model
+- Cumulative incidence estimation from a set of Cox models
 
 Add this package via Julia's package manager:
 
