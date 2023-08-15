@@ -46,11 +46,11 @@ Maximum partial likelihood estimates (alpha=$alpha):
 ---------------------------------------------------------"""
   for (i,r) in enumerate(eachrow(op))
     str *= "\nb$i       "[1:4]
-    str *=  """ $(@sprintf("%7g", r[1]))       """[1:9]
-    str *= """ $(@sprintf("%7g", r[2]))        """[1:9]
-    str *= """ $(@sprintf("%7g", r[3]))        """[1:9]
-    str *= """ $(@sprintf("%7g", r[4]))        """[1:9]
-    str *= """ $(@sprintf("%7g", r[5]))        """[1:9]
+    str *=  """ $(@sprintf("%.7g", r[1]))       """[1:9]
+    str *= """ $(@sprintf("%.7g", r[2]))        """[1:9]
+    str *= """ $(@sprintf("%.7g", r[3]))        """[1:9]
+    str *= """ $(@sprintf("%.7g", r[4]))        """[1:9]
+    str *= """ $(@sprintf("%.7g", r[5]))        """[1:9]
     str *= """ $(formatp(r[6]))        """
   end
   str *= "\n---------------------------------------------------------\n"
