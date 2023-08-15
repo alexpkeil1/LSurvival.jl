@@ -42,7 +42,7 @@ function cox_summary(args; alpha=0.05, verbose=true)
 Maximum partial likelihood estimates (alpha=$alpha):
 
 ---------------------------------------------------------
-    ln(HR)  StdErr  LCI     UCI     Z       P(>|Z|)
+    ln(HR)   StdErr   LCI      UCI      Z        P(>|Z|)
 ---------------------------------------------------------"""
   for (i,r) in enumerate(eachrow(op))
     str *= "\nb$i       "[1:4]
