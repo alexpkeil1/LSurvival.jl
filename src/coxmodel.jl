@@ -34,13 +34,13 @@ function cox_summary(args; alpha=0.05, verbose=true)
   uci = beta .+ zcrit[2]*std_err
   pval = calcp.(z)
   op = hcat(beta, std_err, lci, uci, z, pval)
-  coeftab = CoefTable(op, head, rown, 6,5 )
   verbose ? true : return(op)
   chi2 =  ll[end] - ll[1] 
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
   rown = ["b$i" for i in 1:size(op)[1]]
+  coeftab = CoefTable(op, head, rown, 6,5 )
   iob = IOBuffer();
   println(iob, coeftab);
   str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
