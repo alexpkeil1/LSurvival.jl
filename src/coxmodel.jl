@@ -48,8 +48,8 @@ function cox_summary(args; alpha=0.05, verbose=true)
   str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
   str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll[end]))\n"
   str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%5g", lrtp))\n"
-  str *= "Newton-Raphson iterations: $(length(ll)-1)\n"
-  print(str)
+  str *= "Newton-Raphson iterations: $(length(ll)-1)"
+  println(str)
   op
 end
 
