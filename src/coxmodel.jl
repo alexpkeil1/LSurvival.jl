@@ -39,25 +39,25 @@ function cox_summary(args; alpha=0.05, verbose=true)
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
-  lines = join(fill("-", 13*6))
+  lines = join(fill("-", 11*6))
   str = """
 Maximum partial likelihood estimates (alpha=$alpha):
 
-$(lines)\n    """
+$(lines)\n     """
 for h in head
- str *= "$(h)                "[1:13]
+ str *= "$(h)                "[1:11]
 end    
 str *= """\n$(lines)"""
   for (i,r) in enumerate(eachrow(op))
-    str *= "\nb$i       "[1:4]
-    str *=  """ $(@sprintf("%.7g", r[1]))       """[1:13]
-    str *= """ $(@sprintf("%.7g", r[2]))        """[1:13]
-    str *= """ $(@sprintf("%.7g", r[3]))        """[1:13]
-    str *= """ $(@sprintf("%.7g", r[4]))        """[1:13]
-    str *= """ $(@sprintf("%.7g", r[5]))        """[1:13]
+    str *= "\nb$i       "[1:5]
+    str *=  """ $(@sprintf("%.5g", r[1]))       """[1:11]
+    str *= """ $(@sprintf("%.5g", r[2]))        """[1:11]
+    str *= """ $(@sprintf("%.5g", r[3]))        """[1:11]
+    str *= """ $(@sprintf("%.5g", r[4]))        """[1:11]
+    str *= """ $(@sprintf("%.5g", r[5]))        """[1:11]
     str *= """ $(formatp(r[6]))        """
   end
-  str *= "\n---------------------------------------------------------\n"
+  str *= "\n$(lines)\n"
   str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
   str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll[end]))\n"
   str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%5g", lrtp))\n"
