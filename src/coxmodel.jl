@@ -39,7 +39,7 @@ function cox_summary(args; alpha=0.05, verbose=true)
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
-  lines = join(fill("-", 11*6))
+  lines = join(fill("-", 11*6 + 6))
   str = """
 Maximum partial likelihood estimates (alpha=$alpha):
 
