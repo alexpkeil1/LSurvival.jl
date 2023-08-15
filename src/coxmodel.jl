@@ -17,14 +17,6 @@ helper functions
 =# ####################################################################################################################
 calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
 
-function formatp(pvalue)
-  if pvalue < eps(typeof(pvalue))
-    return(@sprintf("<%4.4g", eps(typeof(pvalue))))
-  end
-  str1 = @sprintf("%4.5g", pvalue)
-  str1
-end
-
 function cox_summary(args; alpha=0.05, verbose=true)
   beta, ll, g, h, basehaz = args
   std_err = sqrt.(diag(-inv(h)))
