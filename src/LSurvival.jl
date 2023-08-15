@@ -4,6 +4,7 @@ using Distributions
 using LinearAlgebra
 using Random
 using Printf
+import StatsModels.CoefTable
 
 include("coxmodel.jl")
 include("npsurvival.jl")

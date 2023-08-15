@@ -34,30 +34,17 @@ function cox_summary(args; alpha=0.05, verbose=true)
   uci = beta .+ zcrit[2]*std_err
   pval = calcp.(z)
   op = hcat(beta, std_err, lci, uci, z, pval)
+  coeftab = CoefTable(op, head, rown, 6,5 )
   verbose ? true : return(op)
   chi2 =  ll[end] - ll[1] 
   df = length(beta)
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
-  lines = join(fill("-", 11*6 + 6))
-  str = """
-Maximum partial likelihood estimates (alpha=$alpha):
-
-$(lines)\n     """
-for h in head
- str *= "$(h)                "[1:11]
-end    
-str *= """\n$(lines)"""
-  for (i,r) in enumerate(eachrow(op))
-    str *= "\nb$i       "[1:5]
-    str *=  """ $(@sprintf("%.5g", r[1]))       """[1:11]
-    str *= """ $(@sprintf("%.5g", r[2]))        """[1:11]
-    str *= """ $(@sprintf("%.5g", r[3]))        """[1:11]
-    str *= """ $(@sprintf("%.5g", r[4]))        """[1:11]
-    str *= """ $(@sprintf("%.5g", r[5]))        """[1:11]
-    str *= """ $(formatp(r[6]))        """
-  end
-  str *= "\n$(lines)\n"
+  rown = ["b$i" for i in 1:size(op)[1]]
+  iob = IOBuffer();
+  println(iob, coeftab);
+  str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
+  str *= String(take!(iob))
   str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
   str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll[end]))\n"
   str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%5g", lrtp))\n"
