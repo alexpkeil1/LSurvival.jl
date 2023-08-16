@@ -93,8 +93,8 @@ if false
                        
 function fit(::Type{M},
     X::AbstractMatrix{<:FP},
-    enter::AbstractVector{<:Real}
-    exit::AbstractVector{<:Real}
+    enter::AbstractVector{<:Real},
+    exit::AbstractVector{<:Real},
     y::AbstractVector{<:Real}
     ;
     dropcollinear::Bool = true,
