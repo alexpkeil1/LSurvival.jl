@@ -91,67 +91,69 @@ if false
                        PHModel(rr, pp, f, fit, 0, NaN, NaN, NaN)
                         
                        
-function fit(::Type{M},
-    X::AbstractMatrix{<:FP},
-    enter::AbstractVector{<:Real},
-    exit::AbstractVector{<:Real},
-    y::AbstractVector{<:Real}
-    ;
-    dropcollinear::Bool = true,
-    method::Symbol = :cholesky,
-    wts::AbstractVector{<:Real}      = similar(y, 1),
-    offset::AbstractVector{<:Real}   = similar(y, 0),
-    fitargs...) where {M<:AbstractPH}
-    
+  function fit(::Type{M},
+      X::AbstractMatrix{<:FP},
+      enter::AbstractVector{<:Real},
+      exit::AbstractVector{<:Real},
+      y::AbstractVector{<:Real}
+      ;
+      dropcollinear::Bool = true,
+      method::Symbol = :cholesky,
+      wts::AbstractVector{<:Real}      = similar(y, 1),
+      offset::AbstractVector{<:Real}   = similar(y, 0),
+      fitargs...) where {M<:AbstractPH}
+      
+  
+      # Check that X and y have the same number of observations
+      #if size(X, 1) != size(y, 1)
+      #    throw(DimensionMismatch("number of rows in X and y must match"))
+      #end
+  
+      #rr = GlmResp(y, d, l, offset, wts)
+      rr = LSurvResp(enter, exit, y, wts)
+      
+      
+      #res = M(rr, cholpred(X, dropcollinear), nothing, false)
+      
+      res = M(rr, cholpred(X, dropcollinear), nothing, false)
+      
+  
+      #return coxmodel(_in::Array{<:Real,1}, 
+      #          _out::Array{<:Real,1}, 
+      #          d::Array{<:Real,1}, 
+      #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
+      return fit!(res; fitargs...)
+  end
+  
+  function fit(::Type{M},
+               f::FormulaTerm,
+               data;
+               offset::Union{AbstractVector, Nothing} = nothing,
+               wts::AbstractVector{<:Real}      = similar(y, 1),
+               offset::AbstractVector{<:Real}   = similar(y, 0),
+               method::Symbol = :cholesky,
+               dofit::Union{Bool, Nothing} = nothing,
+               contrasts::AbstractDict{Symbol}=Dict{Symbol,Any}(),
+               fitargs...) where {M<:AbstractGLM}
+  
+      f, (y, X) = modelframe(f, data, contrasts, M)
+  
+      # Check that X and y have the same number of observations
+      #if size(X, 1) != size(y, 1)
+      #    throw(DimensionMismatch("number of rows in X and y must match"))
+      #end
+  
+      #rr = GlmResp(y, d, l, off, wts)
+      
+      res = M(rr, cholpred(X, dropcollinear), nothing, false)
+  
+      #return coxmodel(_in::Array{<:Real,1}, 
+      #          _out::Array{<:Real,1}, 
+      #          d::Array{<:Real,1}, 
+      #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
+      return fit!(res; fitargs...)
+  end
 
-    # Check that X and y have the same number of observations
-    #if size(X, 1) != size(y, 1)
-    #    throw(DimensionMismatch("number of rows in X and y must match"))
-    #end
-
-    #rr = GlmResp(y, d, l, offset, wts)
-    rr = LSurvResp(enter, exit, y, wts)
-    
-    
-    #res = M(rr, cholpred(X, dropcollinear), nothing, false)
-    
-    res = M(rr, cholpred(X, dropcollinear), nothing, false)
-    
-
-    #return coxmodel(_in::Array{<:Real,1}, 
-    #          _out::Array{<:Real,1}, 
-    #          d::Array{<:Real,1}, 
-    #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
-    return fit!(res; fitargs...)
-end
-
-function fit(::Type{M},
-             f::FormulaTerm,
-             data;
-             offset::Union{AbstractVector, Nothing} = nothing,
-             wts::AbstractVector{<:Real}      = similar(y, 1),
-             offset::AbstractVector{<:Real}   = similar(y, 0),
-             method::Symbol = :cholesky,
-             dofit::Union{Bool, Nothing} = nothing,
-             contrasts::AbstractDict{Symbol}=Dict{Symbol,Any}(),
-             fitargs...) where {M<:AbstractGLM}
-
-    f, (y, X) = modelframe(f, data, contrasts, M)
-
-    # Check that X and y have the same number of observations
-    #if size(X, 1) != size(y, 1)
-    #    throw(DimensionMismatch("number of rows in X and y must match"))
-    #end
-
-    #rr = GlmResp(y, d, l, off, wts)
-    
-    res = M(rr, cholpred(X, dropcollinear), nothing, false)
-
-    #return coxmodel(_in::Array{<:Real,1}, 
-    #          _out::Array{<:Real,1}, 
-    #          d::Array{<:Real,1}, 
-    #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
-    return fit!(res; fitargs...)
 end
 
 #= #################################################################################################################### 
