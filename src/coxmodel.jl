@@ -128,7 +128,6 @@ if false
   function fit(::Type{M},
                f::FormulaTerm,
                data;
-               offset::Union{AbstractVector, Nothing} = nothing,
                wts::AbstractVector{<:Real}      = similar(y, 1),
                offset::AbstractVector{<:Real}   = similar(y, 0),
                method::Symbol = :cholesky,
