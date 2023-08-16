@@ -13,8 +13,151 @@
 =# ####################################################################################################################
 
 #= #################################################################################################################### 
+structs
+=# ####################################################################################################################
+
+
+  """
+        AbstractLsurvResp
+
+  Abstract type representing a model response vector
+  """
+  abstract type AbstractLSurvResp end                         
+  struct LSurvResp{E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector, T<:Real} <: AbstractLSurvResp 
+    enter::E
+    "`exit`: Time at observation end"
+    exit::X
+    "`y`: event occurrence in observation"
+    y::Y	
+    "`wts`: observation weights"
+    wts::W
+    "`eventtimes`: unique event times"
+    eventtimes::E
+    "`origin`: origin on the time scale"
+    origin::T
+  end
+    
+  function LSurvResp(enter::E, exit::X, y::Y, wts::W) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
+    ne  = length(enter)
+    nx = length(exit)
+    ny = length(y)
+    lw = length(wts)
+    if !(ne == nx == ny)
+        throw(DimensionMismatch("lengths of enter, exit, and y ($ne, $nx, $ny) are not equal"))
+    end
+    if lw != 0 && lw != ny
+        throw(DimensionMismatch("wts must have length $n or length 0 but was $lw"))
+    end
+    eventtimes = sort(unique(exit[findall(y .> 0)]))
+    origin = minimum(enter)
+   
+    return LSurvResp(enter,exit,y,wts,eventtimes,origin)
+  end
+  
+  # import Base.show
+  # using Printf
+  # resp = LSurvResp(enter, t, d, ones(length(d)))
+  function show(io::IO, x::LSurvResp)
+    lefttruncate = [ e == x.origin ? "[" : "(" for e in x.enter]
+    rightcensor = [ y > 0 ? "]" : ")" for y in x.y]
+    enter = [@sprintf("%.2g", e) for e in x.enter]
+    exit = [@sprintf("%2.g", e) for e in x.exit]
+    pr = [join([lefttruncate[i], enter[i], ",", exit[i], rightcensor[i]], "") for i in 1:length(exit)]
+    println("$(sum(x.y .> 0)) events, $(length(x.eventtimes)) unique event times")
+    println("Origin: $(x.origin) events, Max time: $(maximum(x.exit))")
+    show(io, reduce(vcat, pr))
+  end
+    
+  show(x::LSurvResp) = show(stdout, x)
+
+if false
+  # in progress
+  abstract type AbstractPH <: LinPredModel end
+  
+  
+      
+  mutable struct PHModel{G,L} <: AbstractPH
+    rr::G
+    pp::L
+    formula::Union{FormulaTerm,Nothing}
+    fit::Bool
+    maxiter::Int
+    minstepfac::Float64
+    atol::Float64
+    rtol::Float64
+  end
+  
+  PHModel(rr, pp, f::Union{FormulaTerm, Nothing}, fit::Bool) =
+                       PHModel(rr, pp, f, fit, 0, NaN, NaN, NaN)
+                        
+                       
+function fit(::Type{M},
+    X::AbstractMatrix{<:FP},
+    enter::AbstractVector{<:Real}
+    exit::AbstractVector{<:Real}
+    y::AbstractVector{<:Real}
+    ;
+    dropcollinear::Bool = true,
+    method::Symbol = :cholesky,
+    wts::AbstractVector{<:Real}      = similar(y, 1),
+    offset::AbstractVector{<:Real}   = similar(y, 0),
+    fitargs...) where {M<:AbstractPH}
+    
+
+    # Check that X and y have the same number of observations
+    #if size(X, 1) != size(y, 1)
+    #    throw(DimensionMismatch("number of rows in X and y must match"))
+    #end
+
+    #rr = GlmResp(y, d, l, offset, wts)
+    rr = LSurvResp(enter, exit, y, wts)
+    
+    
+    #res = M(rr, cholpred(X, dropcollinear), nothing, false)
+    
+    res = M(rr, cholpred(X, dropcollinear), nothing, false)
+    
+
+    #return coxmodel(_in::Array{<:Real,1}, 
+    #          _out::Array{<:Real,1}, 
+    #          d::Array{<:Real,1}, 
+    #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
+    return fit!(res; fitargs...)
+end
+
+function fit(::Type{M},
+             f::FormulaTerm,
+             data;
+             offset::Union{AbstractVector, Nothing} = nothing,
+             wts::AbstractVector{<:Real}      = similar(y, 1),
+             offset::AbstractVector{<:Real}   = similar(y, 0),
+             method::Symbol = :cholesky,
+             dofit::Union{Bool, Nothing} = nothing,
+             contrasts::AbstractDict{Symbol}=Dict{Symbol,Any}(),
+             fitargs...) where {M<:AbstractGLM}
+
+    f, (y, X) = modelframe(f, data, contrasts, M)
+
+    # Check that X and y have the same number of observations
+    #if size(X, 1) != size(y, 1)
+    #    throw(DimensionMismatch("number of rows in X and y must match"))
+    #end
+
+    #rr = GlmResp(y, d, l, off, wts)
+    
+    res = M(rr, cholpred(X, dropcollinear), nothing, false)
+
+    #return coxmodel(_in::Array{<:Real,1}, 
+    #          _out::Array{<:Real,1}, 
+    #          d::Array{<:Real,1}, 
+    #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
+    return fit!(res; fitargs...)
+end
+
+#= #################################################################################################################### 
 helper functions
 =# ####################################################################################################################
+
 calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z)))*2
 
 function cox_summary(args; alpha=0.05, verbose=true)
@@ -103,9 +246,9 @@ partial likelihood/gradient/hessian functions for tied events
  _grad = zeros(p)
  _hess = zeros(p,p)
  _den = zeros(j)
- LGH_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+ lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
  """
-function LGH_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+function lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
   den = sum(_rriskset.* _wtriskset)
   _LL .+= sum(_wtcases .* log.(_rcases)) .- log(den)*sum(_wtcases)
   #
@@ -143,9 +286,9 @@ _LL = [0.0]
 _grad = zeros(p)
 _hess = zeros(p,p)
 _den = zeros(j)
-LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
+lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
 """
-function LGH_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtcases, _wt, caseidx, risksetidx)
+function lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r,  _wtcases, _wt, caseidx, risksetidx)
   # things to drop
   #risksetnotcaseidx = setdiff(risksetidx, caseidx) # move out
   #_rnotcase  = _r[risksetnotcaseidx] # move out
@@ -189,21 +332,20 @@ wrapper: calculate log partial likelihood, gradient, hessian contributions for a
           under a specified method for handling ties
 (efron and breslow estimators only)
 """
-function LGH!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+function lgh!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
   whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
   isnothing(whichmeth) ? throw("Method not recognized") : true
   if whichmeth == 1
-    LGH_efron!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X, _r[caseidx], _r, _wt[caseidx], _wt, caseidx, risksetidx)
+    lgh_efron!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X, _r[caseidx], _r, _wt[caseidx], _wt, caseidx, risksetidx)
   elseif whichmeth == 2
-    LGH_breslow!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X[risksetidx,:], _r[caseidx], _r[risksetidx], _wt[caseidx], _wt[risksetidx])
+    lgh_breslow!(_den, _LL, _grad, _hess, j, p, X[caseidx,:], X[risksetidx,:], _r[caseidx], _r[risksetidx], _wt[caseidx], _wt[risksetidx])
   end
 end
 
 # calculate log likelihood, gradient, hessian at set value of _B
 """
 wrapper: calculate log partial likelihood, gradient, hessian contributions across all risk sets
-          under a specified method for handling ties
-(efron and breslow estimators only)
+          under a specified method for handling ties (efron and breslow estimators only)
 
 p = size(X,2)
 _LL = zeros(1)
@@ -242,7 +384,7 @@ function _stepcox!(
     #caseidx = findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj))
     risksetidx =risksetidxs[j]
     caseidx = caseidxs[j]
-    LGH!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+    lgh!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     wtdriskset[j] = sum(_wt[risksetidx])
     wtdcases[j] = sum(_wt[caseidx])
   end # j
@@ -377,6 +519,8 @@ coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2};kwargs...
 
 
 """
+  Estimating cumulative incidence from two or more cause-specific Cox models
+  
   z,x,outt,d,event,weights = LSurvival.dgm_comprisk(100)
   X = hcat(z,x)
   int = zeros(100)

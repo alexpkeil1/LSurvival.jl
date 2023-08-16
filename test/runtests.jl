@@ -1,5 +1,5 @@
-using LSurvival
 using Test
+using LSurvival
 using Random
 
 @testset "LSurvival.jl" begin
@@ -19,12 +19,13 @@ using Random
 
 
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+    enter = zeros(length(t))
   
     #subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
     #subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
-    ajres= aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
-    aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)
-    kms = kaplan_meier(zeros(length(t)), t, d, weights=wt)
+    ajres= aalen_johansen(enter, t, event, dvalues=[1.0, 2.0])
+    aalen_johansen(enter, t, event, dvalues=[1.0, 2.0], weights=wt)
+    kms = kaplan_meier(enter, t, d, weights=wt)
   
     X = hcat(z,x)
     int = zeros(100)
