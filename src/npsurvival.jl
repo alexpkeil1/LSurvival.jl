@@ -214,6 +214,46 @@ fit for AJSurv objects
 
 
 
+  function Base.show(io::IO, m::M; level::Real=0.95) where {M <: KMSurv}
+    resmat = hcat(m.times, m.surv, m.events, m.riskset)
+    head = ["time","survival","# events","at risk"]
+    rown = ["$i" for i in 1:size(resmat)[1]]
+    ln = join(fill("-", 80))
+
+    op = CoefTable(resmat, head, rown)
+    iob = IOBuffer();
+    println(iob, op);
+    str = """\nKaplan-Meier Survival\n"""
+    str *= String(take!(iob))
+    str *= "Number of events: $(@sprintf("%8g", sum(m.events)))\n"
+    str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))\n"
+    println(str)
+  end
+
+
+  function Base.show(io::IO, m::M; level::Real=0.95) where {M <: AJSurv}
+    types = m.R.eventtypes[2:end]
+    ev = ["# events (j=$j)" for j in types]
+    rr = ["risk (j=$j)" for j in types]
+
+    resmat = hcat(m.times, m.surv, m.events, m.riskset, m.risk)
+    head = ["time","survival",ev...,"at risk", rr...]
+    rown = ["$i" for i in 1:size(resmat)[1]]
+
+    op = CoefTable(resmat, head, rown)
+    iob = IOBuffer();
+    println(iob, op);
+    str = """\nKaplan-Meier Survival, Aalen-Johansen risk\n"""
+    str *= String(take!(iob))
+    for j in types
+      str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events[:,j])))\n"
+    end
+    str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))\n"
+    println(str)
+  end
+  
+
+
 """
 Kaplan Meier for one observation per unit and no late entry
   (simple function)
