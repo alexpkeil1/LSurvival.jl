@@ -76,7 +76,7 @@ mutable struct AJSurv{G <: LSurvResp} <: AbstractNPSurv
   events::Matrix{Float64}
 end
 
-function AJSurv(R::G) where {G <: LSurvResp}
+function AJSurv(R::G) where {G <: LSurvCompResp}
 times = R.eventtimes
 nt = length(times)
 surv = ones(Float64, nt)
