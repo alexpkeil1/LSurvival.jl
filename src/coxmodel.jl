@@ -664,7 +664,7 @@ fit for PHSurv objects
       for (jidx, j) in enumerate(types)
         str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.event .== m.eventtypes[jidx])))\n"
       end
-      str *= "Number of unique event times: $(@sprintf("%8g", length(m.time)))\n"
+      str *= "Number of unique event times: $(@sprintf("%8g", length(m.times)))\n"
       println(io, str)
     end
     
