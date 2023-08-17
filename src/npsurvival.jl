@@ -82,7 +82,7 @@ net = length(R.eventtypes)-1
 nt = length(times)
 surv = ones(Float64, nt)
 risk = zeros(Float64, nt, net)
-riskset = zeros(Float64, net)
+riskset = zeros(Float64, nt)
 events = zeros(Float64, nt, net)
 AJSurv(R,times,surv,risk,riskset,events)
 end
