@@ -42,7 +42,7 @@ using Random
     lnhr2, ll2, g2, h2, bh2 = coxmodel(int, t, d2, X, method="efron");
     fit(PHModel, X, int, t, d1, ties="efron")
     fit(PHModel, X, int, t, d2, ties="efron")
-    coxph(X, int, t, d2, method="efron")
+    coxph(X, int, t, d2, ties="efron")
     bhlist = [bh1, bh2]
     coeflist = [lnhr1, lnhr2]
     covarmat = sum(X, dims=1) ./ size(X,1)
