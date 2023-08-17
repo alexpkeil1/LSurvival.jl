@@ -77,9 +77,8 @@ structs
   # "linear predictor"
   abstract type AbstractLSurvParms end                         
 
-  mutable struct PHParms{D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix, I <: Real} <: AbstractLSurvParms  
+  mutable struct PHParms{D <: AbstractMatrix, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix, I <: Real} <: AbstractLSurvParms  
     X::D
-    type::T
     _B::B                        # coefficient vector
     _r::R                        # linear predictor/risk
     _LL::L                 # partial likelihood history
@@ -90,7 +89,7 @@ structs
 #    function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
   end
   
- function PHParms(X::D, _B::B, _r::R, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
+ function PHParms(X::D, _B::B, _r::R, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
     n = length(_r)
     p = length(_B)   
    return PHParms(X, _B, _r, _LL, _grad, _hess, n, p)
@@ -267,7 +266,7 @@ end
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    m = fit(PHModel, X, enter, t, d)
+    m = fit(PHModel, X, enter, t, d, ties="efron")
     coeftable(m)
   """                     
   function fit(::Type{M},
