@@ -584,16 +584,16 @@ function _fit!(m::M; coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
       end 
     end
     lci = zeros(length(m.eventtypes))
-    @inbounds for i in 1:m.ntimes
+    @inbounds for i in 1:length(m.basehaz)
       @inbounds for (j,d) in enumerate(m.eventtypes)
-        if event[i] == d
-          basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
-          m.risk[i,j] =  lci[j] + basehaz[i] * lsurv 
+        if m.event[i] == d
+          m.basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
+          m.risk[i,j] =  lci[j] + m.basehaz[i] * lsurv 
         else 
           m.risk[i,j] =  lci[j]
         end
       end
-      ch += basehaz[i]
+      ch += m.basehaz[i]
       m.surv[i] = exp(-ch)
       lsurv = m.surv[i]
       lci = m.risk[i,:]
