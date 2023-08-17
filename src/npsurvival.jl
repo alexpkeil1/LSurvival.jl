@@ -142,7 +142,7 @@ function _fit!(m::AJSurv;
     ni = sum(weightsR) # sum of weights/weighted individuals in risk set
     m.riskset[_i] = ni
     for (jidx,j) in enumerate(dvalues)
-      dij = sum(weightsR .* objw.eventmatrix[R,jidx] .* (m.R.exit[R] .== tt))
+      dij = sum(weightsR .* m.R.eventmatrix[R,jidx] .* (m.R.exit[R] .== tt))
       m.events[_i, jidx] = dij
       m.risk[_i, jidx] = Sm1[_i] * dij/ni
     end
