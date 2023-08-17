@@ -87,7 +87,7 @@ structs
 #    function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
   end
   
- function PHParms(X::D, type::T, inits::B, _r::R, _B::B, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
+ function PHParms(X::D, type::T, _B::B, _r::R, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
     n = length(_r)
     p = length(_B)   
     types = ["efron", "breslow"]
