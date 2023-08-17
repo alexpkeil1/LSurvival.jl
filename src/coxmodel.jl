@@ -132,8 +132,8 @@ end
     X = hcat(x,z);
     R = LSurvResp(enter, t, Int64.(d), wt)
     P = PHParms(X, "efron")
-    mod = PHModel(R,P, true)
-    _fit!(mod)
+    mf = PHModel(R,P, true)
+    _fit!(mf)
     
 """  
 function PHModel(R::G, P::L, fit::Bool) where {G <: LSurvResp,L <: AbstractLSurvParms}
@@ -171,6 +171,21 @@ function _fit!(m::PHModel;
       m.R.enter, m.R.exit, m.R.y, m.P.X, m.R.wts,
       m.P._B, m.P.p, m.P.n, m.R.eventtimes, m.P._r, 
       risksetidxs, caseidxs)
+    # _stepcox!(
+    #      lowermethod3,
+    #      # recycled parameters
+    #      _LL::Vector, _grad::Vector, _hess::Matrix{Float64},
+    #      # data
+    #      _in::Vector, _out::Vector, d::Union{Vector, BitVector}, X, _wt::Vector,
+    #      # fixed parameters
+    #      _B::Vector, 
+    #      # indexes
+    #      p, n, eventtimes,
+    #      # containers
+    #      _r::Vector,
+    #      # big indexes
+    #      risksetidxs, caseidxs
+                  )
   _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
   # repeat newton raphson steps until convergence or max iterations
   while totiter<maxiter
@@ -217,7 +232,7 @@ function _fit!(m::PHModel;
     m.bh = [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
   end
   m.P._LL = _llhistory
-  nothing
+  m
 end
 
 function StatsBase.fit!(m::AbstractPH;
@@ -264,7 +279,7 @@ end
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    fit(PHModel, X, enter, t, d)
+    fit(PHModel, X, enter, t, d, wts=wt)
 
   """                     
   function fit(::Type{M},
@@ -283,7 +298,7 @@ end
           throw(DimensionMismatch("number of rows in X and y must match"))
       end
       
-      R = LSurvResp(enter, exit, Int64.(y), wts)
+      R = LSurvResp(enter, exit, y, wts)
       P = PHParms(X, method)
  
       res = M(R,P, false)
@@ -295,25 +310,7 @@ end
 
 if false
   # in progress
-  
-  
-
-  
-  
-  
-
-                        
-
-
-
-
-###############
-###############
-###############
-  
-  
-  #
-  function fit(::Type{M},
+    function fit(::Type{M},
                f::FormulaTerm,
                data;
                wts::AbstractVector{<:Real}      = similar(y, 0),
@@ -340,7 +337,7 @@ if false
       #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
       return fit!(res; fitargs...)
   end
-
+  
 end
 
 #= #################################################################################################################### 
@@ -554,12 +551,12 @@ function _stepcox!(
          # fixed parameters
          _B::Vector, 
          # indexs
-         p, n, eventtimes,
+         p::T, n::U, eventtimes::Vector,
          # containers
          _r::Vector,
          # big indexes
          risksetidxs, caseidxs
-                  )
+                  ) where {T <: Int, U <: Int}
   _coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
   # loop over event times
   ne = length(eventtimes)
