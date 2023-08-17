@@ -43,7 +43,8 @@ module LSurvival
         loglikelihood, nullloglikelihood, #nobs, 
         stderror, vcov,
         #residuals, predict, predict!,
-        fitted, fit #model_response, response, modelmatrix, PValue
+        fitted, fit, #model_response, response, modelmatrix, PValue
+        coxph
 
 
     ####### Abstract types #######

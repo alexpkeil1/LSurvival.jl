@@ -77,6 +77,9 @@ function dgm(rng, n, maxT;regimefun=int_0)
   beta2, ll2, g2, h2, basehaz2 = coxmodel(coxargs..., weights=wt, method="efron", tol=1e-9, inits=nothing);
   se = sqrt.(diag(-inv(h)));
   hcat(beta, se, beta ./ se)
+  # new:
+  m = fit(PHModel, X, int, outt, d, ties="breslow", wts=wt)
+  m2 = fit(PHModel, X, int, outt, d, ties="efron", wts=wt)
 
 # Kaplan-Meier estimator of the cumulative risk/survival
 res = kaplan_meier(int, outt,d; wt=nothing)
