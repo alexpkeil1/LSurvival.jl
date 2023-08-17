@@ -56,7 +56,7 @@ mutable struct KMSurv{G <: LSurvResp} <: AbstractNPSurv
      surv::Vector{Float64}
      riskset::Vector{Float64}
      events::Vector{Float64}
-    end
+end
 
 function KMSurv(R::G) where {G <: LSurvResp}
   times = R.eventtimes
@@ -66,6 +66,26 @@ function KMSurv(R::G) where {G <: LSurvResp}
   events = zeros(Float64, nt)
   KMSurv(R,times,surv,riskset, events)
 end
+
+mutable struct AJSurv{G <: LSurvResp} <: AbstractNPSurv  
+  R::G        # Survival response
+  times::AbstractVector
+  surv::Vector{Float64}
+  risk::Matrix{Float64}
+  riskset::Vector{Float64}
+  events::Matrix{Float64}
+end
+
+function AJSurv(R::G) where {G <: LSurvResp}
+times = R.eventtimes
+nt = length(times)
+surv = ones(Float64, nt)
+risk = zeros(Float64, nt)
+riskset = zeros(Float64, length(R.eventtypes)-1)
+events = zeros(Float64, nt, length(R.eventtypes)-1)
+AJSurv(R,times,surv,risk,riskset, events)
+end
+
 
 """
    using LSurvival
@@ -103,17 +123,60 @@ function _fit!(m::KMSurv;
   m
 end
 
+#function aj(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+function _fit!(m::AJSurv;
+    dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+    if !isnothing(weights)
+      m.R.wts = weights
+    end
+    #nvals = length(dvalues) 
+    nvals = length(m.R.eventtypes) 
+    #KMSurv(R,times,surv,riskset, events)
+    #kmsobj = KMSurv(m.R, m.times, m.surv, m.riskset, m.events)
+    kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, weights=m.R.wts)
+  # overall survival via Kaplan-Meier
+  orderedtimes, S, riskset = kmfit.times, kmfit.surv, kmfit.riskset
+  Sm1 = vcat(1.0, S)
+  #####
+  #ajest = zeros(length(orderedtimes), nvals)
+  _d = zeros(length(out), nvals)
+  for (jidx,j) in enumerate(dvalues)
+    _d[:,jidx] = (d .== j)
+  end
+  for (_i,tt) in enumerate(orderedtimes)
+    R = findall((out .>= tt) .& (in .< (tt-eps))) # risk set
+    weightsR = weights[R]
+    ni = sum(weightsR) # sum of weights/weighted individuals in risk set
+    m.riskset[_i] = ni
+    for (jidx,j) in enumerate(dvalues)
+      dij = sum(weightsR .* _d[R,jidx] .* (out[R] .== tt))
+      m.events[_i, jidx] = dij
+      m.risk[_i, jidx] = Sm1[_i] * dij/ni
+    end
+  end
+  for jidx in 1:nvals
+    m.risk[:,jidx] = 1.0 .- cumsum(m.risk[:,jidx])
+  end
+  m
+  #orderedtimes, S, ajest, riskset
+end
+;
+
+
 function StatsBase.fit!(m::AbstractNPSurv;
   kwargs...)
   _fit!(m; kwargs...)
 end
 
 """
+fit for KMSurv objects
+
    using LSurvival
    using Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
    m = fit(KMSurv, enter, t, d)
+   mw = fit(KMSurv, enter, t, d, wts=wt)
   """                     
   function fit(::Type{M},
       enter::AbstractVector{<:Real},
@@ -130,6 +193,30 @@ end
       return fit!(res; fitargs...)
   end
 
+  """
+fit for KMSurv objects
+
+   using LSurvival
+   using Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   enter = zeros(length(t));
+   m = fit(AJSurv, enter, t, d)
+   mw = fit(AJSurv, enter, t, d, wts=wt)
+  """                     
+  function fit(::Type{M},
+      enter::AbstractVector{<:Real},
+      exit::AbstractVector{<:Real},
+      y::Union{AbstractVector{<:Real},BitVector}
+      ;
+      wts::AbstractVector{<:Real}      = similar(y, 0),
+      offset::AbstractVector{<:Real}   = similar(y, 0),
+      fitargs...) where {M<:AJSurv}
+      
+      R = LSurvResp(enter, exit, y, wts) 
+      res = M(R)
+      
+      return fit!(res; fitargs...)
+  end
 
 
 
