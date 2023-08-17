@@ -185,7 +185,7 @@ function _fit!(m::PHModel;
     #      _r::Vector,
     #      # big indexes
     #      risksetidxs, caseidxs
-                  )
+    #              )
   _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
   # repeat newton raphson steps until convergence or max iterations
   while totiter<maxiter
