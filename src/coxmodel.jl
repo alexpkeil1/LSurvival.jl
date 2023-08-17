@@ -50,6 +50,9 @@ structs
     end
     eventtimes = sort(unique(exit[findall(y .> 0)]))
     origin = minimum(enter)
+    if lw == 0
+      wts = ones(Int64,ny)
+    end
    
     return LSurvResp(enter,exit,y,wts,eventtimes,origin)
   end
@@ -274,12 +277,12 @@ end
    using Random
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
     enter = zeros(length(t));
-    X = hcat(x,z);
+    X = hcat(x,rand(length(x)));
     #R = LSurvResp(enter, t, Int64.(d), wt)
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    fit(PHModel, X, enter, t, d, wts=wt)
+    m = fit(PHModel, X, enter, t, d, wts=wt)
 
   """                     
   function fit(::Type{M},
