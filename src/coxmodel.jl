@@ -550,7 +550,7 @@ function _stepcox!(
          # recycled parameters
          _LL::Vector, _grad::Vector, _hess::Matrix{Float64},
          # data
-         _in::Vector, _out::Vector, d::Vector, X, _wt::Vector,
+         _in::Vector, _out::Vector, d::Union{Vector, BitVector}, X, _wt::Vector,
          # fixed parameters
          _B::Vector, 
          # indexs
