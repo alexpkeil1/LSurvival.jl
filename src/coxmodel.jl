@@ -150,10 +150,6 @@ function _fit!(m::PHModel;
                kwargs...
 )
     m.P._B = start
-    if haskey(kwargs, :ties)
-        m.ties = kwargs[:ties]
-    end
-    method = m.ties
    #
    lowermethod3 = lowercase(method[1:3])
    # tuning params
@@ -283,11 +279,16 @@ end
       if size(X, 1) != size(y, 1)
           throw(DimensionMismatch("number of rows in X and y must match"))
       end
-      
+      if haskey(fitargs, :ties)
+         method = kwargs[:ties]
+      else 
+        method = "efron"
+      end
+     
       R = LSurvResp(enter, exit, y, wts)
       P = PHParms(X)
  
-      res = M(R,P, false)
+      res = M(R,P, method, false)
       
       return fit!(res; fitargs...)
   end
