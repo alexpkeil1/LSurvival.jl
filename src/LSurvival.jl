@@ -26,7 +26,8 @@ module LSurvival
         PHModel, 
         PHParms,
         LSurvResp,
-        AbstractPH
+        AbstractPH,
+        AbstractNPSurv
         # Outcome types
         
     export 
@@ -50,8 +51,18 @@ module LSurvival
     ####### Abstract types #######
     #abstract type LinPred end                         # linear predictor in statistical models
     #abstract type DensePred <: LinPred end            # linear predictor with dense X
+    abstract type AbstractNPSurv end
     
     
+"""
+        AbstractLsurvResp
+
+  Abstract type representing a model response vector
+"""
+  abstract type AbstractLSurvResp end                         
+  abstract type AbstractLSurvParms end                         
+  abstract type AbstractPH <: RegressionModel end   # model based on a linear predictor
+
     ####### function definitions #######
     
     include("coxmodel.jl")

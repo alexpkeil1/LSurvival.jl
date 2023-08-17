@@ -1,4 +1,96 @@
 
+  struct LSurvCompResp{E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector, T<:Real, V<:AbstractVector, M<:AbstractMatrix} <: AbstractLSurvResp 
+    enter::E
+    "`exit`: Time at observation end"
+    exit::X
+    "`y`: event type in observation (integer)"
+    y::Y	
+    "`wts`: observation weights"
+    wts::W
+    "`eventtimes`: unique event times"
+    eventtimes::E
+    "`origin`: origin on the time scale"
+    origin::T
+    "`eventtypes`: vector of unique event types"
+    eventtypes::V
+    "`eventmatrix`: matrix of indicators on the observation level"
+    eventmatrix::M
+  end
+    
+  function LSurvCompResp(enter::E, exit::X, y::Y, wts::W) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector, V<:AbstractVector, M<:AbstractMatrix}
+    ne  = length(enter)
+    nx = length(exit)
+    ny = length(y)
+    lw = length(wts)
+    if !(ne == nx == ny)
+        throw(DimensionMismatch("lengths of enter, exit, and y ($ne, $nx, $ny) are not equal"))
+    end
+    if lw != 0 && lw != ny
+        throw(DimensionMismatch("wts must have length $n or length 0 but was $lw"))
+    end
+    eventtimes = sort(unique(exit[findall(y .> 0)]))
+    origin = minimum(enter)
+    if lw == 0
+      wts = ones(Int64,ny)
+    end
+    eventtypes = sort(unique(y))
+    eventmatrix = reduce(hcat, [y .== e for e in eventtypes[2:end]])
+   
+    return LSurvCompResp(enter,exit,y,wts,eventtimes,origin,eventtypes,eventmatrix)
+  end
+  
+  
+mutable struct KMSurv{G <: LSurvResp} <: AbstractNPSurv  
+     R::G        # Survival response
+     times::AbstractVector
+     surv::Vector{Float64,1}
+     riskset::Vector{Int64,1}
+end
+
+function KMSurv(R::G) where {G <: LSurvResp}
+  times = R.eventtimes
+  nt = length(times)
+  surv = ones(Float64, nt)
+  riskset = zeros(Int64, nt)
+  KMSurv(R,times,surv,riskset)
+end
+
+"""
+   using LSurvival
+   using Random
+   #import LSurvival._stepcox!
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+    enter = zeros(length(t));
+    X = hcat(x,z);
+    R = LSurvResp(enter, t, Int64.(d), wt)
+    P = PHParms(X)
+    mf = PHModel(R,P)
+    _fit!(mf)
+
+"""
+function _fit!(m::KMSurv; 
+                weights=nothing, 
+                eps = 0.00000001,
+                kwargs...)
+   # there is some bad floating point issue with epsilon that should be tracked
+   # R handles this gracefully
+  # ties allowed
+  if isnothing(weights) || isnan(weights[1])
+    weights = ones(length(in))
+  end
+  #_dt = zeros(length(orderedtimes))
+  _1mdovern = ones(m.times)
+  for (_i,tt) in enumerate(m.times)
+    R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
+    ni = sum(weights[R]) # sum of weights in risk set
+    di = sum(weights[R] .* (d[R] .> censval) .* (out[R] .== tt))
+    _1mdovern[_i] = log(1.0 - di/ni)
+    m.riskset[_i] = ni
+  end
+  m.surv = exp.(cumsum(_1mdovern))
+  m
+end
+
 
 
 
