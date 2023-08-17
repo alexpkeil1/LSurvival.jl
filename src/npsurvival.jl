@@ -122,7 +122,7 @@ end
       ;
       wts::AbstractVector{<:Real}      = similar(y, 0),
       offset::AbstractVector{<:Real}   = similar(y, 0),
-      fitargs...) where {M<:AbstractPH}
+      fitargs...) where {M<:KMSurv}
       
       R = LSurvResp(enter, exit, y, wts) 
       res = M(R)
