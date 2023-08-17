@@ -249,7 +249,7 @@ aalen_johansen(enter, exit, d, args...; kwargs...) = fit(AJSurv, enter, exit, d,
     str *= String(take!(iob))
     str *= "Number of events: $(@sprintf("%8g", sum(m.events)))\n"
     str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))\n"
-    println(str)
+    println(io, str)
   end
 
 
@@ -260,7 +260,8 @@ aalen_johansen(enter, exit, d, args...; kwargs...) = fit(AJSurv, enter, exit, d,
 
     resmat = hcat(m.times, m.surv, m.events, m.riskset, m.risk)
     head = ["time","survival",ev...,"at risk", rr...]
-    rown = ["$i" for i in 1:size(resmat)[1]]
+    nr = size(resmat)[1]
+    rown = ["$i" for i in 1:nr]
 
     op = CoefTable(resmat, head, rown)
     iob = IOBuffer();
@@ -283,7 +284,7 @@ aalen_johansen(enter, exit, d, args...; kwargs...) = fit(AJSurv, enter, exit, d,
       str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events[:,jidx])))\n"
     end
     str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))\n"
-    println(str)
+    println(io, str)
   end
   
 
