@@ -151,10 +151,9 @@ function _fit!(m::PHModel;
 )
     m.P._B = start
     if haskey(kwargs, :ties)
-       method = kwargs[:ties]
-    else
-      method = m.ties
+        m.ties = kwargs[:ties]
     end
+    method = m.ties
    #
    lowermethod3 = lowercase(method[1:3])
    # tuning params
