@@ -250,7 +250,7 @@ function StatsBase.fit!(m::AbstractPH;
         rtol = kwargs[:tol]
     end
 
-    start = isnothing(start) ? zeros(Float64, m.P.p) : p
+    start = isnothing(start) ? zeros(Float64, m.P.p) : start
 
     _fit!(m, verbose=verbose, maxiter=maxiter, minstepfac=minstepfac, atol=atol, rtol=rtol, start=start; kwargs...)
 end
@@ -266,7 +266,7 @@ end
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    m = fit(PHModel, X, enter, t, d)
+    m = fit(PHModel, X, enter, t, d, ties="efron")
     m2 = fit(PHModel, X, enter, t, d, ties="breslow")
     coeftable(m)
   """                     
@@ -384,8 +384,12 @@ if false
   
       #rr = GlmResp(y, d, l, off, wts)
       
-      res = M(rr, cholpred(X, dropcollinear), nothing, false)
-  
+      #res = M(rr, X, nothing, false)
+      R = LSurvResp(enter, exit, y, wts)
+      P = PHParms(X)
+ 
+      res = M(R,P, ties)
+
       #return coxmodel(_in::Array{<:Real,1}, 
       #          _out::Array{<:Real,1}, 
       #          d::Array{<:Real,1}, 
@@ -858,24 +862,28 @@ if false
     bb, l, gg,hh,_ = coxmodel(coxargs...;weights=cgd.weight, method="efron", tol=1e-9, inits=coxcoef, maxiter=0);
     bb2, l2, gg2,hh2,_ = coxmodel(coxargs...,weights=cgd.weight, method="breslow", tol=1e-9, inits=coxcoef2, maxiter=0);
     
-    m = fit(PHModel, Matrix(cgd[:,[:height,:propylac]]), cgd.tstart, cgd.tstop, cgd.status, wts=cgd.weight)
-    m2 = fit(PHModel, Matrix(cgd[:,[:height,:propylac]]), cgd.tstart, cgd.tstop, cgd.status, wts=cgd.weight)
+    m = fit(PHModel, Matrix(cgd[:,[:height,:propylac]]), cgd.tstart, cgd.tstop, cgd.status, wts=cgd.weight, ties="efron", rtol=1e-12, atol=1e-6)
+    m2 = fit(PHModel, Matrix(cgd[:,[:height,:propylac]]), cgd.tstart, cgd.tstop, cgd.status, wts=cgd.weight, ties="breslow", rtol=1e-12, atol=1e-6)
     # efron likelihoods, weighted + unweighted look promising (float error?)
-    [l[end], coxll[end]] 
+    [l[end], coxll[end], loglikelihood(m)] 
     # breslow likelihoods, weighted + unweighted look promising (float error?)
-    [l2[end], coxll2[end]] 
+    [l2[end], coxll2[end], loglikelihood(m2)] 
     # efron weighted gradient, weighted + unweighted look promising (float error?)
      gg
      ff
+     m.P._grad
      # breslow wt grad, weighted + unweighted look promising (float error?)
      gg2
      ff2 
+     m2.P._grad
      # efron hessian (unweighted only is ok)
-    sqrt.(diag(-inv(hh)))
+     sqrt.(diag(-inv(hh)))
      sqrt.(diag(coxvcov))
+     stderror(m)
      # breslow hessian (both ok - vcov)
     -inv(hh2)
      coxvcov2
+     vcov(m)
 
   =#
 
@@ -917,7 +925,8 @@ if false
 
     beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
     beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
-
+    # fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", start=[.9,.9,.9])
+    fit(PHModel, X, int, outt, d, wts=wt, ties="breslow")
 
   # benchmark runtimes vs. calling R
   function rfun(int, outt, d, X, wt)
