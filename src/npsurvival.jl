@@ -78,11 +78,12 @@ end
 
 function AJSurv(R::G) where {G <: LSurvCompResp}
 times = R.eventtimes
+net = length(R.eventtypes)-1
 nt = length(times)
 surv = ones(Float64, nt)
-risk = zeros(Float64, nt)
-riskset = zeros(Float64, length(R.eventtypes)-1)
-events = zeros(Float64, nt, length(R.eventtypes)-1)
+risk = zeros(Float64, nt, net)
+riskset = zeros(Float64, net)
+events = zeros(Float64, nt, net)
 AJSurv(R,times,surv,risk,riskset,events)
 end
 
