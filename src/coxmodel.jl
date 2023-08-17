@@ -268,6 +268,7 @@ end
     #mod = PHModel(R,P, true)
     #_fit!(mod)
     m = fit(PHModel, X, enter, t, d)
+    m2 = fit(PHModel, X, enter, t, d, ties="breslow")
     coeftable(m)
   """                     
   function fit(::Type{M},
@@ -276,6 +277,7 @@ end
       exit::AbstractVector{<:Real},
       y::AbstractVector{<:Real}
       ;
+      ties = "breslow",
       wts::AbstractVector{<:Real}      = similar(y, 0),
       offset::AbstractVector{<:Real}   = similar(y, 0),
       fitargs...) where {M<:AbstractPH}
@@ -288,7 +290,7 @@ end
       R = LSurvResp(enter, exit, y, wts)
       P = PHParms(X)
  
-      res = M(R,P, "efron", false)
+      res = M(R,P, ties)
       
       return fit!(res; fitargs...)
   end
