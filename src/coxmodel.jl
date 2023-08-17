@@ -280,7 +280,7 @@ end
           throw(DimensionMismatch("number of rows in X and y must match"))
       end
       if haskey(fitargs, :ties)
-         method = kwargs[:ties]
+         method = fitargs[:ties]
       else 
         method = "efron"
       end
