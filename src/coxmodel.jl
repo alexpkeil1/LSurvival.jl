@@ -563,7 +563,7 @@ end #function _stepcox!
 """
 function ci_from_coxmodels(fitlist::L;eventtypes=[1,2], coeflist=nothing) where {L :< {KMSurv, KSurv}}
 #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
-  if(length(eventtypes) != length(fitlist))
+  if length(eventtypes) != length(fitlist)
     eventtypes = collect(1:length(fitlist))
   end
   bhlist = [ft.bh for ft in fitlist]
