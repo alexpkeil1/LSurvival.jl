@@ -49,7 +49,8 @@ module LSurvival
         stderror, vcov,
         #residuals, predict, predict!,
         fitted, fit, #model_response, response, modelmatrix, PValue
-        coxph
+        coxph, 
+        risk_from_coxphmodels
 
 
     ####### Abstract types #######

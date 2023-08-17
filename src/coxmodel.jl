@@ -632,7 +632,12 @@ fit for PHSurv objects
         return fit!(res; fitargs...)
     end
 
+"""
+    risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
 
+"""
+  risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel = fit(PHSurv, fitlist, args...; kwargs...)
+  
 
     function Base.show(io::IO, m::M; maxrows=20) where {M <: PHSurv}
       types = m.eventtypes
