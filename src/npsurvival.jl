@@ -132,7 +132,7 @@ function _fit!(m::AJSurv;
   orderedtimes, S, riskset = kmfit.times, kmfit.surv, kmfit.riskset
   Sm1 = vcat(1.0, S)
   #####
-  _d = zeros(length(out), nvals)
+  _d = zeros(length(m.R.exit), nvals)
   for (jidx,j) in enumerate(dvalues)
     _d[:,jidx] = (d .== j)
   end
