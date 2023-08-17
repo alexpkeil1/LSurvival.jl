@@ -361,11 +361,11 @@ function Base.show(io::IO, m::M; level::Real=0.95) where {M <: AbstractPH}
   ll = loglikelihood(m)
   llnull = nullloglikelihood(m)
   chi2 = ll - llnull
-  df = length(beta)
-  lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
-  rown = ["b$i" for i in 1:size(op)[1]]
+  #rown = ["b$i" for i in 1:size(op)[1]]
   coeftab = coeftable(m, level=level)
+  df = length(coeftab.rr.rownms)
+  lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   iob = IOBuffer();
   println(iob, coeftab);
   str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
