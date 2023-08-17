@@ -310,28 +310,28 @@ end
   end
 
 
-function StatsBase.coef(m <: AbstractPH)
+function StatsBase.coef(m::M) where {M <: AbstractPH}
   m.P._B
 end
 
-function StatsBase.vcov(m <: AbstractPH)
+function StatsBase.vcov(m::M) where {M <: AbstractPH}
   -inv(m.P._hess)
 end
 
-function StatsBase.stderror(m <: AbstractPH)
+function StatsBase.stderror(m::M) where {M <: AbstractPH}
   sqrt.(diag(vcov(m)))
 end
 
 
-function StatsBase.loglikelihood(m <: AbstractPH)
+function StatsBase.loglikelihood(m::M) where {M <: AbstractPH}
   m.P._LL[end]
 end
 
-function StatsBase.nullloglikelihood(m <: AbstractPH)
+function StatsBase.nullloglikelihood(m::M) where {M <: AbstractPH}
   m.P._LL[1]
 end
 
-function StatsBase.confint(m <: AbstractPH)
+function StatsBase.confint(m::M; level::Real=0.95) where {M <: AbstractPH}
   beta = coef(m)
   std_err = stderror(m)
   z = beta./std_err
@@ -342,7 +342,7 @@ function StatsBase.confint(m <: AbstractPH)
 end
 
 
-function StatsBase.coeftable(m <: AbstractPH; level::Real=0.95)
+function StatsBase.coeftable(m::M; level::Real=0.95) where {M <: AbstractPH}
   beta = coef(m)
   std_err = stderror(m)
   z = beta./std_err
