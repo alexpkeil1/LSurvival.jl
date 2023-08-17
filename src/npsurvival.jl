@@ -69,6 +69,7 @@ end
 function _fit!(m::KMSurv; 
                 weights=nothing, 
                 eps = 0.00000001,
+                censval=0,
                 kwargs...)
    # there is some bad floating point issue with epsilon that should be tracked
    # R handles this gracefully
@@ -79,9 +80,9 @@ function _fit!(m::KMSurv;
   #_dt = zeros(length(orderedtimes))
   _1mdovern = ones(length(m.times))
   for (_i,tt) in enumerate(m.times)
-    R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
+    R = findall((m.R.exit .>= tt) .& (m.R.enter .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
     ni = sum(mf.R.wts[R]) # sum of weights in risk set
-    di = sum(mf.R.wts[R] .* (d[R] .> censval) .* (out[R] .== tt))
+    di = sum(mf.R.wts[R] .* (m.R.y[R] .> censval) .* (m.R.exit[R] .== tt))
     _1mdovern[_i] = log(1.0 - di/ni)
     m.riskset[_i] = ni
   end
