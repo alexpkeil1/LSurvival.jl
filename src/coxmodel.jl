@@ -662,7 +662,7 @@ fit for PHSurv objects
       str = """\nCox-model based survival, risk\n"""
       str *= String(take!(iob))
       for (jidx, j) in enumerate(types)
-        str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events .== m.eventtypes[jidx])))\n"
+        str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.event .== m.eventtypes[jidx])))\n"
       end
       str *= "Number of unique event times: $(@sprintf("%8g", length(m.time)))\n"
       println(io, str)
