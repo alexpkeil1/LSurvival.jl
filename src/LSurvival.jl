@@ -13,7 +13,7 @@ module LSurvival
     import StatsBase: coef, coeftable, coefnames, confint, deviance, nulldeviance, dof, dof_residual,
                       loglikelihood, nullloglikelihood, nobs, stderror, vcov,
                       #residuals, predict, predict!,
-                      fitted, fit, model_response, response, modelmatrix, PValue
+                      fitted, fit, model_response, response, modelmatrix, PValue, fit!
     import Base.show
     
     ####### exports #######
