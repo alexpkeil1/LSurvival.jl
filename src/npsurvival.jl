@@ -194,7 +194,7 @@ fit for KMSurv objects
   end
 
   """
-fit for KMSurv objects
+fit for AJSurv objects
 
    using LSurvival
    using Random
@@ -212,7 +212,7 @@ fit for KMSurv objects
       offset::AbstractVector{<:Real}   = similar(y, 0),
       fitargs...) where {M<:AJSurv}
       
-      R = LSurvResp(enter, exit, y, wts) 
+      R = LSurvCompResp(enter, exit, y, wts) 
       res = M(R)
       
       return fit!(res; fitargs...)
