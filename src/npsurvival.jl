@@ -214,15 +214,26 @@ fit for AJSurv objects
 
 
 
-  function Base.show(io::IO, m::M; level::Real=0.95) where {M <: KMSurv}
+  function Base.show(io::IO, m::M; maxrows=20) where {M <: KMSurv}
     resmat = hcat(m.times, m.surv, m.events, m.riskset)
     head = ["time","survival","# events","at risk"]
-    rown = ["$i" for i in 1:size(resmat)[1]]
-    ln = join(fill("-", 80))
-
+    nr = size(resmat)[1]
+    rown = ["$i" for i in 1:nr]
     op = CoefTable(resmat, head, rown)
     iob = IOBuffer();
-    println(iob, op);
+    if nr < maxrows
+      println(iob, op);
+    else
+      len = round(Int,maxrows/2)
+      op1, op2 = deepcopy(op), deepcopy(op)
+      op1.rownms = op1.rownms[1:len]
+      op1.cols = [c[1:len] for c in op1.cols]
+      op2.rownms = op2.rownms[(end-len):end]
+      op2.cols = [c[(end-len):end] for c in op2.cols]
+      println(iob, op1);
+      println(iob, "...");
+      println(iob, op2);
+    end
     str = """\nKaplan-Meier Survival\n"""
     str *= String(take!(iob))
     str *= "Number of events: $(@sprintf("%8g", sum(m.events)))\n"
@@ -231,10 +242,10 @@ fit for AJSurv objects
   end
 
 
-  function Base.show(io::IO, m::M; level::Real=0.95) where {M <: AJSurv}
+  function Base.show(io::IO, m::M; maxrows=20) where {M <: AJSurv}
     types = m.R.eventtypes[2:end]
-    ev = ["# events (j=$j)" for j in types]
-    rr = ["risk (j=$j)" for j in types]
+    ev = ["# events (j=$j)" for jidx in (jidx, j) in enumerate(types)]
+    rr = ["risk (j=$j)" for jidx in (jidx, j) in enumerate(types)]
 
     resmat = hcat(m.times, m.surv, m.events, m.riskset, m.risk)
     head = ["time","survival",ev...,"at risk", rr...]
@@ -245,8 +256,8 @@ fit for AJSurv objects
     println(iob, op);
     str = """\nKaplan-Meier Survival, Aalen-Johansen risk\n"""
     str *= String(take!(iob))
-    for j in types
-      str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events[:,j])))\n"
+    for (jidx, j) in enumerate(types)
+      str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events[:,jidx])))\n"
     end
     str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))\n"
     println(str)
