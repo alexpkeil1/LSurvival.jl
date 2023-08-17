@@ -128,6 +128,7 @@ function _fit!(m::AJSurv;
   dvalues = m.R.eventtypes[2:end]
   nvals = length(dvalues) 
   kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, weights=m.R.wts)
+  m.surv = kmfit.surv
   # overall survival via Kaplan-Meier
   orderedtimes, S, riskset = kmfit.times, kmfit.surv, kmfit.riskset
   Sm1 = vcat(1.0, S)
