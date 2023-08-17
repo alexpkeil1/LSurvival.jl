@@ -45,6 +45,7 @@ mutable struct KMSurv{G <: LSurvResp} <: AbstractNPSurv
      times::AbstractVector
      surv::Vector{Float64}
      riskset::Vector{Float64}
+     events::Vector{Float64}
     end
 
 function KMSurv(R::G) where {G <: LSurvResp}
@@ -52,13 +53,14 @@ function KMSurv(R::G) where {G <: LSurvResp}
   nt = length(times)
   surv = ones(Float64, nt)
   riskset = zeros(Float64, nt)
-  KMSurv(R,times,surv,riskset)
+  events = zeros(Float64, nt)
+  KMSurv(R,times,surv,riskset, events)
 end
 
 """
    using LSurvival
    using Random
-   z,x,t,d, event,wt = dgm_comprisk(MersenneTwister(1212), 100);
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
    enter = zeros(length(t));
    X = hcat(x,z);
    R = LSurvResp(enter, t, Int64.(d), wt)
@@ -83,6 +85,7 @@ function _fit!(m::KMSurv;
     R = findall((m.R.exit .>= tt) .& (m.R.enter .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
     ni = sum(m.R.wts[R]) # sum of weights in risk set
     di = sum(m.R.wts[R] .* (m.R.y[R] .> censval) .* (m.R.exit[R] .== tt))
+    m.events[R] = di
     _1mdovern[_i] = log(1.0 - di/ni)
     m.riskset[_i] = ni
   end
