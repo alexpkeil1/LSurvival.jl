@@ -214,7 +214,7 @@ end
       X::AbstractMatrix,#{<:FP},
       enter::AbstractVector{<:Real},
       exit::AbstractVector{<:Real},
-      y::AbstractVector{<:Real}
+      y::Union{AbstractVector{<:Real},BitVector}
       ;
       ties = "breslow",
       wts::AbstractVector{<:Real}      = similar(y, 0),

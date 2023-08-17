@@ -113,13 +113,12 @@ end
    using Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
-   X = hcat(x,rand(length(x)));
-   m = fit(KMSurv, X, enter, t, d)
+   m = fit(KMSurv, enter, t, d)
   """                     
   function fit(::Type{M},
       enter::AbstractVector{<:Real},
       exit::AbstractVector{<:Real},
-      y::AbstractVector{<:Real}
+      y::Union{AbstractVector{<:Real},BitVector}
       ;
       wts::AbstractVector{<:Real}      = similar(y, 0),
       offset::AbstractVector{<:Real}   = similar(y, 0),
