@@ -67,7 +67,7 @@ function KMSurv(R::G) where {G <: LSurvResp}
   KMSurv(R,times,surv,riskset, events)
 end
 
-mutable struct AJSurv{G <: LSurvResp} <: AbstractNPSurv  
+mutable struct AJSurv{G <: LSurvCompResp} <: AbstractNPSurv  
   R::G        # Survival response
   times::AbstractVector
   surv::Vector{Float64}
