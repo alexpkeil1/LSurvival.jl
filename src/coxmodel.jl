@@ -558,7 +558,7 @@ end #function _stepcox!
    ft2 = coxph(X, enter, t, d.*(event .== 2), ties="breslow");
    fitlist = [ft1, ft2]
 """
-function ci_from_coxmodels(fitlist::L;eventtypes=[1,2], coeflist=nothing) where {L :< {KMSurv, KSurv}}
+function ci_from_coxmodels(fitlist::L;eventtypes=[1,2], coeflist=nothing) where {L :< Array{KMSurv}}
 #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
   if length(eventtypes) != length(fitlist)
     eventtypes = collect(1:length(fitlist))
