@@ -75,7 +75,7 @@ function _fit!(m::KMSurv;
    # R handles this gracefully
   # ties allowed
   if !isnothing(weights)
-    mf.R.wts = weights
+    m.R.wts = weights
   end
   #_dt = zeros(length(orderedtimes))
   _1mdovern = ones(length(m.times))
