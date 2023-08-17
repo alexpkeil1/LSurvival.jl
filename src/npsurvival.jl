@@ -105,7 +105,7 @@ end
 
 function StatsBase.fit!(m::AbstractNPSurv;
   kwargs...)
-  _fit!(m, verbose=verbose, maxiter=maxiter, minstepfac=minstepfac, atol=atol, rtol=rtol, start=start; kwargs...)
+  _fit!(m; kwargs...)
 end
 
 """
