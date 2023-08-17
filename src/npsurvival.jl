@@ -85,7 +85,7 @@ function _fit!(m::KMSurv;
     R = findall((m.R.exit .>= tt) .& (m.R.enter .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
     ni = sum(m.R.wts[R]) # sum of weights in risk set
     di = sum(m.R.wts[R] .* (m.R.y[R] .> censval) .* (m.R.exit[R] .== tt))
-    m.events[R] = di
+    m.events[_i] = di
     _1mdovern[_i] = log(1.0 - di/ni)
     m.riskset[_i] = ni
   end
