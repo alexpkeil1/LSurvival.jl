@@ -62,7 +62,7 @@ end
    enter = zeros(length(t));
    X = hcat(x,z);
    R = LSurvResp(enter, t, Int64.(d), wt)
-   mf = LSurvival.KMSurv(R)
+   mf = KMSurv(R)
    _fit!(mf)
 
 """
@@ -73,15 +73,15 @@ function _fit!(m::KMSurv;
    # there is some bad floating point issue with epsilon that should be tracked
    # R handles this gracefully
   # ties allowed
-  if isnothing(weights) || isnan(weights[1])
-    weights = ones(length(in))
+  if !isnothing(weights)
+    mf.R.wts = weights
   end
   #_dt = zeros(length(orderedtimes))
   _1mdovern = ones(length(m.times))
   for (_i,tt) in enumerate(m.times)
     R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
-    ni = sum(weights[R]) # sum of weights in risk set
-    di = sum(weights[R] .* (d[R] .> censval) .* (out[R] .== tt))
+    ni = sum(mf.R.wts[R]) # sum of weights in risk set
+    di = sum(mf.R.wts[R] .* (d[R] .> censval) .* (out[R] .== tt))
     _1mdovern[_i] = log(1.0 - di/ni)
     m.riskset[_i] = ni
   end
