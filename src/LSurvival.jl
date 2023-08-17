@@ -23,7 +23,8 @@ module LSurvival
     export 
         # types
         # Model types
-        PHModel, 
+        PHModel,
+        KMSurv, 
         PHParms,
         LSurvResp,
         AbstractPH,

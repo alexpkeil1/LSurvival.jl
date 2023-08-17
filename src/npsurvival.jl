@@ -45,8 +45,6 @@ mutable struct KMSurv{G <: LSurvResp} <: AbstractNPSurv
      times::AbstractVector
      surv::Vector{Float64}
      riskset::Vector{Int64}
-     #surv::AbstractVector
-     #riskset::AbstractVector
     end
 
 function KMSurv(R::G) where {G <: LSurvResp}
@@ -64,8 +62,7 @@ end
    enter = zeros(length(t));
    X = hcat(x,z);
    R = LSurvResp(enter, t, Int64.(d), wt)
-   P = PHParms(X)
-   mf = PHModel(R,P)
+   mf = LSurvival.KMSurv(R)
    _fit!(mf)
 
 """
@@ -80,7 +77,7 @@ function _fit!(m::KMSurv;
     weights = ones(length(in))
   end
   #_dt = zeros(length(orderedtimes))
-  _1mdovern = ones(m.times)
+  _1mdovern = ones(length(m.times))
   for (_i,tt) in enumerate(m.times)
     R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
     ni = sum(weights[R]) # sum of weights in risk set
