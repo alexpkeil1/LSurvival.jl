@@ -8,7 +8,7 @@
     "`wts`: observation weights"
     wts::W
     "`eventtimes`: unique event times"
-    eventtimes::E
+    eventtimes::X
     "`origin`: origin on the time scale"
     origin::T
     "`eventtypes`: vector of unique event types"
@@ -17,7 +17,7 @@
     eventmatrix::M
   end
     
-  function LSurvCompResp(enter::E, exit::X, y::Y, wts::W) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector, V<:AbstractVector, M<:AbstractMatrix}
+  function LSurvCompResp(enter::E, exit::X, y::Y, wts::W) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
     ne  = length(enter)
     nx = length(exit)
     ny = length(y)
