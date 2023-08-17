@@ -283,7 +283,7 @@ end
           throw(DimensionMismatch("number of rows in X and y must match"))
       end
       
-      R = LSurvResp(enter, exit, Int64.(d), wts)
+      R = LSurvResp(enter, exit, Int64.(y), wts)
       P = PHParms(X, method)
  
       res = M(R,P, false)
