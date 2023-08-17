@@ -269,7 +269,7 @@ end
 
   """                     
   function fit(::Type{M},
-      X::AbstractMatrix{<:FP},
+      X::AbstractMatrix,#{<:FP},
       enter::AbstractVector{<:Real},
       exit::AbstractVector{<:Real},
       y::AbstractVector{<:Real}
