@@ -150,7 +150,7 @@ function _fit!(m::PHModel;
                start=nothing,
                kwargs...
 )
-    m.P._B = m.P.inits
+    m.P._B = start
     method = m.P.type
    #
    lowermethod3 = lowercase(method[1:3])
@@ -248,7 +248,7 @@ function StatsBase.fit!(m::AbstractPH;
         rtol = kwargs[:tol]
     end
 
-    #start = 
+    start = isnothing(start) ? zeros(Float64, m.P.p) : p
 
     _fit!(m, verbose=verbose, maxiter=maxiter, minstepfac=minstepfac, atol=atol, rtol=rtol, start=start; kwargs...)
 end
