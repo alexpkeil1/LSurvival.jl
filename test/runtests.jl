@@ -20,6 +20,10 @@ using Random
 
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
     enter = zeros(length(t))
+    
+    # resp = LSurvival.LSurvResp(enter, t, d, wt)
+    #    X = hcat(z,x)
+    #  coxmodel(resp.enter, resp.exit, Int.(resp.y), X, method="efron")
   
     #subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0])
     #subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0], weights=wt)

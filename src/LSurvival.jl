@@ -34,9 +34,8 @@ module LSurvival
 
 
     ####### Abstract types #######
-    abstract type LinPred end                         # linear predictor in statistical models
-    abstract type DensePred <: LinPred end            # linear predictor with dense X
-    abstract type LinPredModel <: RegressionModel end # model based on a linear predictor
+    #abstract type LinPred end                         # linear predictor in statistical models
+    #abstract type DensePred <: LinPred end            # linear predictor with dense X
     
     
     ####### function definitions #######

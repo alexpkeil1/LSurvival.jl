@@ -70,65 +70,254 @@ structs
     
   show(x::LSurvResp) = show(stdout, x)
 
-if false
-  # in progress
-  abstract type AbstractPH <: LinPredModel end
-  
-  
-      
-  mutable struct PHModel{G,L} <: AbstractPH
-    rr::G
-    pp::L
-    formula::Union{FormulaTerm,Nothing}
-    fit::Bool
-    maxiter::Int
-    minstepfac::Float64
-    atol::Float64
-    rtol::Float64
+
+  # "linear predictor"
+  abstract type AbstractLSurvParms end                         
+
+  mutable struct PHParms{D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix, I <: Real} <: AbstractLSurvParms  
+    X::D
+    type::T
+    _B::B                        # coefficient vector
+    _r::R                        # linear predictor/risk
+    _LL::L                 # partial likelihood history
+    _grad::B     # gradient vector
+    _hess::H     # Hessian matrix
+    n::I                     # number of observations
+    p::I                     # number of parameters
+#    function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
   end
   
-  PHModel(rr, pp, f::Union{FormulaTerm, Nothing}, fit::Bool) =
-                       PHModel(rr, pp, f, fit, 0, NaN, NaN, NaN)
-                        
-                       
+ function PHParms(X::D, type::T, inits::B, _r::R, _B::B, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
+    n = length(_r)
+    p = length(_B)   
+    types = ["efron", "breslow"]
+    
+    validtypes = findall(types .== type)
+    
+    if length(validtypes) !== 1
+         throw("Type does not exist")
+    end
+   return PHParms(X, type, _B, _r, _LL, _grad, _hess, n, p)
+  end
+
+function PHParms(X::D, type::T) where {D <: AbstractMatrix, T <: String}
+  n,p = size(X)
+  PHParms(X, type, fill(0.0, p), fill(0.0, n), zeros(Float64, 1), fill(0.0, p), fill(0.0, p, p))
+end
+ 
+  # PH model
+  
+ # abstract type AbstractPH <: RegressionModel end
+      
+abstract type AbstractPH <: RegressionModel end   # model based on a linear predictor
+
+mutable struct PHModel{G <: LSurvResp,L <: AbstractLSurvParms} <: AbstractPH  
+     R::G        # Survival response
+     P::L        # parameters
+     fit::Bool
+     bh::AbstractMatrix
+end
+
+function PHModel(R::G, P::L, fit::Bool, maxiter::Int) where {G <: LSurvResp,L <: AbstractLSurvParms}
+        return PHModel(R, P, fit, zeros(Float64, length(R.eventtimes), 4))
+end
+
+
+"""
+   using LSurvival
+   using Random
+   import LSurvival._stepcox!
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+    enter = zeros(length(t))
+    X = hcat(x,z)
+    R = LSurvResp(enter, t, Int64.(d), wt)
+    P = PHParms(X, "efron")
+    mod = PHModel(R,P, true)
+    _fit!(mod)
+    
+"""  
+function PHModel(R::G, P::L, fit::Bool) where {G <: LSurvResp,L <: AbstractLSurvParms}
+        return PHModel(R, P, fit, 500)
+end
+
+
+function _fit!(m::PHModel;
+               verbose::Bool=false,
+               maxiter::Integer=500,
+               minstepfac::Real=0.001,
+               atol::Real=sqrt(1e-8),
+               rtol::Real=1e-8,
+               start=nothing,
+               kwargs...
+)
+    m.P._B = m.P.inits
+    method = m.P.type
+   #
+   lowermethod3 = lowercase(method[1:3])
+   # tuning params
+   λ=1.0
+   #
+   totiter=0
+   #
+   oldQ = floatmax() 
+   lastLL = -floatmax()
+   risksetidxs, caseidxs = [], []
+   @inbounds for _outj in m.R.eventtimes
+     push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj)))
+     push!(caseidxs, findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj)))
+   end
+   den, _sumwtriskset, _sumwtcase = _stepcox!(lowermethod3, 
+      m.P._LL, m.P._grad, m.P._hess,
+      m.R.enter, m.R.exit, m.R.y, m.P.X, m.R.wts,
+      m.P._B, m.P.p, m.P.n, m.R.eventtimes, m.P._r, 
+      risksetidxs, caseidxs)
+  _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
+  # repeat newton raphson steps until convergence or max iterations
+  while totiter<maxiter
+    totiter +=1
+    ######
+    # update 
+    #######
+    Q = 0.5 * (m.P._grad'*m.P._grad) #modified step size if gradient increases
+    likrat = (lastLL/m.P._LL[1])
+    absdiff = abs(lastLL-m.P._LL[1])
+    reldiff = max(likrat, inv(likrat)) - 1.0
+    converged = (reldiff < atol) || (absdiff < rtol)
+    if converged
+      break
+    end
+    if Q > oldQ
+      λ *= 0.5  # step-halving
+    else
+      λ = min(2.0λ, 1.) # de-halving
+      #bestb = _B
+      nothing
+    end
+    isnan(m.P._LL[1]) ? throw("Log-partial-likelihood is NaN") : true
+    if abs(m.P._LL[1]) != Inf
+      m.P._B .+= inv(-(m.P._hess))*m.P._grad.*λ # newton raphson step
+      oldQ=Q
+    else
+       throw("log-partial-likelihood is infinite")
+    end
+    lastLL = m.P._LL[1]
+    den, _, _ = _stepcox!(lowermethod3,
+      m.P._LL, m.P._grad, m.P._hess,
+      m.R.enter, m.R.exit, m.R.y, m.P.X, m.R.wts,
+      m.P._B, m.P.p, m.P.n, m.R.eventtimes, m.P._r, 
+      risksetidxs, caseidxs)
+    push!(_llhistory, m.P._LL[1])
+  end
+  if totiter==maxiter
+    @warn "Algorithm did not converge after $totiter iterations"
+  end
+  if lowermethod3 == "bre"
+    m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
+  elseif lowermethod3 == "efr"
+    m.bh = [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
+  end
+  m.P._LL = _llhistory
+  nothing
+end
+
+function StatsBase.fit!(m::AbstractPH;
+                        verbose::Bool=false,
+                        maxiter::Integer=500,
+                        minstepfac::Real=0.001,
+                        atol::Real=1e-6,
+                        rtol::Real=1e-6,
+                        start=nothing,
+                        kwargs...)
+    if haskey(kwargs, :maxIter)
+        Base.depwarn("'maxIter' argument is deprecated, use 'maxiter' instead", :fit!)
+        maxiter = kwargs[:maxIter]
+    end
+    if haskey(kwargs, :minStepFac)
+        Base.depwarn("'minStepFac' argument is deprecated, use 'minstepfac' instead", :fit!)
+        minstepfac = kwargs[:minStepFac]
+    end
+    if haskey(kwargs, :convTol)
+        Base.depwarn("'convTol' argument is deprecated, use `atol` and `rtol` instead", :fit!)
+        rtol = kwargs[:convTol]
+    end
+    if !issubset(keys(kwargs), (:maxIter, :minStepFac, :convTol))
+        throw(ArgumentError("unsupported keyword argument"))
+    end
+    if haskey(kwargs, :tol)
+        Base.depwarn("`tol` argument is deprecated, use `atol` and `rtol` instead", :fit!)
+        rtol = kwargs[:tol]
+    end
+
+    #start = 
+
+    _fit!(m, verbose=verbose, maxiter=maxiter, minstepfac=minstepfac, atol=atol, rtol=rtol, start=start; kwargs...)
+end
+
+
+  """
+   using LSurvival
+   using Random
+   import LSurvival._stepcox!
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+    enter = zeros(length(t))
+    X = hcat(x,z)
+    #R = LSurvResp(enter, t, Int64.(d), wt)
+    #P = PHParms(X, "efron")
+    #mod = PHModel(R,P, true)
+    #_fit!(mod)
+    fit(PhModel, X, enter, t, d)
+
+  """                     
   function fit(::Type{M},
       X::AbstractMatrix{<:FP},
       enter::AbstractVector{<:Real},
       exit::AbstractVector{<:Real},
       y::AbstractVector{<:Real}
       ;
-      dropcollinear::Bool = true,
-      method::Symbol = :cholesky,
-      wts::AbstractVector{<:Real}      = similar(y, 1),
+      method::String = "efron",
+      wts::AbstractVector{<:Real}      = similar(y, 0),
       offset::AbstractVector{<:Real}   = similar(y, 0),
       fitargs...) where {M<:AbstractPH}
       
-  
       # Check that X and y have the same number of observations
-      #if size(X, 1) != size(y, 1)
-      #    throw(DimensionMismatch("number of rows in X and y must match"))
-      #end
-  
-      #rr = GlmResp(y, d, l, offset, wts)
-      rr = LSurvResp(enter, exit, y, wts)
+      if size(X, 1) != size(y, 1)
+          throw(DimensionMismatch("number of rows in X and y must match"))
+      end
       
+      R = LSurvResp(enter, t, Int64.(d), wts)
+      P = PHParms(X, method)
+ 
+      res = M(R,P, false)
       
-      #res = M(rr, cholpred(X, dropcollinear), nothing, false)
-      
-      res = M(rr, cholpred(X, dropcollinear), nothing, false)
-      
-  
-      #return coxmodel(_in::Array{<:Real,1}, 
-      #          _out::Array{<:Real,1}, 
-      #          d::Array{<:Real,1}, 
-      #          X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
       return fit!(res; fitargs...)
   end
+
+
+
+if false
+  # in progress
   
+  
+
+  
+  
+  
+
+                        
+
+
+
+
+###############
+###############
+###############
+  
+  
+  #
   function fit(::Type{M},
                f::FormulaTerm,
                data;
-               wts::AbstractVector{<:Real}      = similar(y, 1),
+               wts::AbstractVector{<:Real}      = similar(y, 0),
                offset::AbstractVector{<:Real}   = similar(y, 0),
                method::Symbol = :cholesky,
                dofit::Union{Bool, Nothing} = nothing,
