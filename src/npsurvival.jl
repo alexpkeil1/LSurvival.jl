@@ -44,26 +44,26 @@ mutable struct KMSurv{G <: LSurvResp} <: AbstractNPSurv
      R::G        # Survival response
      times::AbstractVector
      surv::Vector{Float64}
-     riskset::Vector{Int64}
+     riskset::Vector{Float64}
     end
 
 function KMSurv(R::G) where {G <: LSurvResp}
   times = R.eventtimes
   nt = length(times)
   surv = ones(Float64, nt)
-  riskset = zeros(Int64, nt)
+  riskset = zeros(Float64, nt)
   KMSurv(R,times,surv,riskset)
 end
 
 """
    using LSurvival
    using Random
-   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+   z,x,t,d, event,wt = dgm_comprisk(MersenneTwister(1212), 100);
    enter = zeros(length(t));
    X = hcat(x,z);
    R = LSurvResp(enter, t, Int64.(d), wt)
    mf = KMSurv(R)
-   _fit!(mf)
+   LSurvival._fit!(mf)
 
 """
 function _fit!(m::KMSurv; 
