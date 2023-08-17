@@ -547,7 +547,7 @@ end #function _stepcox!
 
 mutable struct PHSurv{G <: Array{T} where {T <: PHModel}}  <: AbstractNPSurv  
   fitlist::G        # Survival response
-  eventtypes::Vector{Float64}
+  eventtypes::AbstractVector
   times::AbstractVector
   surv::Vector{Float64}
   risk::Matrix{Float64}
