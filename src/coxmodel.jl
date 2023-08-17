@@ -368,7 +368,7 @@ function Base.show(io::IO, m::M; level::Real=0.95) where {M <: AbstractPH}
   lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
   iob = IOBuffer();
   println(iob, coeftab);
-  str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
+  str = """\nMaximum partial likelihood estimates (alpha=$(1-level)):\n"""
   str *= String(take!(iob))
   str *= "Partial log-likelihood (null): $(@sprintf("%8g", llnull))\n"
   str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll))\n"
