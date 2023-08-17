@@ -619,7 +619,7 @@ fit for PHSurv objects
    ft1 = coxph(X, enter, t, d.*(event .== 1), ties="breslow");
    ft2 = coxph(X, enter, t, d.*(event .== 2), ties="breslow");
    fitlist = [ft1, ft2]
-   fit(PHSurv, [ft1, ft2])
+   res = fit(PHSurv, [ft1, ft2])
    
 """                     
     function fit(::Type{M},
@@ -634,6 +634,39 @@ fit for PHSurv objects
 
 
 
+    function Base.show(io::IO, m::M; maxrows=20) where {M <: PHSurv}
+      types = m.eventtypes
+      ev = ["# events (j=$jidx)" for (jidx, j) in enumerate(types)]
+      rr = ["risk (j=$jidx)" for (jidx, j) in enumerate(types)]
+  
+      resmat = hcat(m.times, m.surv, m.event, m.basehaz, m.risk)
+      head = ["time","survival","event type","cause-specific hazard", rr...]
+      rown = ["$i" for i in 1:size(resmat)[1]]
+  
+      op = CoefTable(resmat, head, rown)
+      iob = IOBuffer();
+      if nr < maxrows
+        println(iob, op);
+      else
+        len = round(Int,maxrows/2)
+        op1, op2 = deepcopy(op), deepcopy(op)
+        op1.rownms = op1.rownms[1:len]
+        op1.cols = [c[1:len] for c in op1.cols]
+        op2.rownms = op2.rownms[(end-len):end]
+        op2.cols = [c[(end-len):end] for c in op2.cols]
+        println(iob, op1)
+        println(iob, "...")
+        println(iob, op2)
+      end
+      str = """\nCox-model based survival, risk\n"""
+      str *= String(take!(iob))
+      for (jidx, j) in enumerate(types)
+        str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events .== m.eventtypes[jidx])))\n"
+      end
+      str *= "Number of unique event times: $(@sprintf("%8g", length(m.time)))\n"
+      println(str)
+    end
+    
 
 #= #################################################################################################################### 
 Examples

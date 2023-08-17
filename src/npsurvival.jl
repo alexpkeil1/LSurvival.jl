@@ -255,8 +255,8 @@ aalen_johansen(enter, exit, d, args...; kwargs...) = fit(AJSurv, enter, exit, d,
 
   function Base.show(io::IO, m::M; maxrows=20) where {M <: AJSurv}
     types = m.R.eventtypes[2:end]
-    ev = ["# events (j=$jidx)" in (jidx, j) in enumerate(types)]
-    rr = ["risk (j=$jidx)" in (jidx, j) in enumerate(types)]
+    ev = ["# events (j=$jidx)" for (jidx, j) in enumerate(types)]
+    rr = ["risk (j=$jidx)" for (jidx, j) in enumerate(types)]
 
     resmat = hcat(m.times, m.surv, m.events, m.riskset, m.risk)
     head = ["time","survival",ev...,"at risk", rr...]
