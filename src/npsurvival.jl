@@ -230,9 +230,9 @@ fit for AJSurv objects
       op1.cols = [c[1:len] for c in op1.cols]
       op2.rownms = op2.rownms[(end-len):end]
       op2.cols = [c[(end-len):end] for c in op2.cols]
-      println(iob, op1);
-      println(iob, "...");
-      println(iob, op2);
+      println(iob, op1)
+      println(iob, "...")
+      println(iob, op2)
     end
     str = """\nKaplan-Meier Survival\n"""
     str *= String(take!(iob))
@@ -244,8 +244,8 @@ fit for AJSurv objects
 
   function Base.show(io::IO, m::M; maxrows=20) where {M <: AJSurv}
     types = m.R.eventtypes[2:end]
-    ev = ["# events (j=$j)" for jidx in (jidx, j) in enumerate(types)]
-    rr = ["risk (j=$j)" for jidx in (jidx, j) in enumerate(types)]
+    ev = ["# events (j=$jidx)" in (jidx, j) in enumerate(types)]
+    rr = ["risk (j=$jidx)" in (jidx, j) in enumerate(types)]
 
     resmat = hcat(m.times, m.surv, m.events, m.riskset, m.risk)
     head = ["time","survival",ev...,"at risk", rr...]
