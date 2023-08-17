@@ -558,7 +558,7 @@ end
 function PHSurv(fitlist::Array{T}, eventtypes) where {T <: PHModel}
   bhlist = [ft.bh for ft in fitlist]
   bhlist = [hcat(bh, fill(eventtypes[i], size(bh,1))) for (i,bh) in enumerate(bhlist)]
-  basehaz = reduce(vcat, bhlist)
+  bh = reduce(vcat, bhlist)
   sp = sortperm(bh[:,4])
   bh = bh[sp,:]
   ntimes::Int64 = size(bh,1)
