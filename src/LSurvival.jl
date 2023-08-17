@@ -72,6 +72,7 @@ module LSurvival
     include("coxmodel.jl")
     include("npsurvival.jl")
     include("data_generators.jl")
+    include("deprecated.jl")
     
 
 end
