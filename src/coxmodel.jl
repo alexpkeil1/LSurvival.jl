@@ -557,8 +557,12 @@ end #function _stepcox!
    ft1 = coxph(X, enter, t, d.*(event .== 1), ties="breslow");
    ft2 = coxph(X, enter, t, d.*(event .== 2), ties="breslow");
    fitlist = [ft1, ft2]
+   ci_from_coxmodels(fitlist)
+
+   covarmat = sum(X, dims=1) ./ size(X,1)
+   coefs = [coef(ft1), coef(ft2)]
 """
-function ci_from_coxmodels(fitlist::Array{PHModel};eventtypes=[1,2], coeflist=nothing)
+function ci_from_coxmodels(fitlist::Array{PHModel};eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
 #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
   if length(eventtypes) != length(fitlist)
     eventtypes = collect(1:length(fitlist))
@@ -574,7 +578,7 @@ function ci_from_coxmodels(fitlist::Array{PHModel};eventtypes=[1,2], coeflist=no
   lsurv::Float64 = 1.0
   if !isnothing(coeflist)
     @inbounds for (j,d) in enumerate(eventtypes)
-      hr[j] = exp(dot(fitlist[1].P.X, coeflist[j]))
+      hr[j] = exp(dot(coefmat, coeflist[j]))
     end 
   end
   lci = zeros(length(eventtypes))
