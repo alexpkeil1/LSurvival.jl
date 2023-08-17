@@ -100,16 +100,12 @@ end
 
 """
 function _fit!(m::KMSurv; 
-                weights=nothing, 
                 eps = 0.00000001,
                 censval=0,
                 kwargs...)
    # there is some bad floating point issue with epsilon that should be tracked
    # R handles this gracefully
   # ties allowed
-  if !isnothing(weights)
-    m.R.wts = weights
-  end
   #_dt = zeros(length(orderedtimes))
   _1mdovern = ones(length(m.times))
   for (_i,tt) in enumerate(m.times)
@@ -126,27 +122,21 @@ end
 
 #function aj(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
 function _fit!(m::AJSurv;
-    dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
-    if !isnothing(weights)
-      m.R.wts = weights
-    end
-    #nvals = length(dvalues) 
+    dvalues=[1.0, 2.0], 
+    eps = 0.00000001)
     nvals = length(m.R.eventtypes) 
-    #KMSurv(R,times,surv,riskset, events)
-    #kmsobj = KMSurv(m.R, m.times, m.surv, m.riskset, m.events)
     kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, weights=m.R.wts)
   # overall survival via Kaplan-Meier
   orderedtimes, S, riskset = kmfit.times, kmfit.surv, kmfit.riskset
   Sm1 = vcat(1.0, S)
   #####
-  #ajest = zeros(length(orderedtimes), nvals)
   _d = zeros(length(out), nvals)
   for (jidx,j) in enumerate(dvalues)
     _d[:,jidx] = (d .== j)
   end
   for (_i,tt) in enumerate(orderedtimes)
     R = findall((out .>= tt) .& (in .< (tt-eps))) # risk set
-    weightsR = weights[R]
+    weightsR = m.R.wts[R]
     ni = sum(weightsR) # sum of weights/weighted individuals in risk set
     m.riskset[_i] = ni
     for (jidx,j) in enumerate(dvalues)
