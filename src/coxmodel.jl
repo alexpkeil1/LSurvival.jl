@@ -294,6 +294,28 @@ end
       return fit!(res; fitargs...)
   end
 
+"""
+    glm(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
+        ; <keyword arguments>)
+
+Fit a generalized Cox proportional hazards model to data. Alias for `fit(PHModel, ...)`.
+
+   using LSurvival
+   using Random
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+    enter = zeros(length(t));
+    X = hcat(x,rand(length(x)));
+    #R = LSurvResp(enter, t, Int64.(d), wt)
+    #P = PHParms(X, "efron")
+    #mod = PHModel(R,P, true)
+    #_fit!(mod)
+    m = fit(PHModel, X, enter, t, d, ties="efron")
+    m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+    coeftable(m)
+
+"""
+coxph(X, enter, exit, y, args...; kwargs...) = fit(PHModel, X, enter, exit, y, args...; kwargs...)
+
 
 function StatsBase.coef(m::M) where {M <: AbstractPH}
   m.P._B
@@ -364,6 +386,8 @@ end
 
 
 if false
+
+
   # in progress
     function fit(::Type{M},
                f::FormulaTerm,
@@ -814,6 +838,7 @@ function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=n
 end
 
 
+
 #= #################################################################################################################### 
 Examples
 =# ####################################################################################################################
@@ -949,7 +974,8 @@ if false
   end
 
   function jfun(int, outt, d, X, wt)
-    coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+    #coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+    fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", rtol=1e-9)
   end
 
   @rput int outt d X wt ;
@@ -970,6 +996,8 @@ if false
 
     beta, ll, g, h, basehaz = coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
     beta2, ll2, g2, h2, basehaz2 = coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
+    m = fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", rtol=1e-9);
+    m2 = fit(PHModel, X, int, outt, d, wts=wt, ties="efron", rtol=1e-9);
 
 
 
@@ -989,18 +1017,17 @@ if false
   cfit
   """
 
-
   @rget coxcoef;
   @rget coxcoef2;
   @rget coxll;
   @rget bh;
   @rget bh2;
-  hcat(diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())], basehaz[2:end,1])
-  hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())], basehaz2[2:end,1])
+  hcat(diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())], basehaz[2:end,1], m.bh[2:end,1])
+  hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())], basehaz2[2:end,1], m2.bh[2:end,1])
   hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())] ./  basehaz2[2:end,1], basehaz2[2:end,2:end])
 
 
-  hcat(bh2.hazard[1:1], basehaz2[1:1,:])
+  hcat(bh2.hazard[1:1], basehaz2[1:1,:], m2.bh[1:1,:])
   length(findall(outt .== 11 .&& d .== 1))
   =#
   
