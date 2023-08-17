@@ -11,7 +11,8 @@ module LSurvival
     using StatsBase
     import StatsBase: CoefTable, StatisticalModel, RegressionModel
     
-    import StatsBase: coef, coeftable, coefnames, confint, deviance, nulldeviance, dof, dof_residual,
+    import StatsBase: coef, coeftable, coefnames, confint, 
+                      #deviance, nulldeviance, dof, dof_residual,
                       loglikelihood, nullloglikelihood, nobs, stderror, vcov,
                       #residuals, predict, predict!,
                       fitted, fit, model_response, response, modelmatrix, PValue
@@ -37,8 +38,12 @@ module LSurvival
         ci_from_coxmodels    # interface for estimating cumulative risk from hazard specific Cox models
         #subdistribution_hazard_cuminc
     export 
-        fit
-
+        coef, coeftable, coefnames, confint, 
+        #deviance, nulldeviance, dof, dof_residual,
+        loglikelihood, nullloglikelihood, #nobs, 
+        stderror, vcov,
+        #residuals, predict, predict!,
+        fitted, fit #model_response, response, modelmatrix, PValue
 
 
     ####### Abstract types #######

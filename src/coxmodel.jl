@@ -282,7 +282,7 @@ end
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    m = fit(PHModel, X, enter, t, d, wts=wt)
+    m = fit(PHModel, X, enter, t, d)
 
   """                     
   function fit(::Type{M},
@@ -308,6 +308,55 @@ end
       
       return fit!(res; fitargs...)
   end
+
+
+function StatsBase.coef(m <: AbstractPH)
+  m.P._B
+end
+
+function StatsBase.vcov(m <: AbstractPH)
+  -inv(m.P._hess)
+end
+
+function StatsBase.stderror(m <: AbstractPH)
+  sqrt.(diag(vcov(m)))
+end
+
+
+function StatsBase.loglikelihood(m <: AbstractPH)
+  m.P._LL[end]
+end
+
+function StatsBase.nullloglikelihood(m <: AbstractPH)
+  m.P._LL[1]
+end
+
+function StatsBase.confint(m <: AbstractPH)
+  beta = coef(m)
+  std_err = stderror(m)
+  z = beta./std_err
+  zcrit = quantile.(Distributions.Normal(), [(1-level)/2, 1-(1-level)/2])
+  lci = beta .+ zcrit[1]*std_err
+  uci = beta .+ zcrit[2]*std_err
+  hcat(lci,uci)
+end
+
+
+function StatsBase.coeftable(m <: AbstractPH; level::Real=0.95)
+  beta = coef(m)
+  std_err = stderror(m)
+  z = beta./std_err
+  zcrit = quantile.(Distributions.Normal(), [(1-level)/2, 1-(1-level)/2])
+  lci = beta .+ zcrit[1]*std_err
+  uci = beta .+ zcrit[2]*std_err
+  pval = calcp.(z)
+  op = hcat(beta, std_err, lci, uci, z, pval)
+  head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
+  rown = ["b$i" for i in 1:size(op)[1]]
+  StatsBase.CoefTable(op, head, rown, 6,5 )
+
+end
+
 
 
 
