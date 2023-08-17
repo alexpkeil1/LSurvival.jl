@@ -573,7 +573,7 @@ function PHSurv(fitlist::Array{T}) where {T <: PHModel}
   PHSurv(fitlist, eventtypes)
 end
 
-function _fit!(m::M;, coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
+function _fit!(m::M; coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
   #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
     hr = zeros(Float64,length(m.eventtypes))
     ch::Float64 = 0.0
