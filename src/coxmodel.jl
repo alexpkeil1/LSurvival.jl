@@ -259,8 +259,8 @@ end
    using Random
    import LSurvival._stepcox!
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
-    enter = zeros(length(t))
-    X = hcat(x,z)
+    enter = zeros(length(t));
+    X = hcat(x,z);
     #R = LSurvResp(enter, t, Int64.(d), wt)
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)

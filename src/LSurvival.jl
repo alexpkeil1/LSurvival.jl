@@ -14,7 +14,7 @@ module LSurvival
     import StatsBase: coef, coeftable, coefnames, confint, deviance, nulldeviance, dof, dof_residual,
                       loglikelihood, nullloglikelihood, nobs, stderror, vcov,
                       #residuals, predict, predict!,
-                      fitted, fit, model_response, response, modelmatrix, PValue, fit!
+                      fitted, fit, model_response, response, modelmatrix, PValue
     
     import Base.show
     
@@ -22,9 +22,13 @@ module LSurvival
     export 
         # types
         # Model types
-        #PHModel
+        PHModel, 
+        PHParms,
+        LSurvResp,
+        AbstractPH
         # Outcome types
         
+    export 
         # functions    
         kaplan_meier,        # interface for estimating cumulative risk from non-parametric estimator
         aalen_johansen,      # interface for estimating cumulative risk from non-parametric competing risk estimator
@@ -32,6 +36,8 @@ module LSurvival
         cox_summary,         # convenience function to summarize Cox model results
         ci_from_coxmodels    # interface for estimating cumulative risk from hazard specific Cox models
         #subdistribution_hazard_cuminc
+    export 
+        fit
 
 
 
