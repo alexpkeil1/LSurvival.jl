@@ -90,22 +90,15 @@ structs
 #    function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
   end
   
- function PHParms(X::D, type::T, _B::B, _r::R, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
+ function PHParms(X::D, _B::B, _r::R, _LL::L, _grad::B, _hess::H) where {D <: AbstractMatrix, T <: String, B <: AbstractVector, R <: AbstractVector, L <: AbstractVector, H <: AbstractMatrix}
     n = length(_r)
     p = length(_B)   
-    types = ["efron", "breslow"]
-    
-    validtypes = findall(types .== type)
-    
-    if length(validtypes) !== 1
-         throw("Type does not exist")
-    end
-   return PHParms(X, type, _B, _r, _LL, _grad, _hess, n, p)
+   return PHParms(X, _B, _r, _LL, _grad, _hess, n, p)
   end
 
-function PHParms(X::D, type::T) where {D <: AbstractMatrix, T <: String}
+function PHParms(X::D) where {D <: AbstractMatrix}
   n,p = size(X)
-  PHParms(X, type, fill(0.0, p), fill(0.0, n), zeros(Float64, 1), fill(0.0, p), fill(0.0, p, p))
+  PHParms(X, fill(0.0, p), fill(0.0, n), zeros(Float64, 1), fill(0.0, p), fill(0.0, p, p))
 end
  
   # PH model
@@ -117,14 +110,18 @@ abstract type AbstractPH <: RegressionModel end   # model based on a linear pred
 mutable struct PHModel{G <: LSurvResp,L <: AbstractLSurvParms} <: AbstractPH  
      R::G        # Survival response
      P::L        # parameters
+     ties::String
      fit::Bool
      bh::AbstractMatrix
 end
 
-function PHModel(R::G, P::L, fit::Bool, maxiter::Int) where {G <: LSurvResp,L <: AbstractLSurvParms}
-        return PHModel(R, P, fit, zeros(Float64, length(R.eventtimes), 4))
+function PHModel(R::G, P::L, ties::String, fit::Bool) where {G <: LSurvResp,L <: AbstractLSurvParms}
+    return PHModel(R, P, ties, fit, zeros(Float64, length(R.eventtimes), 4))
 end
 
+function PHModel(R::G, P::L, ties::String) where {G <: LSurvResp,L <: AbstractLSurvParms}
+    return PHModel(R, P, ties, false)
+end
 
 """
    using LSurvival
@@ -134,13 +131,13 @@ end
     enter = zeros(length(t));
     X = hcat(x,z);
     R = LSurvResp(enter, t, Int64.(d), wt)
-    P = PHParms(X, "efron")
-    mf = PHModel(R,P, true)
+    P = PHParms(X)
+    mf = PHModel(R,P)
     _fit!(mf)
     
 """  
-function PHModel(R::G, P::L, fit::Bool) where {G <: LSurvResp,L <: AbstractLSurvParms}
-        return PHModel(R, P, fit, 500)
+function PHModel(R::G, P::L) where {G <: LSurvResp,L <: AbstractLSurvParms}
+    return PHModel(R, P, "efron")
 end
 
 
@@ -154,7 +151,10 @@ function _fit!(m::PHModel;
                kwargs...
 )
     m.P._B = start
-    method = m.P.type
+    if haskey(kwargs, :ties)
+        m.ties = kwargs[:ties]
+    end
+    method = m.ties
    #
    lowermethod3 = lowercase(method[1:3])
    # tuning params
@@ -174,21 +174,6 @@ function _fit!(m::PHModel;
       m.R.enter, m.R.exit, m.R.y, m.P.X, m.R.wts,
       m.P._B, m.P.p, m.P.n, m.R.eventtimes, m.P._r, 
       risksetidxs, caseidxs)
-    # _stepcox!(
-    #      lowermethod3,
-    #      # recycled parameters
-    #      _LL::Vector, _grad::Vector, _hess::Matrix{Float64},
-    #      # data
-    #      _in::Vector, _out::Vector, d::Union{Vector, BitVector}, X, _wt::Vector,
-    #      # fixed parameters
-    #      _B::Vector, 
-    #      # indexes
-    #      p, n, eventtimes,
-    #      # containers
-    #      _r::Vector,
-    #      # big indexes
-    #      risksetidxs, caseidxs
-    #              )
   _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
   # repeat newton raphson steps until convergence or max iterations
   while totiter<maxiter
@@ -275,7 +260,7 @@ end
   """
    using LSurvival
    using Random
-    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
     enter = zeros(length(t));
     X = hcat(x,rand(length(x)));
     #R = LSurvResp(enter, t, Int64.(d), wt)
@@ -291,7 +276,6 @@ end
       exit::AbstractVector{<:Real},
       y::AbstractVector{<:Real}
       ;
-      method::String = "efron",
       wts::AbstractVector{<:Real}      = similar(y, 0),
       offset::AbstractVector{<:Real}   = similar(y, 0),
       fitargs...) where {M<:AbstractPH}
@@ -302,7 +286,7 @@ end
       end
       
       R = LSurvResp(enter, exit, y, wts)
-      P = PHParms(X, method)
+      P = PHParms(X)
  
       res = M(R,P, false)
       
@@ -872,6 +856,9 @@ if false
     
     bb, l, gg,hh,_ = coxmodel(coxargs...;weights=cgd.weight, method="efron", tol=1e-9, inits=coxcoef, maxiter=0);
     bb2, l2, gg2,hh2,_ = coxmodel(coxargs...,weights=cgd.weight, method="breslow", tol=1e-9, inits=coxcoef2, maxiter=0);
+    
+    m = fit(PHModel, Matrix(cgd[:,[:height,:propylac]]), cgd.tstart, cgd.tstop, cgd.status, wts=cgd.weight)
+    m2 = fit(PHModel, Matrix(cgd[:,[:height,:propylac]]), cgd.tstart, cgd.tstop, cgd.status, wts=cgd.weight)
     # efron likelihoods, weighted + unweighted look promising (float error?)
     [l[end], coxll[end]] 
     # breslow likelihoods, weighted + unweighted look promising (float error?)
