@@ -126,10 +126,10 @@ end
 """
    using LSurvival
    using Random
-   import LSurvival._stepcox!
+   #import LSurvival._stepcox!
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
-    enter = zeros(length(t))
-    X = hcat(x,z)
+    enter = zeros(length(t));
+    X = hcat(x,z);
     R = LSurvResp(enter, t, Int64.(d), wt)
     P = PHParms(X, "efron")
     mod = PHModel(R,P, true)
@@ -257,7 +257,6 @@ end
   """
    using LSurvival
    using Random
-   import LSurvival._stepcox!
     z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
     enter = zeros(length(t));
     X = hcat(x,z);
@@ -265,7 +264,7 @@ end
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    fit(PhModel, X, enter, t, d)
+    fit(PHModel, X, enter, t, d)
 
   """                     
   function fit(::Type{M},
@@ -284,7 +283,7 @@ end
           throw(DimensionMismatch("number of rows in X and y must match"))
       end
       
-      R = LSurvResp(enter, t, Int64.(d), wts)
+      R = LSurvResp(enter, exit, Int64.(d), wts)
       P = PHParms(X, method)
  
       res = M(R,P, false)
