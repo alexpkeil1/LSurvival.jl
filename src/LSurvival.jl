@@ -25,7 +25,8 @@ module LSurvival
         # Model types
         PHModel,
         KMSurv, 
-        AJSurv, 
+        AJSurv,
+        PHSurv, 
         PHParms,
         LSurvResp,
         LSurvCompResp,

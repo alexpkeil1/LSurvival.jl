@@ -545,6 +545,87 @@ end #function _stepcox!
 
 
 
+mutable struct PHSurv{G <: Array{T} where {T <: PHModel}}  <: AbstractNPSurv  
+  fitlist::G        # Survival response
+  eventtypes::Vector{Float64}
+  times::AbstractVector
+  surv::Vector{Float64}
+  risk::Matrix{Float64}
+  basehaz::Vector{Float64}
+  event::Vector{Float64}
+end
+
+function PHSurv(fitlist::Array{T}, eventtypes) where {T <: PHModel}
+  bhlist = [ft.bh for ft in fitlist]
+  bhlist = [hcat(bh, fill(eventtypes[i], size(bh,1))) for (i,bh) in enumerate(bhlist)]
+  basehaz = reduce(vcat, bhlist)
+  sp = sortperm(bh[:,4])
+  bh = bh[sp,:]
+  ntimes::Int64 = size(bh,1)
+  risk, surv = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes)
+  times = bh[:,4]
+  event = bh[:,5]
+  PHSurv(fitlist, eventtypes, times, surv, risk, bh[:,1], event)
+end
+
+function PHSurv(fitlist::Array{T}) where {T <: PHModel}
+  eventtypes = collect(1:length(fitlist))
+  PHSurv(fitlist, eventtypes)
+end
+
+function _fit!(m::M;, coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
+  #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
+    hr = zeros(Float64,length(m.eventtypes))
+    ch::Float64 = 0.0
+    lsurv::Float64 = 1.0
+    if !isnothing(coeflist)
+      @inbounds for (j,d) in enumerate(m.eventtypes)
+        hr[j] = exp(dot(coefmat, coeflist[j]))
+      end 
+    end
+    lci = zeros(length(m.eventtypes))
+    @inbounds for i in 1:m.ntimes
+      @inbounds for (j,d) in enumerate(m.eventtypes)
+        if event[i] == d
+          basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
+          m.risk[i,j] =  lci[j] + bh[i,1] * lsurv 
+        else 
+          m.risk[i,j] =  lci[j]
+        end
+      end
+      ch += basehaz[i]
+      m.surv[i] = exp(-ch)
+      lsurv = m.surv[i]
+      lci = m.risk[i,:]
+    end
+    m #ci, surv, bh[:,5], bh[:,4]
+  end
+
+
+  """
+    fit(::Type{M},
+        fitlist::AbstractVector{<:T},
+        ;
+        fitargs...) where {M<:PHSurv, T <: PHModel}
+
+fit for PHSurv objects
+
+   using LSurvival
+   using Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   enter = zeros(length(t));
+  
+"""                     
+    function fit(::Type{M},
+        fitlist::AbstractVector{<:T},
+        ;
+        fitargs...) where {M<:PHSurv, T <: PHModel}
+        
+        res = M(fitlist)
+        
+        return fit!(res; fitargs...)
+    end
+
 """
   Estimating cumulative incidence from two or more cause-specific Cox models
   

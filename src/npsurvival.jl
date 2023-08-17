@@ -187,7 +187,7 @@ fit for KMSurv objects
       return fit!(res; fitargs...)
   end
 
-  """
+"""
 fit for AJSurv objects
 
    using LSurvival
