@@ -152,6 +152,8 @@ function _fit!(m::PHModel;
     m.P._B = start
     if haskey(kwargs, :ties)
        method = kwargs[:ties]
+    else
+      method = m.ties
     end
    #
    lowermethod3 = lowercase(method[1:3])
@@ -265,7 +267,7 @@ end
     #P = PHParms(X, "efron")
     #mod = PHModel(R,P, true)
     #_fit!(mod)
-    m = fit(PHModel, X, enter, t, d, ties="efron")
+    m = fit(PHModel, X, enter, t, d)
     coeftable(m)
   """                     
   function fit(::Type{M},
