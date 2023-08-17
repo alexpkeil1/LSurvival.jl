@@ -8,12 +8,14 @@ module LSurvival
     using Printf
     @reexport using StatsModels
     #
+    using StatsBase
     import StatsBase: CoefTable, StatisticalModel, RegressionModel
     
     import StatsBase: coef, coeftable, coefnames, confint, deviance, nulldeviance, dof, dof_residual,
                       loglikelihood, nullloglikelihood, nobs, stderror, vcov,
                       #residuals, predict, predict!,
                       fitted, fit, model_response, response, modelmatrix, PValue, fit!
+    
     import Base.show
     
     ####### exports #######
