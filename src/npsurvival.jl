@@ -149,7 +149,7 @@ function _fit!(m::AJSurv;
     end
   end
   for jidx in 1:nvals
-    m.risk[:,jidx] = 1.0 .- cumsum(m.risk[:,jidx])
+    m.risk[:,jidx] = cumsum(m.risk[:,jidx])
   end
   m
   #orderedtimes, S, ajest, riskset
