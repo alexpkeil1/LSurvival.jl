@@ -1,3 +1,13 @@
+if false
+# to implement
+# - "fit" arguments in model objects that flip to 1 after fitting
+# - Greenwoods formula estimator for km 
+# - show methods
+
+
+end
+
+
 
   struct LSurvCompResp{E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector, T<:Real, V<:AbstractVector, M<:AbstractMatrix} <: AbstractLSurvResp 
     enter::E
@@ -92,6 +102,34 @@ function _fit!(m::KMSurv;
   m.surv = exp.(cumsum(_1mdovern))
   m
 end
+
+function StatsBase.fit!(m::AbstractNPSurv;
+  kwargs...)
+  _fit!(m, verbose=verbose, maxiter=maxiter, minstepfac=minstepfac, atol=atol, rtol=rtol, start=start; kwargs...)
+end
+
+"""
+   using LSurvival
+   using Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   enter = zeros(length(t));
+   X = hcat(x,rand(length(x)));
+   m = fit(KMSurv, X, enter, t, d)
+  """                     
+  function fit(::Type{M},
+      enter::AbstractVector{<:Real},
+      exit::AbstractVector{<:Real},
+      y::AbstractVector{<:Real}
+      ;
+      wts::AbstractVector{<:Real}      = similar(y, 0),
+      offset::AbstractVector{<:Real}   = similar(y, 0),
+      fitargs...) where {M<:AbstractPH}
+      
+      R = LSurvResp(enter, exit, y, wts) 
+      res = M(R)
+      
+      return fit!(res; fitargs...)
+  end
 
 
 
