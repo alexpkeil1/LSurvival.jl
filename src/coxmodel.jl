@@ -575,7 +575,7 @@ end
 
 function _fit!(m::M; coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
   #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
-    hr = zeros(Float64,length(m.eventtypes))
+    hr = ones(Float64,length(m.eventtypes))
     ch::Float64 = 0.0
     lsurv::Float64 = 1.0
     if !isnothing(coeflist)
@@ -588,7 +588,7 @@ function _fit!(m::M; coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
       @inbounds for (j,d) in enumerate(m.eventtypes)
         if event[i] == d
           basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
-          m.risk[i,j] =  lci[j] + bh[i,1] * lsurv 
+          m.risk[i,j] =  lci[j] + basehaz[i] * lsurv 
         else 
           m.risk[i,j] =  lci[j]
         end
@@ -610,11 +610,17 @@ function _fit!(m::M; coeflist=nothing, covarmat=nothing) where {M <: PHSurv}
 
 fit for PHSurv objects
 
-   using LSurvival
-   using Random
+  using LSurvival
+  using Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
-  
+   X = hcat(x,rand(length(x)));
+   #m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+   ft1 = coxph(X, enter, t, d.*(event .== 1), ties="breslow");
+   ft2 = coxph(X, enter, t, d.*(event .== 2), ties="breslow");
+   fitlist = [ft1, ft2]
+   fit(PHSurv, [ft1, ft2])
+   
 """                     
     function fit(::Type{M},
         fitlist::AbstractVector{<:T},
@@ -626,61 +632,6 @@ fit for PHSurv objects
         return fit!(res; fitargs...)
     end
 
-"""
-  Estimating cumulative incidence from two or more cause-specific Cox models
-  
-  using LSurvival
-  using Random
-   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
-   enter = zeros(length(t));
-   X = hcat(x,rand(length(x)));
-   #m2 = fit(PHModel, X, enter, t, d, ties="breslow")
-   ft1 = coxph(X, enter, t, d.*(event .== 1), ties="breslow");
-   ft2 = coxph(X, enter, t, d.*(event .== 2), ties="breslow");
-   fitlist = [ft1, ft2]
-   ci_from_coxmodels(fitlist)
-
-   typeof(fitlist)
-
-   covarmat = sum(X, dims=1) ./ size(X,1)
-   coefs = [coef(ft1), coef(ft2)]
-"""
-function ci_from_coxmodels(fitlist::Array{T};eventtypes=[1,2], coeflist=nothing, covarmat=nothing) where {T <: PHModel}
-#function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
-  if length(eventtypes) != length(fitlist)
-    eventtypes = collect(1:length(fitlist))
-  end
-  bhlist = [ft.bh for ft in fitlist]
-  bhlist = [hcat(bh, fill(eventtypes[i], size(bh,1))) for (i,bh) in enumerate(bhlist)]
-  bh = reduce(vcat, bhlist)
-  sp = sortperm(bh[:,4])
-  bh = bh[sp,:]
-  ntimes::Int64 = size(bh,1)
-  ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes), zeros(Float64,length(eventtypes))
-  ch::Float64 = 0.0
-  lsurv::Float64 = 1.0
-  if !isnothing(coeflist)
-    @inbounds for (j,d) in enumerate(eventtypes)
-      hr[j] = exp(dot(coefmat, coeflist[j]))
-    end 
-  end
-  lci = zeros(length(eventtypes))
-  @inbounds for i in 1:ntimes
-    @inbounds for (j,d) in enumerate(eventtypes)
-      if bh[i,5] == d
-        bh[i,1] *= hr[j]
-        ci[i,j] =  lci[j] + bh[i,1] * lsurv 
-      else 
-        ci[i,j] =  lci[j]
-      end
-    end
-    ch += bh[i,1]
-    surv[i] = exp(-ch)
-    lsurv = surv[i]
-    lci = ci[i,:]
-  end
-  ci, surv, bh[:,5], bh[:,4]
-end
 
 
 

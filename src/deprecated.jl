@@ -154,13 +154,13 @@ function cox_summary(args; alpha=0.05, verbose=true)
     op
   end
 
-  
+
   """
   Estimating cumulative incidence from two or more cause-specific Cox models
   
-  z,x,outt,d,event,weights = LSurvival.dgm_comprisk(100)
+  z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)
   X = hcat(z,x)
-  int = zeros(100)
+  int = zeros(120)
   d1  = d .* Int.(event.== 1)
   d2  = d .* Int.(event.== 2)
   sum(d)/length(d)
@@ -172,6 +172,7 @@ function cox_summary(args; alpha=0.05, verbose=true)
   coeflist = [lnhr1, lnhr2]
   covarmat = sum(X, dims=1) ./ size(X,1)
   ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)
+  ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2])
   """
 function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
   bhlist = [hcat(bh, fill(eventtypes[i], size(bh,1))) for (i,bh) in enumerate(bhlist)]
@@ -179,7 +180,7 @@ function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=n
   sp = sortperm(bh[:,4])
   bh = bh[sp,:]
   ntimes::Int64 = size(bh,1)
-  ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes), zeros(Float64,length(eventtypes))
+  ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes), ones(Float64,length(eventtypes))
   ch::Float64 = 0.0
   lsurv::Float64 = 1.0
   if !isnothing(coeflist)
