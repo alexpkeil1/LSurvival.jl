@@ -83,7 +83,7 @@ surv = ones(Float64, nt)
 risk = zeros(Float64, nt)
 riskset = zeros(Float64, length(R.eventtypes)-1)
 events = zeros(Float64, nt, length(R.eventtypes)-1)
-AJSurv(R,times,surv,risk,riskset, events)
+AJSurv(R,times,surv,risk,riskset,events)
 end
 
 

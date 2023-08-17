@@ -28,6 +28,7 @@ module LSurvival
         AJSurv, 
         PHParms,
         LSurvResp,
+        LSurvCompResp,
         AbstractPH,
         AbstractNPSurv
         # Outcome types
