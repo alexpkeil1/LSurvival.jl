@@ -283,7 +283,7 @@ end
     #mod = PHModel(R,P, true)
     #_fit!(mod)
     m = fit(PHModel, X, enter, t, d)
-
+    coeftable(m)
   """                     
   function fit(::Type{M},
       X::AbstractMatrix,#{<:FP},
@@ -354,10 +354,28 @@ function StatsBase.coeftable(m::M; level::Real=0.95) where {M <: AbstractPH}
   head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
   rown = ["b$i" for i in 1:size(op)[1]]
   StatsBase.CoefTable(op, head, rown, 6,5 )
-
 end
 
 
+function Base.show(io::IO, m::M; level::Real=0.95) where {M <: AbstractPH}
+  ll = loglikelihood(m)
+  llnull = nullloglikelihood(m)
+  chi2 = ll - llnull
+  df = length(beta)
+  lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
+  head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
+  rown = ["b$i" for i in 1:size(op)[1]]
+  coeftab = coeftable(m, level=level)
+  iob = IOBuffer();
+  println(iob, coeftab);
+  str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
+  str *= String(take!(iob))
+  str *= "Partial log-likelihood (null): $(@sprintf("%8g", llnull))\n"
+  str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll))\n"
+  str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%5g", lrtp))\n"
+  str *= "Newton-Raphson iterations: $(length(m.P._LL)-1)"
+  println(str)
+end
 
 
 if false
