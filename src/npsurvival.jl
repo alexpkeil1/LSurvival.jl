@@ -58,14 +58,13 @@ end
 """
    using LSurvival
    using Random
-   #import LSurvival._stepcox!
-    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
-    enter = zeros(length(t));
-    X = hcat(x,z);
-    R = LSurvResp(enter, t, Int64.(d), wt)
-    P = PHParms(X)
-    mf = PHModel(R,P)
-    _fit!(mf)
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100);
+   enter = zeros(length(t));
+   X = hcat(x,z);
+   R = LSurvResp(enter, t, Int64.(d), wt)
+   P = PHParms(X)
+   mf = PHModel(R,P)
+   _fit!(mf)
 
 """
 function _fit!(m::KMSurv; 

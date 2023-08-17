@@ -65,6 +65,7 @@ module LSurvival
 
     ####### function definitions #######
     
+    include("shared_structs.jl")
     include("coxmodel.jl")
     include("npsurvival.jl")
     include("data_generators.jl")
