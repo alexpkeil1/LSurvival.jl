@@ -122,10 +122,12 @@ end
 
 #function aj(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
 function _fit!(m::AJSurv;
-    dvalues=[1.0, 2.0], 
-    eps = 0.00000001)
-    nvals = length(m.R.eventtypes) 
-    kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, weights=m.R.wts)
+    #dvalues=[1.0, 2.0], 
+    eps = 0.00000001
+    )
+  dvalues = m.R.eventtypes[2:end]
+  nvals = length(m.R.eventtypes) 
+  kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, weights=m.R.wts)
   # overall survival via Kaplan-Meier
   orderedtimes, S, riskset = kmfit.times, kmfit.surv, kmfit.riskset
   Sm1 = vcat(1.0, S)
@@ -135,12 +137,12 @@ function _fit!(m::AJSurv;
     _d[:,jidx] = (d .== j)
   end
   for (_i,tt) in enumerate(orderedtimes)
-    R = findall((out .>= tt) .& (in .< (tt-eps))) # risk set
+    R = findall((m.R.exit .>= tt) .& (m.R.enter .< (tt-eps))) # risk set
     weightsR = m.R.wts[R]
     ni = sum(weightsR) # sum of weights/weighted individuals in risk set
     m.riskset[_i] = ni
     for (jidx,j) in enumerate(dvalues)
-      dij = sum(weightsR .* _d[R,jidx] .* (out[R] .== tt))
+      dij = sum(weightsR .* _d[R,jidx] .* (m.R.exit[R] .== tt))
       m.events[_i, jidx] = dij
       m.risk[_i, jidx] = Sm1[_i] * dij/ni
     end
