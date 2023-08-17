@@ -43,9 +43,11 @@
 mutable struct KMSurv{G <: LSurvResp} <: AbstractNPSurv  
      R::G        # Survival response
      times::AbstractVector
-     surv::Vector{Float64,1}
-     riskset::Vector{Int64,1}
-end
+     #surv::Vector{Float64,1}
+     #riskset::Vector{Int64,1}
+     surv::AbstractVector
+     riskset::AbstractVector
+    end
 
 function KMSurv(R::G) where {G <: LSurvResp}
   times = R.eventtimes
