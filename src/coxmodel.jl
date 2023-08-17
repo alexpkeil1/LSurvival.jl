@@ -559,10 +559,12 @@ end #function _stepcox!
    fitlist = [ft1, ft2]
    ci_from_coxmodels(fitlist)
 
+   typeof(fitlist)
+
    covarmat = sum(X, dims=1) ./ size(X,1)
    coefs = [coef(ft1), coef(ft2)]
 """
-function ci_from_coxmodels(fitlist::Array{PHModel};eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
+function ci_from_coxmodels(fitlist::Array{T};eventtypes=[1,2], coeflist=nothing, covarmat=nothing) where {T <: PHModel}
 #function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
   if length(eventtypes) != length(fitlist)
     eventtypes = collect(1:length(fitlist))
