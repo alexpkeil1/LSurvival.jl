@@ -1,13 +1,21 @@
-module LSurvival
+if false
+    # to implement
+    # - "fit" arguments in model objects that flip to 1 after fitting
+    # - Greenwoods formula estimator for km 
+    # - show methods
+    
+    
+end
+    
+    module LSurvival
     ####### imports #######
 
     using Reexport
-    using Distributions
-    using LinearAlgebra
-    using Random
     using Printf
+    using Random, Distributions, LinearAlgebra
     @reexport using StatsModels
     #
+    import DataFrames: DataFrame
     using StatsBase
     import StatsBase: CoefTable, StatisticalModel, RegressionModel
     
@@ -23,10 +31,15 @@ module LSurvival
     export 
         # types
         # Model types
-        PHModel, 
+        PHModel,
+        KMSurv, 
+        AJSurv,
+        PHSurv, 
         PHParms,
         LSurvResp,
-        AbstractPH
+        LSurvCompResp,
+        AbstractPH,
+        AbstractNPSurv
         # Outcome types
         
     export 
@@ -44,19 +57,32 @@ module LSurvival
         stderror, vcov,
         #residuals, predict, predict!,
         fitted, fit, #model_response, response, modelmatrix, PValue
-        coxph
+        coxph, 
+        risk_from_coxphmodels
 
 
     ####### Abstract types #######
     #abstract type LinPred end                         # linear predictor in statistical models
     #abstract type DensePred <: LinPred end            # linear predictor with dense X
+    abstract type AbstractNPSurv end
     
     
+"""
+        AbstractLsurvResp
+
+  Abstract type representing a model response vector
+"""
+  abstract type AbstractLSurvResp end                         
+  abstract type AbstractLSurvParms end                         
+  abstract type AbstractPH <: RegressionModel end   # model based on a linear predictor
+
     ####### function definitions #######
     
+    include("shared_structs.jl")
     include("coxmodel.jl")
     include("npsurvival.jl")
     include("data_generators.jl")
+    include("deprecated.jl")
     
 
 end
