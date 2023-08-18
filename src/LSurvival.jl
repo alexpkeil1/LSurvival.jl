@@ -1,13 +1,21 @@
-module LSurvival
+if false
+    # to implement
+    # - "fit" arguments in model objects that flip to 1 after fitting
+    # - Greenwoods formula estimator for km 
+    # - show methods
+    
+    
+end
+    
+    module LSurvival
     ####### imports #######
 
     using Reexport
-    using Distributions
-    using LinearAlgebra
-    using Random
     using Printf
+    using Random, Distributions, LinearAlgebra
     @reexport using StatsModels
     #
+    import DataFrames: DataFrame
     using StatsBase
     import StatsBase: CoefTable, StatisticalModel, RegressionModel
     

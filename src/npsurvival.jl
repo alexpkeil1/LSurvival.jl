@@ -1,11 +1,3 @@
-if false
-# to implement
-# - "fit" arguments in model objects that flip to 1 after fitting
-# - Greenwoods formula estimator for km 
-# - show methods
-
-
-end
 
 
 

@@ -82,5 +82,17 @@ using Random
     cires2[1]
     bcires2[1]
    
+   using Random
+    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+    enter = zeros(length(t));
+    X = hcat(x,rand(length(x)));
+    #R = LSurvResp(enter, t, Int64.(d), wt)
+    #P = PHParms(X, "efron")
+    #mod = PHModel(R,P, true)
+    #_fit!(mod)
+    m = fit(PHModel, X, enter, t, d, ties="efron")
+    m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+    coeftable(m)
+
 
 end
