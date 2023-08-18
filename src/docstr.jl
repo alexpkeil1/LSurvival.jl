@@ -1,0 +1,387 @@
+####### module structs
+DOC_ABSTRACTLSURVRESP = """
+        AbstractLsurvResp
+
+  Abstract type representing a model response vector
+"""
+
+DOC_ABSTRACTLSURVPARMS = """
+AbstractLsurvParms
+
+Abstract type representing a model predictors and coefficient parameters
+"""
+
+DOC_ABSTRACTPH = """
+Abstract type for proportional hazards models
+"""
+
+DOC_ABSTRACTNPSURV = """
+Abstract type for non-parametric survival models, including Kaplan-Meier, Aalen Johansen, and Cox-model based estimates of survival using an Aalen-Johansen-like estimator
+"""
+
+DOC_LSURVRESP = """
+
+struct LSurvResp{
+  E<:AbstractVector,
+  X<:AbstractVector,
+  Y<:AbstractVector,
+  W<:AbstractVector,
+  I<:AbstractVector,
+  T<:Real,
+} <: AbstractLSurvResp
+  enter::E
+  "`exit`: Time at observation end"
+  exit::X
+  "`y`: event occurrence in observation"
+  y::Y
+  "`wts`: observation weights"
+  wts::W
+  "`eventtimes`: unique event times"
+  eventtimes::E
+  "`id`: identifies individuals"
+  id::I,
+  "`origin`: origin on the time scale"
+  origin::T
+end
+
+"""
+
+
+DOC_PHMODEL = """
+PHModel: Mutable object type for proportional hazards regression
+```
+mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
+  R::G        # Survival response
+  P::L        # parameters
+  ties::String # "efron" or "breslow"
+  fit::Bool
+  bh::AbstractMatrix
+end
+
+PHModel(
+    R::G,
+    P::L,
+    ties::String,
+    fit::Bool,
+) where {G<:LSurvResp,L<:AbstractLSurvParms}
+PHModel(R::G, P::L, ties::String) where {G<:LSurvResp,L<:AbstractLSurvParms}
+PHModel(R::G, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
+```
+  Methods: fit, coef, confint, std_err, show
+
+```
+using LSurvival
+using Random
+import LSurvival: _stepcox!, dgm_comprisk
+
+ z,x,t,d, event,wt = dgm_comprisk(MersenneTwister(1212), 100);
+ enter = zeros(length(t));
+ X = hcat(x,z);
+ R = LSurvResp(enter, t, Int64.(d), wt)
+ P = PHParms(X)
+ mf = PHModel(R,P)
+ _fit!(mf)
+```
+"""
+
+DOC_PHSURV = """
+Mutable type for proportional hazards models
+
+PHSsurv: Object type for proportional hazards regression
+
+Methods: fit, show
+```
+
+mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
+  fitlist::G        # Survival response
+  eventtypes::AbstractVector
+  times::AbstractVector
+  surv::Vector{Float64}
+  risk::Matrix{Float64}
+  basehaz::Vector{Float64}
+  event::Vector{Float64}
+end
+
+PHSurv(fitlist::Array{T}, eventtypes) where {T<:PHModel}
+PHSurv(fitlist::Array{T}) where {T<:PHModel}
+```
+
+"""
+
+####### Primary methods
+
+DOC_COXPH = """
+coxph(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::AbstractVector; <keyword arguments>)
+
+Fit a generalized Cox proportional hazards model to data. Alias for `fit(PHModel, ...)`.
+```
+using LSurvival
+using Random
+z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+enter = zeros(length(t));
+X = hcat(x,rand(length(x)));
+m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+LSurvival.coxph(X, enter, t, d, ties="breslow")
+coeftable(m)
+```
+
+"""
+
+
+DOC_RISK_FROM_COXPHMODELS = """
+Competing risk models:
+
+Calculate survival curve and cumulative incidence (risk) function, get a set of Cox models (PHModel objects) that are exhaustive for the outcome types
+```
+fit(::Type{M},
+fitlist::AbstractVector{<:T},
+;
+fitargs...) where {M<:PHSurv, T <: PHModel}
+```
+OR 
+```
+risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
+```
+
+
+fit for PHSurv objects
+  ```
+using LSurvival
+using Random
+z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+enter = zeros(length(t));
+X = hcat(x,rand(length(x)));
+#m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+ft1 = coxph(X, enter, t, d.*(event .== 1), ties="breslow");
+ft2 = coxph(X, enter, t, d.*(event .== 2), ties="breslow");
+fitlist = [ft1, ft2]
+# these are equivalent
+res = fit(PHSurv, [ft1, ft2])
+res2 = risk_from_coxphmodels([ft1, ft2])
+```
+"""
+
+DOC_E_YEARSOFLIFELOST = """
+Expected number of years of life lost due to cause k
+```
+  using Distributions, Plots, Random
+  plotly()
+  z,x,t,d, event,weights = dgm_comprisk(n=200, rng=MersenneTwister(1232));
+  
+  times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
+  times_aj, S, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
+  time0, eyll0 = e_yearsoflifelost(times_aj, 1.0 .- S)  
+  time2, eyll1 = e_yearsoflifelost(times_aj, ajest[:,1])  
+  time1, eyll2 = e_yearsoflifelost(times_sd, ci_sd)  
+  # CI estimates
+  plot(times_aj, ajest[:,1], label="AJ", st=:step);
+  plot!(times_sd, ci_sd, label="SD", st=:step)  
+  # expected years of life lost by time k, given a specific cause or overall
+  plot(time0, eyll0, label="Overall", st=:step);
+  plot!(time1, eyll1, label="AJ", st=:step);
+  plot!(time2, eyll2, label="SD", st=:step) 
+``` 
+"""
+
+####### generic methods
+
+DOC_FIT_ABSTRACPH = """
+fit for AbstractPH objects
+
+fit(::Type{M},
+X::AbstractMatrix,#{<:FP},
+enter::AbstractVector{<:Real},
+exit::AbstractVector{<:Real},
+y::Union{AbstractVector{<:Real},BitVector}
+;
+ties = "breslow",
+wts::AbstractVector{<:Real}      = similar(y, 0),
+offset::AbstractVector{<:Real}   = similar(y, 0),
+fitargs...) where {M<:AbstractPH}
+
+using LSurvival
+using Random
+ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ enter = zeros(length(t));
+ X = hcat(x,rand(length(x)));
+ #R = LSurvResp(enter, t, Int64.(d), wt)
+ #P = PHParms(X, "efron")
+ #mod = PHModel(R,P, true)
+ #_fit!(mod)
+ m = fit(PHModel, X, enter, t, d, ties="efron")
+ m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+ coeftable(m)
+"""
+
+DOC_FITKMSURV = """
+fit for KMSurv objects
+
+   using LSurvival
+   using Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   enter = zeros(length(t));
+   m = fit(KMSurv, enter, t, d)
+   mw = fit(KMSurv, enter, t, d, wts=wt)
+
+   # or, equivalently:
+
+   kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
+   ; <keyword arguments>)
+
+"""
+
+DOC_FITAJSURV = """
+fit for AJSurv objects
+
+   using LSurvival
+   using Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   enter = zeros(length(t));
+   # event variable is coded 0[referent],1,2
+   m = fit(AJSurv, enter, t, event)
+   mw = fit(AJSurv, enter, t, event, wts=wt)
+
+   # or, equivalently:
+
+   aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
+   ; <keyword arguments>)
+
+"""
+
+
+####### non-user functions
+DOC_LGH_BRESLOW = """
+lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+
+ # for a given risk set
+ #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
+
+ Xcases=X[caseidx,:]
+ Xriskset=X[risksetidx,:]
+ _rcases = _r[caseidx]
+ _rriskset = _r[risksetidx]
+ 
+ _wtcases=_wt[caseidx]
+ _wtriskset=_wt[risksetidx]
+ p = size(X,2)
+ j = 1
+ _LL = [0.0]
+ _grad = zeros(p)
+ _hess = zeros(p,p)
+ _den = zeros(j)
+ lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+"""
+
+
+DOC_LGH_EFRON = """
+lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
+
+# for a given risk set
+#compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
+Xcases=X[caseidx,:]
+Xriskset=X[risksetidx,:]
+_rcases = _r[caseidx]
+_rriskset = _r[risksetidx]
+
+_wtcases=_wt[caseidx]
+_wtriskset=_wt[risksetidx]
+p = size(X,2)
+j = 1
+_LL = [0.0]
+_grad = zeros(p)
+_hess = zeros(p,p)
+_den = zeros(j)
+lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
+"""
+
+
+DOC_LGH = """
+lgh!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+
+wrapper: calculate log partial likelihood, gradient, hessian contributions for a single risk set
+          under a specified method for handling ties
+(efron and breslow estimators only)
+"""
+
+
+DOC__STEPCOXi = """
+calculate log likelihood, gradient, hessian at set value of coefficients
+
+_stepcox!(
+    lowermethod3,
+    # recycled parameters
+    _LL::Vector, _grad::Vector, _hess::Matrix{Float64},
+    # data
+    _in::Vector, _out::Vector, d::Union{Vector, BitVector}, X, _wt::Vector,
+    # fixed parameters
+    _B::Vector, 
+    # indexs
+    p::T, n::U, eventtimes::Vector,
+    # containers
+    _r::Vector,
+    # big indexes
+    risksetidxs, caseidxs
+    ) where {T <: Int, U <: Int}
+
+wrapper: calculate log partial likelihood, gradient, hessian contributions across all risk sets
+          under a specified method for handling ties (efron and breslow estimators only)
+
+p = size(X,2)
+_LL = zeros(1)
+_grad = zeros(p)
+_hess = zeros(p,p)
+_den = zeros(1)
+#
+_B = rand(p)
+eventtimes = sort(unique(_out[findall(d.==1)]))
+"""
+
+
+####### data generation functions
+DOC_DGM = """
+Generating discrete survival data without competing risks
+
+Usage: dgm(rng, n, maxT;afun=int_0, yfun=yprob, lfun=lprob)
+        dgm(n, maxT;afun=int_0, yfun=yprob, lfun=lprob)
+
+        Where afun, yfun, and lfun are all functions that take arguments v,l,a and output time-specific values of a, y, and l respectively
+Example:
+```julia-repl
+
+  expit(mu) =  inv(1.0+exp(-mu))
+
+  function aprob(v,l,a)
+    expit(-1.0 + 3*v + 2*l)
+  end
+  
+  function lprob(v,l,a)
+    expit(-3 + 2*v + 0*l + 0*a)
+  end
+  
+  function yprob(v,l,a)
+    expit(-3 + 2*v + 0*l + 2*a)
+  end
+  # 10 individuals followed for up to 5 times
+  LSurvival.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)
+
+```
+
+"""
+
+DOC_DGM_COMPRISK = """
+  Generating continuous survival data with competing risks
+
+  Usage: dgm_comprisk(rng, n)
+        dgm_comprisk(n)
+
+        - rng = random number generator    
+        - n = sample size
+
+  Example:
+  ```julia-repl
+  using LSurvival
+    # 100 individuals with two competing events
+    z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
+    
+  ```
+  """

@@ -491,3 +491,13 @@ function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=noth
   orderedtimes_dmain, cumsum(_haz), 1.0 .- exp.(.-cumsum(_haz)), [:times, :cumhaz, :ci]
 end
 ;
+
+
+"""
+$DOC_E_YEARSOFLIFELOST
+"""
+function e_yearsoflifelost(time, ci)
+    cilag = vcat(0, ci[1:(end-1)])
+    difftime = diff(vcat(0, time))
+    time, cumsum(cilag .* difftime)
+end
