@@ -4,18 +4,18 @@
   uses: julia-actions/julia-runtest@v1.9.3
   with:
     # Value determining which bounds checking setting to use. Options: yes | no | auto. Default value: yes.
-    check_bounds: # optional, default is yes
+    check_bounds: yes # optional, default is yes
     # Value determining whether to test with coverage or not. Options: true | false. Default value: true.
-    coverage: # optional, default is true
+    coverage: true # optional, default is true
     # Value passed to the --depwarn flag. Options: yes | no | error. Default value: yes.
-    depwarn: # optional, default is yes
+    depwarn: yes # optional, default is yes
     # If true, then, for each [compat] entry in the active project, only allow the latest compatible version. If the value is auto and the pull request has been opened by Dependabot or CompatHelper, then force_latest_compatible_version will be set to true, otherwise it will be set to false. Options: true | false | auto. Default value: auto.
-    force_latest_compatible_version: # optional, default is auto
+    force_latest_compatible_version: auto # optional, default is auto
     # Value passed to the --inline flag. Options: yes | no. Default value: yes.
-    #inline: # optional, default is yes
+    inline: yes # optional, default is yes
     # Value inserted in front of the julia command, e.g. for running xvfb-run julia [...]
     #prefix: # optional, default is 
     # Value passed to the --project flag. The default value is the repository root: "@."
     #project: # optional, default is @.
     # Whether or not to attempt to create GitHub annotations to show test failures inline. Only effective on Julia 1.8+.
-    annotate: # optional, default is false
+    #annotate: # optional, default is false
