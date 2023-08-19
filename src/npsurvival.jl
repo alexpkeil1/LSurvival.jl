@@ -103,7 +103,7 @@ function StatsBase.fit!(m::AbstractNPSurv; kwargs...)
 end
 
 """
-$DOC_FITKMSURV
+$DOC_FIT_KMSURV
 """
 function fit(
     ::Type{M},
@@ -123,7 +123,7 @@ function fit(
 end
 
 """
-$DOC_FITAJSURV
+$DOC_FIT_AJSURV
 """
 function fit(
     ::Type{M},
@@ -143,13 +143,13 @@ function fit(
 end
 
 """
-$DOC_FITKMSURV
+$DOC_FIT_KMSURV
 """
 kaplan_meier(enter, exit, y, args...; kwargs...) =
     fit(KMSurv, enter, exit, y, args...; kwargs...)
 
 """
-$DOC_FITAJSURV
+$DOC_FIT_AJSURV
 """
 aalen_johansen(enter, exit, d, args...; kwargs...) =
     fit(AJSurv, enter, exit, d, args...; kwargs...)

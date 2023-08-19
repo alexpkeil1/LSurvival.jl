@@ -316,7 +316,7 @@ end
 
 
 """
-$DOC_COXPH
+$DOC_FIT_ABSTRACPH
 """
 coxph(X, enter, exit, y, args...; kwargs...) =
     fit(PHModel, X, enter, exit, y, args...; kwargs...)

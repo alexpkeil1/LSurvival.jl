@@ -22,7 +22,7 @@ Abstract type for non-parametric survival models, including Kaplan-Meier, Aalen 
 DOC_LSURVRESP = """
 
 Outcome type for survival outcome subject to left truncation and right censoring
-
+```
 struct LSurvResp{
   E<:AbstractVector,
   X<:AbstractVector,
@@ -45,7 +45,8 @@ struct LSurvResp{
   "`id`: person level identifier (must be wrapped in ID() function)"
   id::Vector{I}
 end
-
+```
+```
 function LSurvResp(
   enter::E,
   exit::X,
@@ -59,35 +60,39 @@ function LSurvResp(
   W<:AbstractVector,
   I<:AbstractLSurvID,
 }
-
+```
+```
 LSurvResp(
   enter::E,
   exit::X,
   y::Y,
   id::Vector{I},
 ) 
-
+```
+```
 LSurvResp(
   enter::E,
   exit::X,
   y::Y,
   wts::W,
 ) 
-
+```
+```
 LSurvResp(
   enter::E,
   exit::X,
   y::Y,
 )
-
+```
+```
 LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
-
+```
 """
 
 DOC_LSURVCOMPRESP = """
 
 Outcome type for competing risk survival outcomes subject to left truncation and right censoring
-
+  ```
 struct LSurvCompResp{
   E<:AbstractVector,
   X<:AbstractVector,
@@ -116,7 +121,8 @@ struct LSurvCompResp{
   "`eventmatrix`: matrix of indicators on the observation level"
   eventmatrix::M
 end
-
+```
+```
 LSurvCompResp(
   enter::E,
   exit::X,
@@ -124,26 +130,30 @@ LSurvCompResp(
   wts::W,
   id::Vector{I}
 )
-
+```
+```
 LSurvCompResp(
   enter::E,
   exit::X,
   y::Y,
   id::Vector{I}
 )
-
+```
+```
 LSurvCompResp(
   enter::E,
   exit::X,
   y::Y,
   wts::W,
 )
-
+```
+```
 LSurvCompResp(
   enter::E,
   exit::X,
   y::Y,
 )
+```
 """
 
 DOC_PHMODEL = """
@@ -190,7 +200,6 @@ PHSsurv: Object type for proportional hazards regression
 
 Methods: fit, show
 ```
-
 mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
   fitlist::G        # Survival response
   eventtypes::AbstractVector
@@ -220,7 +229,7 @@ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
 X = hcat(x,rand(length(x)));
 m2 = fit(PHModel, X, enter, t, d, ties="breslow")
-LSurvival.coxph(X, enter, t, d, ties="breslow")
+coxph(X, enter, t, d, ties="breslow")
 coeftable(m)
 ```
 
@@ -244,7 +253,7 @@ risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
 
 
 fit for PHSurv objects
-  ```
+  ```julia-repl
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -262,7 +271,7 @@ res2 = risk_from_coxphmodels([ft1, ft2])
 
 DOC_E_YEARSOFLIFELOST = """
 Expected number of years of life lost due to cause k
-```
+```julia-repl
   using Distributions, Plots, Random
   plotly()
   z,x,t,d, event,weights = dgm_comprisk(n=200, rng=MersenneTwister(1232));
@@ -286,7 +295,7 @@ Expected number of years of life lost due to cause k
 
 DOC_FIT_ABSTRACPH = """
 fit for AbstractPH objects
-
+```
 fit(::Type{M},
 X::AbstractMatrix,#{<:FP},
 enter::AbstractVector{<:Real},
@@ -297,7 +306,8 @@ ties = "breslow",
 wts::AbstractVector{<:Real}      = similar(y, 0),
 offset::AbstractVector{<:Real}   = similar(y, 0),
 fitargs...) where {M<:AbstractPH}
-
+```
+```julia-repl
 using LSurvival
 using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -310,9 +320,10 @@ using Random
  m = fit(PHModel, X, enter, t, d, ties="efron")
  m2 = fit(PHModel, X, enter, t, d, ties="breslow")
  coeftable(m)
+ ```
 """
 
-DOC_FITKMSURV = """
+DOC_FIT_KMSURV = """
 fit for KMSurv objects
 
    using LSurvival
@@ -329,9 +340,9 @@ fit for KMSurv objects
 
 """
 
-DOC_FITAJSURV = """
+DOC_FIT_AJSURV = """
 fit for AJSurv objects
-
+  ```julia-repl
    using LSurvival
    using Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -339,22 +350,23 @@ fit for AJSurv objects
    # event variable is coded 0[referent],1,2
    m = fit(AJSurv, enter, t, event)
    mw = fit(AJSurv, enter, t, event, wts=wt)
-
-   # or, equivalently:
-
+   ```
+   or, equivalently:
+```julia-repl
    aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
-
+   ```
 """
 
 
 ####### non-user functions
 DOC_LGH_BRESLOW = """
+```
 lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
-
+```
  # for a given risk set
  #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
-
+```julia-repl
  Xcases=X[caseidx,:]
  Xriskset=X[risksetidx,:]
  _rcases = _r[caseidx]
@@ -369,12 +381,15 @@ lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset
  _hess = zeros(p,p)
  _den = zeros(j)
  lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
+ ```
 """
 
 
 DOC_LGH_EFRON = """
+```
 lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
-
+```
+```julia-repl
 # for a given risk set
 #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
 Xcases=X[caseidx,:]
@@ -391,12 +406,14 @@ _grad = zeros(p)
 _hess = zeros(p,p)
 _den = zeros(j)
 lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
+```
 """
 
 
 DOC_LGH = """
+```julia-repl
 lgh!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-
+```
 wrapper: calculate log partial likelihood, gradient, hessian contributions for a single risk set
           under a specified method for handling ties
 (efron and breslow estimators only)
@@ -405,7 +422,7 @@ wrapper: calculate log partial likelihood, gradient, hessian contributions for a
 
 DOC__STEPCOXi = """
 calculate log likelihood, gradient, hessian at set value of coefficients
-
+```julia-repl
 _stepcox!(
     lowermethod3,
     # recycled parameters
@@ -421,10 +438,10 @@ _stepcox!(
     # big indexes
     risksetidxs, caseidxs
     ) where {T <: Int, U <: Int}
-
+    ```
 wrapper: calculate log partial likelihood, gradient, hessian contributions across all risk sets
           under a specified method for handling ties (efron and breslow estimators only)
-
+            ```julia-repl
 p = size(X,2)
 _LL = zeros(1)
 _grad = zeros(p)
@@ -433,6 +450,7 @@ _den = zeros(1)
 #
 _B = rand(p)
 eventtimes = sort(unique(_out[findall(d.==1)]))
+```
 """
 
 
