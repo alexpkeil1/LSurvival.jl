@@ -65,7 +65,6 @@ using Random
     ft2 = fit(PHModel, X, enter, t, (event .== 2), ties = "efron")
     ft1 = fit(PHModel, X, enter, t, (event .== 1), ties = "efron", verbose = true)
     coxph(X, enter, t, d2, ties = "efron")
-    coeflist = [lnhr1, lnhr2]
     covarmat = sum(X, dims = 1) ./ size(X, 1)
     ciresb = risk_from_coxphmodels(
         [ft1, ft2];
