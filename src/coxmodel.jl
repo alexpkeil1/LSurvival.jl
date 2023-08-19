@@ -435,7 +435,7 @@ Base.show(m::M; kwargs...) where {M<:AbstractPH} =
 ####################################################################################################################
 
 function mwarn(m)
-    if !fitted(m)
+    if !isfitted(m)
         @warn "Model not yet fitted"
     end
 end
@@ -679,9 +679,6 @@ risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T<:PHModel} 
 # summary functions for PHSurv objects
 #####################################################################################################################
 
-function StatsBase.fitted(m::M) where {M<:PHSurv}
-    m.fit
-end
 
 function Base.show(io::IO, m::M; maxrows = 20) where {M<:PHSurv}
     if !m.fit
