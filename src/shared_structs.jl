@@ -147,18 +147,18 @@ function Base.show(io::IO, x::LSurvResp; maxrows::Int = 10)
     println("Origin: $(x.origin)")
     println("Max time: $(maximum(x.exit))")
     iob = IOBuffer()
-    op = hcat([a.id for a in x.id], reduce(vcat, pr))
+    op = reduce(vcat, pr)
     nr = size(op, 1)
     if nr < maxrows
-        println(iob, op)
+        [println(iob, "$(x.id[oo]). $(op1[oo])") for oo in eachindex(op)]
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
-        op1 = op1[1:len,:]
-        op2 = op2[(end-len+1):end,:]
-        [println(iob, oo) for oo in eachrow(op1)]
+        op1 = op1[1:len]
+        op2 = op2[(end-len+1):end]
+        [println(iob, "$(x.id[1:len][oo]). $(op1[oo])") for oo in eachindex(op1)]
         println(iob, "...")
-        [println(iob, oo) for oo in eachrow(op1)]
+        [println(iob, "$(x.id[(end-len+1):end][oo]). $(op2[oo])") for oo in eachindex(op2)]
     end
     str = String(take!(iob))
     println(io, str)
