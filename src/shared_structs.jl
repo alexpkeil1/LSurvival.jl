@@ -231,7 +231,7 @@ function LSurvCompResp(
     y::Y,
     id::Vector{I},
 ) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,I<:AbstractLSurvID}
-    wts = ones(Int64, ny)
+    wts = ones(Int64, length(y))
     return LSurvCompResp(enter, exit, y, wts, id)
 end
 

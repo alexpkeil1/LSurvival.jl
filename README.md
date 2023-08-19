@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
 
-These are some survival analysis functions that I was hoping to find in Julia and never did. They don't interface with the existing Julia model fitting modules (e.g. StatsModels). I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
+These are some survival analysis functions that I was hoping to find in Julia and never did. Interface with StatsModels is developing. I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
 
 This module handles:
 - Cox proportional hazards model with Efron's method or Breslow's method for ties
@@ -72,14 +72,10 @@ function dgm(rng, n, maxT;regimefun=int_0)
   wt = rand(length(d))
 
 # Cox model
-  coxargs = (int, outt, d, X);
-  beta, ll, g, h, basehaz = coxmodel(coxargs..., weights=wt, method="breslow", tol=1e-9, inits=nothing);
-  beta2, ll2, g2, h2, basehaz2 = coxmodel(coxargs..., weights=wt, method="efron", tol=1e-9, inits=nothing);
-  se = sqrt.(diag(-inv(h)));
-  hcat(beta, se, beta ./ se)
-  # new:
   m = fit(PHModel, X, int, outt, d, ties="breslow", wts=wt)
   m2 = fit(PHModel, X, int, outt, d, ties="efron", wts=wt)
+  #equivalent
+  m2b = coxph(X, int, outt, d, ties="efron", wts=wt)
 
 # Kaplan-Meier estimator of the cumulative risk/survival
 res = kaplan_meier(int, outt,d; wt=nothing)
@@ -112,6 +108,8 @@ z, x, t, d, event, wt = dgm_comprisk(;n=100, rng=MersenneTwister())
 enter = t.*0.01
 
 res = aalen_johansen(enter, t,event;dvalues=[1.0, 2.0], wt=wt)
-hcat(res[1], res[3])
+  fit1 = fit(PHModel, X, int, outt, (event .== 1), ties="breslow", wts=wt)
+  fit2 = fit(PHModel, X, int, outt, (event .== 1), ties="efron", wts=wt)
+  risk
 
 ```
