@@ -65,7 +65,7 @@ export coef,
     risk_from_coxphmodels,
     stderror,
     #residuals, predict, predict!,
-    vcov,
+    vcov
 
 ####### Documentation #######
 include("docstr.jl")
