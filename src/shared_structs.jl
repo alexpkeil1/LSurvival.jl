@@ -39,7 +39,7 @@ function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
-    wts::Wf
+    wts::W
 ) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
     ne = length(enter)
     nx = length(exit)
