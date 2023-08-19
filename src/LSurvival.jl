@@ -16,30 +16,30 @@ import StatsBase:
     coefnames,
     confint,
     #deviance, nulldeviance, dof, dof_residual,
-    loglikelihood,
-    nullloglikelihood,
-    nobs,
-    stderror,
-    vcov,
-    #residuals, predict, predict!,
-    isfitted,
     fitted,
     fit,
-    model_response,
-    response,
+    isfitted,
+    loglikelihood,
     modelmatrix,
+    model_response,
+    nullloglikelihood,
+    nobs,
     PValue,
+    stderror,
+    #residuals, predict, predict!,
+    response,
+    score,
+    vcov,
     #
-    weights,
-    score
+    weights
 
-import Base.show
+import Base: convert, show
 
 ####### exports #######
 # types
 
 # Model types
-export PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv
+export ID, PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv, AbstractLSurvID
 # Outcome types
 export LSurvResp, LSurvCompResp
 # functions    
@@ -63,6 +63,7 @@ export coef,
     nullloglikelihood, #nobs, 
     response,
     risk_from_coxphmodels,
+    score,
     stderror,
     #residuals, predict, predict!,
     vcov

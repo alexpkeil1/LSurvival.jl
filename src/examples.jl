@@ -114,8 +114,9 @@ P = PHParms(X)
 # not-yet-fit PH model object
 M = PHModel(R,P, "breslow")
 M = PHModel(R,P)  #default is "efron" method for ties
-fitted(M)  # confirm this is not yet "fitted"
-
+isfitted(M)  # confirm this is not yet "fitted"
+LSurvival._fit!(M, start=[0.0, 0.0])
+isfitted(M)  
 
 
 

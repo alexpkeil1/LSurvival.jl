@@ -324,80 +324,9 @@ coxph(X, enter, exit, y, args...; kwargs...) =
 # summary functions for PHModel objects
 #####################################################################################################################
 
-function mwarn(m)
-    if !m.fit
-        @warn "Model not yet fitted"
-    end
-end
-
-function StatsBase.weights(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    m.R.wts
-end
-
-function StatsBase.score(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    m.P._grad
-end
-
 function StatsBase.coef(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P._B
-end
-
-function StatsBase.vcov(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    -inv(m.P._hess)
-end
-
-function StatsBase.stderror(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    sqrt.(diag(vcov(m)))
-end
-
-
-function StatsBase.loglikelihood(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    m.P._LL[end]
-end
-
-function StatsBase.nullloglikelihood(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    m.P._LL[1]
-end
-
-
-function StatsBase.modelmatrix(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    m.P.X
-end
-
-function StatsBase.response(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    m.R
-end
-
-
-function StatsBase.fitted(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    D = modelmatrix(m)
-    D*coef(m)
-end
-
-function StatsBase.isfitted(m::M) where {M<:AbstractPH}
-    m.fit
-end
-
-
-function StatsBase.confint(m::M; level::Real = 0.95) where {M<:AbstractPH}
-    mwarn(m)
-    beta = coef(m)
-    std_err = stderror(m)
-    z = beta ./ std_err
-    zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
-    lci = beta .+ zcrit[1] * std_err
-    uci = beta .+ zcrit[2] * std_err
-    hcat(lci, uci)
 end
 
 function StatsBase.coeftable(m::M; level::Real = 0.95) where {M<:AbstractPH}
@@ -413,6 +342,67 @@ function StatsBase.coeftable(m::M; level::Real = 0.95) where {M<:AbstractPH}
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
     rown = ["b$i" for i = 1:size(op)[1]]
     StatsBase.CoefTable(op, head, rown, 6, 5)
+end
+
+function StatsBase.confint(m::M; level::Real = 0.95) where {M<:AbstractPH}
+    mwarn(m)
+    beta = coef(m)
+    std_err = stderror(m)
+    z = beta ./ std_err
+    zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
+    lci = beta .+ zcrit[1] * std_err
+    uci = beta .+ zcrit[2] * std_err
+    hcat(lci, uci)
+end
+
+function StatsBase.fitted(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    D = modelmatrix(m)
+    D*coef(m)
+end
+
+function StatsBase.isfitted(m::M) where {M<:AbstractPH}
+    m.fit
+end
+
+function StatsBase.loglikelihood(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.P._LL[end]
+end
+
+function StatsBase.modelmatrix(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.P.X
+end
+
+function StatsBase.nullloglikelihood(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.P._LL[1]
+end
+
+function StatsBase.response(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.R
+end
+
+function StatsBase.score(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.P._grad
+end
+
+function StatsBase.stderror(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    sqrt.(diag(vcov(m)))
+end
+
+function StatsBase.vcov(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    -inv(m.P._hess)
+end
+
+function StatsBase.weights(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.R.wts
 end
 
 function Base.show(io::IO, m::M; level::Real = 0.95) where {M<:AbstractPH}
@@ -440,13 +430,17 @@ end
 Base.show(m::M; kwargs...) where {M<:AbstractPH} =
     Base.show(stdout, m::M; kwargs...) where {M<:AbstractPH}
 
-
 ##################################################################################################################### 
 # helper functions
 ####################################################################################################################
 
-calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z))) * 2
+function mwarn(m)
+    if !fitted(m)
+        @warn "Model not yet fitted"
+    end
+end
 
+calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z))) * 2
 
 function _coxrisk!(_r, X, B)
     map!(z -> exp(z), _r, X * B)
@@ -457,7 +451,6 @@ function _coxrisk(X, B)
     _r = ones(size(X, 1))
     _coxrisk!(_r, X, B)
 end
-
 
 ##################################################################################################################### 
 # partial likelihood/gradient/hessian functions for tied events
@@ -493,7 +486,6 @@ function lgh_breslow!(
     _den[j] = den
     nothing
 end
-
 
 function efron_weights(m)
     [(l - 1) / m for l = 1:m]
@@ -662,7 +654,6 @@ function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing) where {M<:P
     m
 end
 
-
 """
 $DOC_RISK_FROM_COXPHMODELS   
 """
@@ -683,8 +674,6 @@ $DOC_RISK_FROM_COXPHMODELS
 """
 risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T<:PHModel} =
     fit(PHSurv, fitlist, args...; kwargs...)
-
-
 
 ##################################################################################################################### 
 # summary functions for PHSurv objects

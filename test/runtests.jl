@@ -7,12 +7,11 @@ using Random
     id, int, outt, data =
         LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
 
-
-
     d, X = data[:, 4], data[:, 1:3]
     weights = rand(length(d))
 
     # survival outcome:
+    R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
     R = LSurvResp(outt, d)         # specification if no late entry
     R = LSurvResp(int, outt, d)    # specification with  late entry
     @assert all(R.wts .< 1.01)
@@ -66,8 +65,8 @@ using Random
 
     lnhr1, ll1, g1, h1, bh1 = coxmodel(int, t, d1, X, method = "efron")
     lnhr2, ll2, g2, h2, bh2 = coxmodel(int, t, d2, X, method = "efron")
-    ft1 = fit(PHModel, X, int, t, (event .== 1), ties = "efron", verbose = true)
     ft2 = fit(PHModel, X, int, t, (event .== 2), ties = "efron")
+    ft1 = fit(PHModel, X, int, t, (event .== 1), ties = "efron", verbose = true)
     coxph(X, int, t, d2, ties = "efron")
     bhlist = [bh1, bh2]
     coeflist = [lnhr1, lnhr2]

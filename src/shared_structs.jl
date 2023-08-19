@@ -2,12 +2,19 @@
 # structs
 #####################################################################################################################
 
-#abstract type AbstractLSurvID <: Vector end
+abstract type AbstractLSurvID end
 #abstract type AbstractLSurvIDtest <: Real end
 
 
-abstract type SurvID <: Any end
-  
+struct ID <: AbstractLSurvID
+    id::T where {T <: Union{Number,String}}
+end
+
+function Base.show(io::IO, x::I) where {I <: ID}
+    show(io, x.id)
+end
+Base.show(x::I) where {I <: ID} = Base.show(stdout, x::I)
+
 
 
 
@@ -21,6 +28,7 @@ struct LSurvResp{
     Y<:AbstractVector,
     W<:AbstractVector,
     T<:Real,
+    I<:AbstractLSurvID,
 } <: AbstractLSurvResp
     enter::E
     "`exit`: Time at observation end"
@@ -33,14 +41,23 @@ struct LSurvResp{
     eventtimes::E
     "`origin`: origin on the time scale"
     origin::T
+    "`id`: person level identifier (must be wrapped in ID() function)"
+    id::Vector{I}
 end
 
 function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
-    wts::W
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
+    wts::W,
+    id::Vector{I},
+) where {
+    E<:AbstractVector,
+    X<:AbstractVector,
+    Y<:AbstractVector,
+    W<:AbstractVector,
+    I<:AbstractLSurvID,
+}
     ne = length(enter)
     nx = length(exit)
     ny = length(y)
@@ -61,8 +78,46 @@ function LSurvResp(
         wts = ones(Int64, ny)
     end
 
-    return LSurvResp(enter, exit, y, wts, eventtimes, origin)
+    return LSurvResp(enter, exit, y, wts, eventtimes, origin, id)
 end
+
+function LSurvResp(
+    enter::E,
+    exit::X,
+    y::Y,
+    id::Vector{I},
+) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,I<:AbstractLSurvID}
+    wts = similar(exit, 0)
+    return LSurvResp(enter, exit, y, wts, id)
+end
+
+function LSurvResp(
+    enter::E,
+    exit::X,
+    y::Y,
+    wts::W,
+) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
+    ne = length(enter)
+    nx = length(exit)
+    ny = length(y)
+    lw = length(wts)
+    if !(ne == nx == ny)
+        throw(
+            DimensionMismatch(
+                "lengths of enter, exit, and y ($ne, $nx, $ny) are not equal",
+            ),
+        )
+    end
+    if lw != 0 && lw != ny
+        throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
+    end
+    if lw == 0
+        wts = ones(Int64, ny)
+    end
+    id = [ID(i) for i in eachindex(y)]
+    return LSurvResp(enter, exit, y, wts, id)
+end
+
 
 function LSurvResp(
     enter::E,
@@ -92,18 +147,18 @@ function Base.show(io::IO, x::LSurvResp; maxrows::Int = 10)
     println("Origin: $(x.origin)")
     println("Max time: $(maximum(x.exit))")
     iob = IOBuffer()
-    op = reduce(vcat, pr)
+    op = hcat([a.id for a in x.id], reduce(vcat, pr))
     nr = size(op, 1)
     if nr < maxrows
         println(iob, op)
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
-        op1 = op1[1:len]
-        op2 = op2[(end-len+1):end]
-        [println(iob, oo) for oo in op1]
+        op1 = op1[1:len,:]
+        op2 = op2[(end-len+1):end,:]
+        [println(iob, oo) for oo in eachrow(op1)]
         println(iob, "...")
-        [println(iob, oo) for oo in op2]
+        [println(iob, oo) for oo in eachrow(op1)]
     end
     str = String(take!(iob))
     println(io, str)
