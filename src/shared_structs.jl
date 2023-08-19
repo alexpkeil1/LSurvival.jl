@@ -254,7 +254,7 @@ function LSurvCompResp(
     return LSurvCompResp(enter, exit, y, id)
 end
 
-function Base.show(io::IO, x::LSurvResp; maxrows::Int = 10)
+function Base.show(io::IO, x<:AbstractLSurvResp; maxrows::Int = 10)
     lefttruncate = [e == x.origin ? "[" : "(" for e in x.enter]
     rightcensor = [y > 0 ? "]" : ")" for y in x.y]
     enter = [@sprintf("%.2g", e) for e in x.enter]
@@ -284,5 +284,4 @@ function Base.show(io::IO, x::LSurvResp; maxrows::Int = 10)
     println(io, str)
 end
 
-Base.show(x::LSurvResp; kwargs...) = Base.show(stdout, x; kwargs...)
-
+Base.show(x<:AbstractLSurvResp; kwargs...) = Base.show(stdout, x; kwargs...)
