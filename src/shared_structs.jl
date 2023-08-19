@@ -73,16 +73,6 @@ function LSurvResp(
     return LSurvResp(enter, exit, y, wts)
 end
 
-
-function LSurvResp(
-    enter::E,
-    exit::X,
-    y::Y,
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector}
-    wts = similar(exit, 0)
-    return LSurvResp(enter, exit, y, wts)
-end
-
 function LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
     enter = zeros(eltype(exit), length(exit))
     return LSurvResp(enter, exit, y)
