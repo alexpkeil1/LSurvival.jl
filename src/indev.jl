@@ -3,16 +3,16 @@
 # - robust standard error estimate for Cox model
 # - using formulas
 
-"""
-Greenwood's formula
-"""
-function StatsBase.std_error(m::KMSurv)
+if false
+
 
 end
 
+
+
 # in progress functions
 # taken from GLM.jl/src/linpred.jl
-function modelframe(f::FormulaTerm, data, contrasts::AbstractDict, ::Type{M}) where M
+function modelframe(f::FormulaTerm, data, contrasts::AbstractDict, ::Type{M}) where {M}
     Tables.istable(data) ||
         throw(ArgumentError("expected data in a Table, got $(typeof(data))"))
     t = Tables.columntable(data)

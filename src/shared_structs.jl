@@ -6,18 +6,7 @@ abstract type AbstractLSurvID end
 #abstract type AbstractLSurvIDtest <: Real end
 
 
-DOC_ID = """
-Type for identifying individuals in survival outcomes.
 
-Accepts any Number or String
-
-[ID(i) for i in 1:10]
-
-Used for the id argument in 
-    - Outcome types: LSurvResp, LSurvCompResp 
-    - Model types: PHModel, KMRisk, AJRisk
-
-"""
 """
 $DOC_ID
 """

@@ -98,7 +98,14 @@ function _fit!(
 end;
 
 
-function StatsBase.fit!(m::AbstractNPSurv; kwargs...)
+"""
+$DOC_FIT_KMSURV
+
+$DOC_FIT_AJSURV
+
+$DOC_FIT_PHSURV
+"""
+function StatsBase.fit!(m::T; kwargs...) where {T <: AbstractNPSurv}
     _fit!(m; kwargs...)
 end
 
@@ -157,11 +164,84 @@ aalen_johansen(enter, exit, d, args...; kwargs...) =
 ##################################################################################################################### 
 # Summary functions for non-parametric survival models
 #####################################################################################################################
-function StatsBase.fitted(m::M) where {M<:KMSurv}
+function StatsBase.isfitted(m::M) where {M<:KMSurv}
     m.fit
 end
 
-function StatsBase.fitted(m::M) where {M<:AJSurv}
+"""
+$DOC_VARIANCE_KMSURV
+"""
+function StatsBase.stderror(m::KMSurv)
+    var = m.surv .* m.surv .* cumsum(m.events ./ (m.riskset .* (m.riskset .- m.events)))
+    sqrt.(var)
+end
+
+
+function confint_normal(m::KMSurv; level=0.95)
+    se = stderror(m)
+    halfalpha = (1.0-level)/2.0
+    zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    cimat = reduce(hcat, [m.surv .+ zcriti .* se for zcriti in zcrit])
+    cimat
+end
+
+function confint_lognlog(m::KMSurv; level=0.95)
+    se = stderror(m)
+    halfalpha = (1.0-level)/2.0
+    zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    logci = reduce(hcat, [log.(m.surv) .* exp.(zcriti .* se ./ (m.surv .* log.(m.surv))) for zcriti in zcrit])
+    cimat = exp.(logci)
+    cimat
+end
+
+"""
+$DOC_VARIANCE_AJSURV
+"""
+function StatsBase.stderror(m::AJSurv)
+    riski = m.risk[:,1]
+    d = sum(m.events, dims=2)
+    sm1 = vcat(1.0, m.surv[1:end-1])
+    vv = [(cumsum((m.surv .* m.risk[:,j]) .* (m.surv .* m.risk[:,j]) .* (m.riskset .- 1.0) .* m.riskset .^(-3.0) .* d, dims=1) +
+     cumsum((sm1) .* (sm1) .* (1.0 .- 2.0 .* m.risk[:,j]) .* (m.riskset .- 1.0) .* m.riskset .^(-3.0) .* m.events[:,j], dims=1))
+     for j in 1:size(m.risk, 2)]
+
+    var = reduce(hcat, vv)
+    sqrt.(var)
+end
+
+
+function confint_normal(m::AJSurv; level=0.95)
+    se = stderror(m)
+    halfalpha = (1.0-level)/2.0
+    zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    cimat = reduce(hcat, [reduce(hcat, [m.risk[:,j] .+ zcriti .* se[:,j] for zcriti in zcrit]) for j in 1:size(m.events,2)])
+    cimat
+end
+
+
+"""
+$DOC_VARIANCE_KMSURV
+"""
+function StatsBase.confint(m::KMSurv; level=0.95, method="normal")
+    method == "lognlog" ? confint_lognlog(m,level=level) : confint_normal(m,level=level)
+end
+
+"""
+$DOC_VARIANCE_AJSURV
+"""
+function StatsBase.confint(m::AJSurv; level=0.95, method="normal")
+    method != "normal" ? @warn("only method=normal CI is implemented for AJSurv objects") : confint_normal(m,level=level)
+end
+
+"""
+$DOC_VARIANCE_KMSURV
+"""
+function StatsBase.confint(m::KMSurv; level=0.95, method="normal")
+    method == "lognlog" ? confint_lognlog(m,level=level) : confint_normal(m,level=level)
+end
+
+
+function StatsBase.isfitted(m::M) where {M<:AJSurv}
     m.fit
 end
 

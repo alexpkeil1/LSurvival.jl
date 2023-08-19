@@ -216,6 +216,19 @@ PHSurv(fitlist::Array{T}) where {T<:PHModel}
 
 """
 
+DOC_ID = """
+Type for identifying individuals in survival outcomes.
+
+Accepts any Number or String
+```julia-repl
+[ID(i) for i in 1:10]
+```
+Used for the id argument in 
+    - Outcome types: LSurvResp, LSurvCompResp 
+    - Model types: PHModel, KMRisk, AJRisk
+
+"""
+
 ####### Primary methods
 
 DOC_COXPH = """
@@ -236,7 +249,7 @@ coeftable(m)
 """
 
 
-DOC_RISK_FROM_COXPHMODELS = """
+DOC_FIT_PHSURV = """
 Competing risk models:
 
 Calculate survival curve and cumulative incidence (risk) function, get a set of Cox models (PHModel objects) that are exhaustive for the outcome types
@@ -325,19 +338,49 @@ using Random
 
 DOC_FIT_KMSURV = """
 fit for KMSurv objects
-
+```julia-repl
    using LSurvival
    using Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
    m = fit(KMSurv, enter, t, d)
    mw = fit(KMSurv, enter, t, d, wts=wt)
-
-   # or, equivalently:
-
+   ```
+    or, equivalently:
+   ```julia-repl
    kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
+   ```
+"""
 
+DOC_VARIANCE_KMSURV = """
+```
+    StatsBase.stderror(m::KMSurv)
+
+    StatsBase.confint(m:KMSurv; level=0.95, method="normal")
+```
+Greenwood's formula
+```julia-repl
+using LSurvival
+using Random
+z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+enter = zeros(length(t));
+m = fit(KMSurv, enter, t, d)
+mw = fit(KMSurv, enter, t, d, wts=wt)
+stderror(m)
+confint(m, method="normal")
+confint(m, method="lognlog") # log-log transformation
+```
+"""
+
+DOC_VARIANCE_AJSURV = """
+```julia-repl
+res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+int = zeros(length(d)) # no late entry
+m = fit(AJSurv, int, outt, event)
+stderror(m)
+confint(m, level=0.95)
+```
 """
 
 DOC_FIT_AJSURV = """
@@ -355,7 +398,7 @@ fit for AJSurv objects
 ```julia-repl
    aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
-   ```
+```
 """
 
 
@@ -450,6 +493,24 @@ _den = zeros(1)
 #
 _B = rand(p)
 eventtimes = sort(unique(_out[findall(d.==1)]))
+```
+"""
+
+DOC_FIT_PHSURV = """
+fit for AJSurv objects
+  ```julia-repl
+   using LSurvival
+   using Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   enter = zeros(length(t));
+   # event variable is coded 0[referent],1,2
+   m = fit(AJSurv, enter, t, event)
+   mw = fit(AJSurv, enter, t, event, wts=wt)
+   ```
+   or, equivalently:
+```julia-repl
+   aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
+   ; <keyword arguments>)
 ```
 """
 

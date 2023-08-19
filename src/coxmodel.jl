@@ -657,7 +657,7 @@ function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing) where {M<:P
 end
 
 """
-$DOC_RISK_FROM_COXPHMODELS   
+$DOC_FIT_PHSURV   
 """
 function fit(
     ::Type{M},
@@ -672,7 +672,7 @@ function fit(
 end
 
 """
-$DOC_RISK_FROM_COXPHMODELS
+$DOC_FIT_PHSURV
 """
 risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T<:PHModel} =
     fit(PHSurv, fitlist, args...; kwargs...)
