@@ -2,8 +2,8 @@
 # structs
 #####################################################################################################################
 
-abstract type AbstractLSurvID <: Vector end
-abstract type AbstractLSurvIDtest <: Real end
+#abstract type AbstractLSurvID <: Vector end
+#abstract type AbstractLSurvIDtest <: Real end
 
 
 abstract type SurvID <: Any end
