@@ -295,6 +295,7 @@ function fit(
     exit::AbstractVector{<:Real},
     y::Union{AbstractVector{<:Real},BitVector};
     ties = "breslow",
+    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     wts::AbstractVector{<:Real} = similar(y, 0),
     offset::AbstractVector{<:Real} = similar(y, 0),
     fitargs...,
@@ -312,6 +313,7 @@ function fit(
 
     return fit!(res; fitargs...)
 end
+
 
 """
 $DOC_COXPH
@@ -358,7 +360,7 @@ end
 function StatsBase.fitted(m::M) where {M<:AbstractPH}
     mwarn(m)
     D = modelmatrix(m)
-    D*coef(m)
+    D * coef(m)
 end
 
 function StatsBase.isfitted(m::M) where {M<:AbstractPH}

@@ -1,23 +1,38 @@
 # to implement
-# - "fit" arguments in model objects that flip to 1 after fitting
 # - Greenwoods formula estimator for km 
 # - robust standard error estimate for Cox model
-# - show methods
+# - using formulas
 
+"""
+Greenwood's formula
+"""
 function StatsBase.std_error(m::KMSurv)
 
 end
 
 # in progress functions
+# taken from GLM.jl/src/linpred.jl
+function modelframe(f::FormulaTerm, data, contrasts::AbstractDict, ::Type{M}) where M
+    Tables.istable(data) ||
+        throw(ArgumentError("expected data in a Table, got $(typeof(data))"))
+    t = Tables.columntable(data)
+    msg = StatsModels.checknamesexist(f, t)
+    msg != "" && throw(ArgumentError(msg))
+    data, _ = StatsModels.missing_omit(t, f)
+    sch = schema(f, data, contrasts)
+    f = apply_schema(f, sch, M)
+    f, modelcols(f, data)
+end
+
 
 function fit(
     ::Type{M},
     f::FormulaTerm,
     data;
+    ties = "breslow",
+    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     wts::AbstractVector{<:Real} = similar(y, 0),
     offset::AbstractVector{<:Real} = similar(y, 0),
-    method::Symbol = :cholesky,
-    dofit::Union{Bool,Nothing} = nothing,
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
     fitargs...,
 ) where {M<:AbstractPH}

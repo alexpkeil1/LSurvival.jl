@@ -3,10 +3,10 @@ module LSurvival
 
 using Reexport
 using Printf
-using Random, Distributions, LinearAlgebra
-@reexport using StatsModels
+using Random, Distributions, LinearAlgebra, Tables
+@reexport using StatsModels # ModelFrame, modelframe
 #
-import DataFrames: DataFrame
+#import DataFrames: DataFrame
 using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
 
@@ -39,7 +39,8 @@ import Base: convert, show
 # types
 
 # Model types
-export ID, PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv, AbstractLSurvID
+export ID,
+    PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv, AbstractLSurvID
 # Outcome types
 export LSurvResp, LSurvCompResp
 # functions    

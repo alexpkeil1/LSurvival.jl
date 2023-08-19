@@ -3,64 +3,6 @@
 # structs
 #####################################################################################################################
 
-
-struct LSurvCompResp{
-    E<:AbstractVector,
-    X<:AbstractVector,
-    Y<:AbstractVector,
-    W<:AbstractVector,
-    T<:Real,
-    V<:AbstractVector,
-    M<:AbstractMatrix,
-} <: AbstractLSurvResp
-    enter::E
-    "`exit`: Time at observation end"
-    exit::X
-    "`y`: event type in observation (integer)"
-    y::Y
-    "`wts`: observation weights"
-    wts::W
-    "`eventtimes`: unique event times"
-    eventtimes::X
-    "`origin`: origin on the time scale"
-    origin::T
-    "`eventtypes`: vector of unique event types"
-    eventtypes::V
-    "`eventmatrix`: matrix of indicators on the observation level"
-    eventmatrix::M
-end
-
-function LSurvCompResp(
-    enter::E,
-    exit::X,
-    y::Y,
-    wts::W,
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
-    ne = length(enter)
-    nx = length(exit)
-    ny = length(y)
-    lw = length(wts)
-    if !(ne == nx == ny)
-        throw(
-            DimensionMismatch(
-                "lengths of enter, exit, and y ($ne, $nx, $ny) are not equal",
-            ),
-        )
-    end
-    if lw != 0 && lw != ny
-        throw(DimensionMismatch("wts must have length $n or length 0 but was $lw"))
-    end
-    eventtimes = sort(unique(exit[findall(y .> 0)]))
-    origin = minimum(enter)
-    if lw == 0
-        wts = ones(Int64, ny)
-    end
-    eventtypes = sort(unique(y))
-    eventmatrix = reduce(hcat, [y .== e for e in eventtypes[2:end]])
-
-    return LSurvCompResp(enter, exit, y, wts, eventtimes, origin, eventtypes, eventmatrix)
-end
-
 mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
     R::G        # Survival response
     times::AbstractVector
@@ -169,11 +111,12 @@ function fit(
     exit::AbstractVector{<:Real},
     y::Union{AbstractVector{<:Real},BitVector};
     wts::AbstractVector{<:Real} = similar(y, 0),
+    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     offset::AbstractVector{<:Real} = similar(y, 0),
     fitargs...,
 ) where {M<:KMSurv}
 
-    R = LSurvResp(enter, exit, y, wts)
+    R = LSurvResp(enter, exit, y, wts, id)
     res = M(R)
 
     return fit!(res; fitargs...)
@@ -188,11 +131,12 @@ function fit(
     exit::AbstractVector{<:Real},
     y::Union{AbstractVector{<:Real},BitVector};
     wts::AbstractVector{<:Real} = similar(y, 0),
+    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     offset::AbstractVector{<:Real} = similar(y, 0),
     fitargs...,
 ) where {M<:AJSurv}
 
-    R = LSurvCompResp(enter, exit, y, wts)
+    R = LSurvCompResp(enter, exit, y, wts, id)
     res = M(R)
 
     return fit!(res; fitargs...)

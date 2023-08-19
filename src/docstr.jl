@@ -21,13 +21,15 @@ Abstract type for non-parametric survival models, including Kaplan-Meier, Aalen 
 
 DOC_LSURVRESP = """
 
+Outcome type for survival outcome subject to left truncation and right censoring
+
 struct LSurvResp{
   E<:AbstractVector,
   X<:AbstractVector,
   Y<:AbstractVector,
   W<:AbstractVector,
-  I<:AbstractVector,
   T<:Real,
+  I<:AbstractLSurvID,
 } <: AbstractLSurvResp
   enter::E
   "`exit`: Time at observation end"
@@ -38,14 +40,111 @@ struct LSurvResp{
   wts::W
   "`eventtimes`: unique event times"
   eventtimes::E
-  "`id`: identifies individuals"
-  id::I,
   "`origin`: origin on the time scale"
   origin::T
+  "`id`: person level identifier (must be wrapped in ID() function)"
+  id::Vector{I}
 end
+
+function LSurvResp(
+  enter::E,
+  exit::X,
+  y::Y,
+  wts::W,
+  id::Vector{I},
+) where {
+  E<:AbstractVector,
+  X<:AbstractVector,
+  Y<:AbstractVector,
+  W<:AbstractVector,
+  I<:AbstractLSurvID,
+}
+
+LSurvResp(
+  enter::E,
+  exit::X,
+  y::Y,
+  id::Vector{I},
+) 
+
+LSurvResp(
+  enter::E,
+  exit::X,
+  y::Y,
+  wts::W,
+) 
+
+LSurvResp(
+  enter::E,
+  exit::X,
+  y::Y,
+)
+
+LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
 
 """
 
+DOC_LSURVCOMPRESP = """
+
+Outcome type for competing risk survival outcomes subject to left truncation and right censoring
+
+struct LSurvCompResp{
+  E<:AbstractVector,
+  X<:AbstractVector,
+  Y<:AbstractVector,
+  W<:AbstractVector,
+  T<:Real,
+  I<:AbstractLSurvID,
+  V<:AbstractVector,
+  M<:AbstractMatrix,
+} <: AbstractLSurvResp
+  enter::E
+  "`exit`: Time at observation end"
+  exit::X
+  "`y`: event type in observation (integer)"
+  y::Y
+  "`wts`: observation weights"
+  wts::W
+  "`eventtimes`: unique event times"
+  eventtimes::X
+  "`origin`: origin on the time scale"
+  origin::T
+  "`id`: person level identifier (must be wrapped in ID() function)"
+  id::Vector{I}
+  "`eventtypes`: vector of unique event types"
+  eventtypes::V
+  "`eventmatrix`: matrix of indicators on the observation level"
+  eventmatrix::M
+end
+
+LSurvCompResp(
+  enter::E,
+  exit::X,
+  y::Y,
+  wts::W,
+  id::Vector{I}
+)
+
+LSurvCompResp(
+  enter::E,
+  exit::X,
+  y::Y,
+  id::Vector{I}
+)
+
+LSurvCompResp(
+  enter::E,
+  exit::X,
+  y::Y,
+  wts::W,
+)
+
+LSurvCompResp(
+  enter::E,
+  exit::X,
+  y::Y,
+)
+"""
 
 DOC_PHMODEL = """
 PHModel: Mutable object type for proportional hazards regression
