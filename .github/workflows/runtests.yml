@@ -1,21 +1,30 @@
-  name: Run Julia package tests
-  # You may pin to the exact commit or the version.
-  # uses: julia-actions/julia-runtest@79a7e100883947123f8263c5f06e6c0ea3eb972f
-  uses: julia-actions/julia-runtest@v1.9.3
-  with:
-    # Value determining which bounds checking setting to use. Options: yes | no | auto. Default value: yes.
-    check_bounds: yes # optional, default is yes
-    # Value determining whether to test with coverage or not. Options: true | false. Default value: true.
-    coverage: true # optional, default is true
-    # Value passed to the --depwarn flag. Options: yes | no | error. Default value: yes.
-    depwarn: yes # optional, default is yes
-    # If true, then, for each [compat] entry in the active project, only allow the latest compatible version. If the value is auto and the pull request has been opened by Dependabot or CompatHelper, then force_latest_compatible_version will be set to true, otherwise it will be set to false. Options: true | false | auto. Default value: auto.
-    force_latest_compatible_version: auto # optional, default is auto
-    # Value passed to the --inline flag. Options: yes | no. Default value: yes.
-    inline: yes # optional, default is yes
-    # Value inserted in front of the julia command, e.g. for running xvfb-run julia [...]
-    #prefix: # optional, default is 
-    # Value passed to the --project flag. The default value is the repository root: "@."
-    #project: # optional, default is @.
-    # Whether or not to attempt to create GitHub annotations to show test failures inline. Only effective on Julia 1.8+.
-    #annotate: # optional, default is false
+name: Run tests
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version: ['1.0', '1', 'nightly']
+        julia-arch: [x64, x86]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        exclude:
+          - os: macOS-latest
+            julia-arch: x86
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        # with:
+        #   annotate: true
