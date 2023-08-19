@@ -20,7 +20,6 @@ struct LSurvResp{
     X<:AbstractVector,
     Y<:AbstractVector,
     W<:AbstractVector,
-    I<:Vector{SurvID},
     T<:Real,
 } <: AbstractLSurvResp
     enter::E
@@ -32,8 +31,6 @@ struct LSurvResp{
     wts::W
     "`eventtimes`: unique event times"
     eventtimes::E
-    "`id`: identifies individuals"
-    id::I,
     "`origin`: origin on the time scale"
     origin::T
 end
@@ -42,8 +39,7 @@ function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
-    wts::W,
-    id::I
+    wts::Wf
 ) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
     ne = length(enter)
     nx = length(exit)
@@ -65,7 +61,7 @@ function LSurvResp(
         wts = ones(Int64, ny)
     end
 
-    return LSurvResp(enter, exit, y, wts, eventtimes, id, origin)
+    return LSurvResp(enter, exit, y, wts, eventtimes, origin)
 end
 
 function LSurvResp(
