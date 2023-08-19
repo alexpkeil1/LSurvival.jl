@@ -21,7 +21,7 @@ or directly in Julia
 `using Pkg; Pkg.add(url="https://github.com/alexpkeil1/LSurvival.jl")`
 
 
-```
+```{julia}
 using Random, LSurvival, Distributions, LinearAlgebra
 
 # generate some data
