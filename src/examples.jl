@@ -180,25 +180,6 @@ print(cfit2)
 
 
 # now using Julia: check for likelihood evaluation at the point estimates from R
-# using deprecated functions from pre 1.0 package
-coxargs = (cgd.tstart, cgd.tstop, cgd.status, Matrix(cgd[:, [:height, :propylac]]));
-bb, l, gg, hh, _ = coxmodel(
-    coxargs...;
-    weights = cgd.weight,
-    method = "efron",
-    tol = 1e-9,
-    inits = coxcoef,
-    maxiter = 0,
-);
-bb2, l2, gg2, hh2, _ = coxmodel(
-    coxargs...,
-    weights = cgd.weight,
-    method = "breslow",
-    tol = 1e-9,
-    inits = coxcoef2,
-    maxiter = 0,
-);
-# using StatsModels compatible functions
 m = fit(
     PHModel,
     Matrix(cgd[:, [:height, :propylac]]),
@@ -227,37 +208,20 @@ m2 = fit(
 );
 
 # efron likelihoods, weighted
-[l[end], coxll[end], loglikelihood(m)]
+[coxll[end], loglikelihood(m)]
 # breslow likelihoods, weighted
-[l2[end], coxll2[end], loglikelihood(m2)]
+[coxll2[end], loglikelihood(m2)]
 # efron weighted gradient, weighted
-hcat(gg, ff, m.P._grad)
+hcat(ff, m.P._grad)
 # breslow wt grad, weighted + unweighted look promising (float error?)
-hcat(gg2, ff2, m2.P._grad)
+hcat(ff2, m2.P._grad)
 # efron standard errors 
-hcat(sqrt.(diag(-inv(hh))), sqrt.(diag(coxvcov)), stderror(m))
+hcat(sqrt.(diag(coxvcov)), stderror(m))
 # breslow covariance matrix
--inv(hh2)
 coxvcov2
 vcov(m2)
 
 # now fitting from start values of zero in Julia
-coxargs = (cgd.tstart, cgd.tstop, cgd.status, Matrix(cgd[:, [:height, :propylac]]));
-beta, ll, g, h, basehaz = coxmodel(
-    coxargs...,
-    weights = cgd.weight,
-    method = "efron",
-    tol = 1e-18,
-    inits = zeros(2),
-);
-beta2, ll2, g2, h2, basehaz2 = coxmodel(
-    coxargs...,
-    weights = cgd.weight,
-    method = "breslow",
-    tol = 1e-18,
-    inits = zeros(2),
-);
-# using StatsModels compatible functions
 m = fit(
     PHModel,
     Matrix(cgd[:, [:height, :propylac]]),
@@ -284,20 +248,19 @@ m2 = fit(
 );
 
 
-hcat(beta, coxcoef, coef(m))
-hcat(beta2, coxcoef2, coef(m2))
+hcat(coxcoef, coef(m))
+hcat(coxcoef2, coef(m2))
 # efron likelihoods, weighted
-[l[end], coxll[end], loglikelihood(m)]
+[coxll[end], loglikelihood(m)]
 # breslow likelihoods, weighted
-[l2[end], coxll2[end], loglikelihood(m2)]
+[coxll2[end], loglikelihood(m2)]
 # efron weighted gradient, weighted
-hcat(gg, ff, m.P._grad)
+hcat(ff, m.P._grad)
 # breslow wt grad, weighted + unweighted look promising (float error?)
-hcat(gg2, ff2, m2.P._grad)
+hcat(ff2, m2.P._grad)
 # efron standard errors 
-hcat(sqrt.(diag(-inv(hh))), sqrt.(diag(coxvcov)), stderror(m))
+hcat(sqrt.(diag(coxvcov)), stderror(m))
 # breslow covariance matrix
--inv(hh2)
 coxvcov2
 vcov(m2)
 
@@ -342,6 +305,7 @@ function rfun2(int, outt, d, X, wt)
     """
 end
 
+# deprecated julia functions
 function jfun(int, outt, d, X, wt)
     coxmodel(int, outt, d, X, weights = wt, method = "breslow", tol = 1e-9, inits = nothing)
 end
@@ -357,6 +321,44 @@ tj = @btime jfun(int, outt, d, X, wt);
 tj2 = @btime jfun2(int, outt, d, X, wt);
 
 
+# now with Efron's method
+# benchmark runtimes vs. calling R
+function rfun(int, outt, d, X, wt)
+    @rput int outt d X wt
+    R"""
+       library(survival)
+       df = data.frame(int=int, outt=outt, d=d, X=X)
+       cfit = coxph(Surv(int,outt,d)~., weights=wt, data=df, ties="efron")
+       coxcoefs_cr = coef(cfit)
+    """
+    @rget coxcoefs_cr
+end
+function rfun2(int, outt, d, X, wt)
+    R"""
+       library(survival)
+       df = data.frame(int=int, outt=outt, d=d, X=X)
+       cfit = coxph(Surv(int,outt,d)~., weights=wt, data=df, ties="efron")
+       coxcoefs_cr = coef(cfit)
+    """
+end
+
+# deprecated julia functions
+function jfun(int, outt, d, X, wt)
+    coxmodel(int, outt, d, X, weights = wt, method = "efron", tol = 1e-9, inits = nothing)
+end
+
+function jfun2(int, outt, d, X, wt)
+    fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", rtol = 1e-9)
+end
+
+@rput int outt d X wt;
+tr2 = @btime rfun2(int, outt, d, X, wt);
+tr = @btime rfun(int, outt, d, X, wt);
+tj = @btime jfun(int, outt, d, X, wt);
+tj2 = @btime jfun2(int, outt, d, X, wt);
+
+
+
 ###################################################################
 # checking baseline hazard against R
 ###################################################################
@@ -366,10 +368,6 @@ d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
 wt ./= (sum(wt) / length(wt))
 
-beta, ll, g, h, basehaz =
-    coxmodel(int, outt, d, X, weights = wt, method = "breslow", tol = 1e-9, inits = nothing);
-beta2, ll2, g2, h2, basehaz2 =
-    coxmodel(int, outt, d, X, weights = wt, method = "efron", tol = 1e-9, inits = nothing);
 m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9);
 m2 = fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", rtol = 1e-9);
 
@@ -398,12 +396,10 @@ cfit
 @rget bh2;
 hcat(
     diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())],
-    basehaz[2:end, 1],
     m.bh[2:end, 1],
 )
 hcat(
     diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())],
-    basehaz2[2:end, 1],
     m2.bh[2:end, 1],
 )
 
