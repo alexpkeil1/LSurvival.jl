@@ -58,6 +58,33 @@ bootstrap(R::LSurvCompResp) = bootstrap(MersenneTwister(), R::LSurvCompResp)
 using LSurvival, Random
 
 id, int, outt, data =
+LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+
+d, X = data[:, 4], data[:, 1:3]
+weights = rand(length(d))
+
+# survival outcome:
+R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+P = PHParms(X)
+idx, R2 = bootstrap(R)
+P2 = bootstrap(idx, P)
+
+Mod = PHModel(R2, P2)
+LSurvival._fit!(Mod, start=Mod.P._B)
+
+```
+
+"""
+function bootstrap(idx::Vector{Int}, P::PHParms)
+    P2 = PHParms(P.X[idx, :])
+    P2
+end
+
+"""
+```
+using LSurvival, Random
+
+id, int, outt, data =
 LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
 
 d, X = data[:, 4], data[:, 1:3]
@@ -79,7 +106,9 @@ LSurvival._fit!(Mod, start=Mod.P._B)
 
 # convenience function for bootstrapping a model
 Modc = bootstrap(Mod)
-LSurvival._fit!(Modb, start=Modb.P._B)
+LSurvival._fit!(Modc, start=Modc.P._B)
+Modc.P.X = nothing
+Modc.R = nothing
 
 ```
 """
@@ -90,32 +119,7 @@ function bootstrap(rng::MersenneTwister, m::PHModel)
 end
 bootstrap(m::PHModel) = bootstrap(MersenneTwister(), m::PHModel)
 
-"""
-```
-using LSurvival, Random
 
-id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
-
-d, X = data[:, 4], data[:, 1:3]
-weights = rand(length(d))
-
-# survival outcome:
-R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
-P = PHParms(X)
-idx, R2 = bootstrap(R)
-P2 = bootstrap(idx, P)
-
-Mod = PHModel(R2, P2)
-LSurvival._fit!(Mod, start=Mod.P._B)
-
-```
-
-"""
-function bootstrap(rng::MersenneTwister, P::PHmodel)
-    P2 = PHParms(P.X[idx, :])
-    P2
-end
 
 
 # in progress functions

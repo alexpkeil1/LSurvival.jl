@@ -140,6 +140,8 @@ function _fit!(
     atol::Real = sqrt(1e-8),
     rtol::Real = 1e-8,
     start = nothing,
+    keepx = false,
+    keepy = false,
     kwargs...,
 )
     m.P._B = start
@@ -246,6 +248,8 @@ function _fit!(
     end
     m.P._LL = _llhistory
     m.fit = true
+    m.P.X = keepx ? m.P.X : nothing
+    m.R = keepy ? m.R : nothing
     m
 end
 
