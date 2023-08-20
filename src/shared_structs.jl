@@ -15,7 +15,7 @@ struct ID <: AbstractLSurvID
 end
 
 function Base.show(io::IO, x::I) where {I<:ID}
-    show(io, x.id)
+    show(io, x.value)
 end
 Base.show(x::I) where {I<:ID} = Base.show(stdout, x::I)
 
@@ -36,7 +36,6 @@ function Base.iterate(x::ID, state = 1)
     end
 end
 
-Base.iterate(S::Squares, state = 1) = state > S.count ? nothing : (state * state, state + 1)
 """
 $DOC_LSURVRESP
 """
@@ -276,15 +275,15 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
     op = reduce(vcat, pr)
     nr = size(op, 1)
     if nr < maxrows
-        [println(iob, "$(x.id[oo]). $(op1[oo])") for oo in eachindex(op)]
+        [println(iob, "$(x.value[oo]). $(op1[oo])") for oo in eachindex(op)]
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
         op1 = op1[1:len]
         op2 = op2[(end-len+1):end]
-        [println(iob, "$(x.id[1:len][oo]). $(op1[oo])") for oo in eachindex(op1)]
+        [println(iob, "$(x.value[1:len][oo]). $(op1[oo])") for oo in eachindex(op1)]
         println(iob, "...")
-        [println(iob, "$(x.id[(end-len+1):end][oo]). $(op2[oo])") for oo in eachindex(op2)]
+        [println(iob, "$(x.value[(end-len+1):end][oo]). $(op2[oo])") for oo in eachindex(op2)]
     end
     str = String(take!(iob))
     println(io, str)
