@@ -57,11 +57,11 @@ using Random
 
     println(ajres)
     println(stderror(ajres))
-    println(confint(ajres, level=.95))
+    println(confint(ajres, level = 0.95))
     println(kms)
     println(stderror(kms))
-    println(confint(kms, level=.95))
-    println(confint(kms, level=.95, method="lognlog"))
+    println(confint(kms, level = 0.95))
+    println(confint(kms, level = 0.95, method = "lognlog"))
 
     X = hcat(z, x)
     d1 = d .* Int.(event .== 1)

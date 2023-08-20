@@ -114,11 +114,11 @@ R = LSurvResp(int, outt, d, weights)    # specification with  weights and late e
 P = PHParms(X)
 
 # not-yet-fit PH model object
-M = PHModel(R,P, "breslow")
-M = PHModel(R,P)  #default is "efron" method for ties
+M = PHModel(R, P, "breslow")
+M = PHModel(R, P)  #default is "efron" method for ties
 isfitted(M)  # confirm this is not yet "fitted"
-LSurvival._fit!(M, start=[0.0, 0.0])
-isfitted(M)  
+LSurvival._fit!(M, start = [0.0, 0.0])
+isfitted(M)
 
 #################################################################################################################### 
 # space savers, bootstrapping
@@ -127,8 +127,8 @@ res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
-ft1big = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
-ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=false, keepy=false)
+ft1big = fit(PHModel, X, int, outt, d .* (event .== 1), keepx = true, keepy = true)
+ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx = false, keepy = false)
 
 
 Base.summarysize(ft1big)   # 8447 bytes

@@ -40,6 +40,7 @@ import Base: convert, show
 
 # Model types
 export ID,
+    # Strata
     PHModel,
     KMSurv,
     AJSurv,
