@@ -40,7 +40,15 @@ import Base: convert, show
 
 # Model types
 export ID,
-    PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv, AbstractLSurvID, AbstractLSurvParms
+    PHModel,
+    KMSurv,
+    AJSurv,
+    PHSurv,
+    PHParms,
+    AbstractPH,
+    AbstractNPSurv,
+    AbstractLSurvID,
+    AbstractLSurvParms
 # Outcome types
 export LSurvResp, LSurvCompResp
 # functions    
@@ -52,7 +60,8 @@ export kaplan_meier,        # interface for estimating cumulative risk from non-
     cox_summary,         # (deprecated) convenience function to summarize Cox model results
     ci_from_coxmodels    # (deprecated) interface for estimating cumulative risk from hazard specific Cox models
 #re-exports
-export coef,
+export bootstrap,
+    coef,
     coeftable,
     coefnames,
     confint,

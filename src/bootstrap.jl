@@ -114,14 +114,15 @@ bootstrap(m::PHModel) = bootstrap(MersenneTwister(), m)
 
 
 """
-res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+using LSurvival, Random
+res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
 mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 
-bootstrap(mainfit, 2)
-
+mb = bootstrap(mainfit)
+LSurvival._fit!(mb, keepx=true, keepy=true)
 """
 function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
     if isnothing(m.R) || isnothing(m.P.X)
@@ -130,7 +131,7 @@ function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
     res = zeros(length(coef(m)), iter)
     for i in 1:iter
       mb = bootstrap(rng, m)
-      LSurvival._fit!(mb;keepx=true, keepy=true, kwargs...)
+      LSurvival._fit!(mb; kwargs...)
       res[i,:] = mb.R._B
     end
 end
