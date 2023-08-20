@@ -1,3 +1,176 @@
+
+function _coxrisk!(_r, X, B)
+  map!(z -> exp(z), _r, X * B)
+  nothing
+end
+
+function _coxrisk(X, B)
+  _r = ones(size(X, 1))
+  _coxrisk!(_r, X, B)
+end
+
+"""
+$DOC_LGH
+"""
+function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+    whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
+    isnothing(whichmeth) ? throw("Ties method not recognized") : true
+    if whichmeth == 1
+        lgh_efron!(
+            _den,
+            _LL,
+            _grad,
+            _hess,
+            j,
+            p,
+            X[caseidx, :],
+            X[risksetidx, :],
+            _r[caseidx],
+            _r[risksetidx],
+            _wt[caseidx],
+            _wt[risksetidx],
+            length(caseidx),  # nties
+        )
+    elseif whichmeth == 2
+        lgh_breslow!(
+            _den,
+            _LL,
+            _grad,
+            _hess,
+            j,
+            p,
+            X[caseidx, :],
+            X[risksetidx, :],
+            _r[caseidx],
+            _r[risksetidx],
+            _wt[caseidx],
+            _wt[risksetidx],
+        )
+    end
+end
+
+"""
+$DOC_LGH_BRESLOW
+"""
+function lgh_breslow!(
+    _den,
+    _LL,
+    _grad,
+    _hess,
+    j,
+    p,
+    Xcases,
+    Xriskset,
+    _rcases,
+    _rriskset,
+    _wtcases,
+    _wtriskset,
+)
+    den = sum(_rriskset .* _wtriskset)
+    _LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
+    #
+    numg = Xriskset' * (_rriskset .* _wtriskset)
+    xbar = numg / den # risk-score-weighted average of X columns among risk set
+    _grad .+= (Xcases .- xbar')' * (_wtcases)
+    #
+    numgg = (Xriskset' * Diagonal(_rriskset .* _wtriskset) * Xriskset)
+    xxbar = numgg / den
+    _hess .+= -(xxbar - xbar * xbar') * sum(_wtcases)
+    _den[j] = den
+    nothing
+end
+
+"""
+$DOC_LGH_EFRON
+"""
+function lgh_efron!(
+    _den,
+    _LL,
+    _grad,
+    _hess,
+    j,
+    p,
+    Xcases,
+    Xriskset,
+    _rcases,
+    _rriskset,
+    _wtcases,
+    _wtriskset,
+    nties,
+)
+
+    effwts = efron_weights(nties)
+    den = sum(_wtriskset .* _rriskset)
+    denc = sum(_wtcases .* _rcases)
+    dens = [den - denc * ew for ew in effwts]
+    _LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
+    #
+    numg = Xriskset' * (_wtriskset .* _rriskset)
+    numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
+    xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
+    _grad .+= Xcases' * _wtcases
+    for i = 1:nties
+        _grad .+= (-xbars[i]) * sum(_wtcases) / nties
+    end
+    numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
+    numggs =
+        [numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts]
+    xxbars = numggs ./ dens
+    #
+    for i = 1:nties
+        _hess .-= (xxbars[i] - xbars[i] * xbars[i]') .* sum(_wtcases) / nties
+    end
+    #_den[j] = den # Breslow estimator
+    sw = sum(_wtcases)
+    aw = sw / nties
+    _den[j] = 1.0 ./ sum(aw ./ dens) # using Efron estimator
+    nothing
+end
+
+"""
+$DOC__STEPCOXi
+"""
+function _stepcox!(
+    lowermethod3,
+    # recycled parameters
+    _LL::Vector,
+    _grad::Vector,
+    _hess::Matrix{Float64},
+    # data
+    _in::Vector,
+    _out::Vector,
+    d::Union{Vector,BitVector},
+    X,
+    _wt::Vector,
+    # fixed parameters
+    _B::Vector,
+    # indexs
+    p::T,
+    n::U,
+    eventtimes::Vector,
+    # recycled containers
+    _r::Vector,
+    # big indexes
+    risksetidxs,
+    caseidxs,
+) where {T<:Int,U<:Int}
+    _coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
+    # loop over event times
+    ne = length(eventtimes)
+    den, wtdriskset, wtdcases = zeros(ne), zeros(ne), zeros(ne)
+    _LL .*= 0.0
+    _grad .*= 0.0
+    _hess .*= 0.0
+    @inbounds for j = 1:ne
+        risksetidx = risksetidxs[j]
+        caseidx = caseidxs[j]
+        lgh!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+        wtdriskset[j] = sum(_wt[risksetidx])
+        wtdcases[j] = sum(_wt[caseidx])
+    end # j
+    den, wtdriskset, wtdcases
+end #function _stepcox!
+
 #= #################################################################################################################### 
 Newton raphson wrapper function
 =# ############################################################################################################d########

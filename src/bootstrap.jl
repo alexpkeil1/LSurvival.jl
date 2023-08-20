@@ -142,7 +142,7 @@ function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
         throw("Model is missing response or predictor matrix, use keepx=true, keepy=true")
     end
     res = zeros(iter, length(coef(m)))
-    for i = 1:iter
+    @inbounds for i = 1:iter
         mb = bootstrap(rng, m)
         LSurvival._fit!(mb; kwargs...)
         res[i, :] = mb.P._B

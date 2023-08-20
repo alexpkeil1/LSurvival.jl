@@ -156,42 +156,23 @@ function _fit!(
     if haskey(kwargs, :ties)
         m.ties = kwargs[:ties]
     end
-    method = m.ties
-    #
-    lowermethod3 = lowercase(method[1:3])
-    # tuning params
+    lowermethod3 = lowercase(m.ties[1:3])
+    # Newton Raphson step size scaler
     λ = 1.0
     #
     totiter = 0
-    #
     oldQ = floatmax()
     lastLL = -floatmax()
     risksetidxs, caseidxs = [], []
     @inbounds for _outj in m.R.eventtimes
         push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj)))
+        #push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))) # implement with strata argument
         push!(
             caseidxs,
             findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj)),
         )
     end
-    den, _sumwtriskset, _sumwtcase = _stepcox!(
-        lowermethod3,
-        m.P._LL,
-        m.P._grad,
-        m.P._hess,
-        m.R.enter,
-        m.R.exit,
-        m.R.y,
-        m.P.X,
-        m.R.wts,
-        m.P._B,
-        m.P.p,
-        m.P.n,
-        m.R.eventtimes,
-        m.P._r,
-        risksetidxs,
-        caseidxs,
-    )
+    den, _sumwtriskset, _sumwtcase = _stepcox!(lowermethod3, m, risksetidxs, caseidxs)
     _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
@@ -207,39 +188,20 @@ function _fit!(
         if converged
             break
         end
-        if Q > oldQ
+        if Q > oldQ # gradient has increased, indicating the maximum of a monotonic partial likelihood was overshot
             λ *= 0.5  # step-halving
         else
             λ = min(2.0λ, 1.0) # de-halving
-            #bestb = _B
-            nothing
         end
         isnan(m.P._LL[1]) ? throw("Log-partial-likelihood is NaN") : true
         if abs(m.P._LL[1]) != Inf
             m.P._B .+= inv(-(m.P._hess)) * m.P._grad .* λ # newton raphson step
             oldQ = Q
         else
-            throw("log-partial-likelihood is infinite")
+            throw("Log-partial-likelihood is infinite")
         end
         lastLL = m.P._LL[1]
-        den, _, _ = _stepcox!(
-            lowermethod3,
-            m.P._LL,
-            m.P._grad,
-            m.P._hess,
-            m.R.enter,
-            m.R.exit,
-            m.R.y,
-            m.P.X,
-            m.R.wts,
-            m.P._B,
-            m.P.p,
-            m.P.n,
-            m.R.eventtimes,
-            m.P._r,
-            risksetidxs,
-            caseidxs,
-        )
+        den, _, _ = _stepcox!(lowermethod3, m, risksetidxs, caseidxs)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
     end
@@ -463,15 +425,11 @@ end
 
 calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z))) * 2
 
-function _coxrisk!(_r, X, B)
-    map!(z -> exp(z), _r, X * B)
+function _coxrisk!(p::P) where {P<:PHParms}
+    map!(z -> exp(z), p._r, p.X * p._B)
     nothing
 end
 
-function _coxrisk(X, B)
-    _r = ones(size(X, 1))
-    _coxrisk!(_r, X, B)
-end
 
 ##################################################################################################################### 
 # partial likelihood/gradient/hessian functions for tied events
@@ -482,28 +440,25 @@ $DOC_LGH_BRESLOW
 """
 function lgh_breslow!(
     _den,
-    _LL,
-    _grad,
-    _hess,
+    p::P,
     j,
-    p,
     Xcases,
     Xriskset,
     _rcases,
     _rriskset,
     _wtcases,
     _wtriskset,
-)
+) where {P<: PHParms}
     den = sum(_rriskset .* _wtriskset)
-    _LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
+    p._LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
     #
     numg = Xriskset' * (_rriskset .* _wtriskset)
     xbar = numg / den # risk-score-weighted average of X columns among risk set
-    _grad .+= (Xcases .- xbar')' * (_wtcases)
+    p._grad .+= (Xcases .- xbar')' * (_wtcases)
     #
     numgg = (Xriskset' * Diagonal(_rriskset .* _wtriskset) * Xriskset)
     xxbar = numgg / den
-    _hess .+= -(xxbar - xbar * xbar') * sum(_wtcases)
+    p._hess .+= -(xxbar - xbar * xbar') * sum(_wtcases)
     _den[j] = den
     nothing
 end
@@ -512,16 +467,14 @@ function efron_weights(m)
     [(l - 1) / m for l = 1:m]
 end
 
+
 """
 $DOC_LGH_EFRON
 """
 function lgh_efron!(
     _den,
-    _LL,
-    _grad,
-    _hess,
+    p::P,
     j,
-    p,
     Xcases,
     Xriskset,
     _rcases,
@@ -529,20 +482,20 @@ function lgh_efron!(
     _wtcases,
     _wtriskset,
     nties,
-)
+) where {P<:PHParms}
 
     effwts = efron_weights(nties)
     den = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
     dens = [den - denc * ew for ew in effwts]
-    _LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
+    p._LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
     #
     numg = Xriskset' * (_wtriskset .* _rriskset)
     numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
     xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
-    _grad .+= Xcases' * _wtcases
+    p._grad .+= Xcases' * _wtcases
     for i = 1:nties
-        _grad .+= (-xbars[i]) * sum(_wtcases) / nties
+        p._grad .+= (-xbars[i]) * sum(_wtcases) / nties
     end
     numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
     numggs =
@@ -550,7 +503,7 @@ function lgh_efron!(
     xxbars = numggs ./ dens
     #
     for i = 1:nties
-        _hess .-= (xxbars[i] - xbars[i] * xbars[i]') .* sum(_wtcases) / nties
+        p._hess .-= (xxbars[i] - xbars[i] * xbars[i]') .* sum(_wtcases) / nties
     end
     #_den[j] = den # Breslow estimator
     sw = sum(_wtcases)
@@ -562,39 +515,34 @@ end
 """
 $DOC_LGH
 """
-function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-    whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
+#function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
+function lgh!(lowermethod3, _den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+        whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
     isnothing(whichmeth) ? throw("Ties method not recognized") : true
     if whichmeth == 1
         lgh_efron!(
             _den,
-            _LL,
-            _grad,
-            _hess,
+            m.P,
             j,
-            p,
-            X[caseidx, :],
-            X[risksetidx, :],
-            _r[caseidx],
-            _r[risksetidx],
-            _wt[caseidx],
-            _wt[risksetidx],
+            m.P.X[caseidx, :],
+            m.P.X[risksetidx, :],
+            m.P._r[caseidx],
+            m.P._r[risksetidx],
+            m.R.wts[caseidx],
+            m.R.wts[risksetidx],
             length(caseidx),  # nties
         )
     elseif whichmeth == 2
         lgh_breslow!(
             _den,
-            _LL,
-            _grad,
-            _hess,
+            m.P,
             j,
-            p,
-            X[caseidx, :],
-            X[risksetidx, :],
-            _r[caseidx],
-            _r[risksetidx],
-            _wt[caseidx],
-            _wt[risksetidx],
+            m.P.X[caseidx, :],
+            m.P.X[risksetidx, :],
+            m.P._r[caseidx],
+            m.P._r[risksetidx],
+            m.R.wts[caseidx],
+            m.R.wts[risksetidx]
         )
     end
 end
@@ -603,42 +551,33 @@ end
 $DOC__STEPCOXi
 """
 function _stepcox!(
-    lowermethod3,
-    # recycled parameters
-    _LL::Vector,
-    _grad::Vector,
-    _hess::Matrix{Float64},
-    # data
-    _in::Vector,
-    _out::Vector,
-    d::Union{Vector,BitVector},
-    X,
-    _wt::Vector,
-    # fixed parameters
-    _B::Vector,
-    # indexs
-    p::T,
-    n::U,
-    eventtimes::Vector,
-    # recycled containers
-    _r::Vector,
+    lowermethod3::String,
+    m::M,
     # big indexes
     risksetidxs,
     caseidxs,
-) where {T<:Int,U<:Int}
-    _coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
+) where {M<:AbstractPH}
+    #_coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
+    _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
     # loop over event times
-    ne = length(eventtimes)
+    ne = length(m.R.eventtimes)
     den, wtdriskset, wtdcases = zeros(ne), zeros(ne), zeros(ne)
-    _LL .*= 0.0
-    _grad .*= 0.0
-    _hess .*= 0.0
+    m.P._LL .*= 0.0
+    m.P._grad .*= 0.0
+    m.P._hess .*= 0.0
     @inbounds for j = 1:ne
         risksetidx = risksetidxs[j]
         caseidx = caseidxs[j]
-        lgh!(lowermethod3, den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-        wtdriskset[j] = sum(_wt[risksetidx])
-        wtdcases[j] = sum(_wt[caseidx])
+        lgh!(
+            lowermethod3,
+            den,
+            m,
+            j,
+            caseidx,
+            risksetidx,
+        )
+        wtdriskset[j] = sum(m.R.wts[risksetidx])
+        wtdcases[j] = sum(m.R.wts[caseidx])
     end # j
     den, wtdriskset, wtdcases
 end #function _stepcox!

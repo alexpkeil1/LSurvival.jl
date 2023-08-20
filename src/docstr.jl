@@ -225,7 +225,7 @@ Accepts any Number or String
 ```
 
 Used for the id argument in 
-  
+
   - Outcome types: LSurvResp, LSurvCompResp 
   - Model types: PHModel, KMRisk, AJRisk
 
@@ -332,6 +332,7 @@ wts::AbstractVector{<:Real}      = similar(y, 0),
 offset::AbstractVector{<:Real}   = similar(y, 0),
 fitargs...) where {M<:AbstractPH}
 ```
+
 ```julia-repl
 using LSurvival
 using Random
