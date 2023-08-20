@@ -131,7 +131,10 @@ ft1big = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=false, keepy=false)
 
 
-Base.summarysize(x)
+Base.summarysize(ft1big)   # 8447 bytes
+Base.summarysize(ft1small) # 1591 bytes
+
+
 
 
 #################################################################################################################### 
