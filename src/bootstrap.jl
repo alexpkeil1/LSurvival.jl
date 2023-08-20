@@ -32,6 +32,7 @@ enter = zeros(length(event))
 
 # survival outcome:
 R = LSurvCompResp(enter, t, event, weights, ID.(collect(1:length(t))))    # specification with ID only
+bootstrap(R) # note that entire observations/clusters identified by id are kept
 ```
 """
 function bootstrap(rng::MersenneTwister, R::LSurvCompResp)
@@ -75,6 +76,9 @@ end
 
 """
 ```
+bootstrap(rng::MersenneTwister, m::PHModel)
+```
+```julia-repl
 using LSurvival, Random
 
 id, int, outt, data =
@@ -114,6 +118,13 @@ bootstrap(m::PHModel) = bootstrap(MersenneTwister(), m)
 
 
 """
+    bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
+
+Bootstrap Cox model coefficients
+```
+LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
+```
+```julia-repl
 using LSurvival, Random
 res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
@@ -121,9 +132,10 @@ X = hcat(z, x)
 
 mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 
-mb = bootstrap(mainfit, 10)
+mb = bootstrap(mainfit, 1000)
+mainfit
 
-LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
+```
 """
 function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
     if isnothing(m.R) || isnothing(m.P.X)

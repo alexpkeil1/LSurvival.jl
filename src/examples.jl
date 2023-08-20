@@ -123,7 +123,7 @@ isfitted(M)
 #################################################################################################################### 
 # space savers, bootstrapping
 ####################################################################################################################
-res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 800)
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
@@ -134,6 +134,12 @@ ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=false, keepy=fal
 Base.summarysize(ft1big)   # 8447 bytes
 Base.summarysize(ft1small) # 1591 bytes
 
+# bootstrapping can only be done with fit objects where keepx=true, keepy=true
+bootstrap(ft1big)      # give a single bootstrap iteration of a model (to be fit)
+bootcoefs = bootstrap(MersenneTwister(123123), ft1big, 100) # draw 100 bootstrap samples of model coefficients
+
+# StatsBase.std(bootcoefs, dims=1): 0.156726  0.109832
+stderror(ft1big) # : 0.13009936549414425  0.11233304711033691
 
 
 

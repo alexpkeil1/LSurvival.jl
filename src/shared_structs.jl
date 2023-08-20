@@ -14,6 +14,14 @@ struct ID <: AbstractLSurvID
     value::T where {T<:Union{Number,String}}
 end
 
+"""
+$DOC_ID
+"""
+struct Strata <: AbstractLSurvID
+    value::T where {T<:Union{Number,String}}
+end
+
+
 function Base.show(io::IO, x::I) where {I<:ID}
     show(io, x.value)
 end

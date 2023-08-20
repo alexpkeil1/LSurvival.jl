@@ -223,12 +223,24 @@ Accepts any Number or String
 ```julia-repl
 [ID(i) for i in 1:10]
 ```
+
 Used for the id argument in 
-    - Outcome types: LSurvResp, LSurvCompResp 
-    - Model types: PHModel, KMRisk, AJRisk
+  
+  - Outcome types: LSurvResp, LSurvCompResp 
+  - Model types: PHModel, KMRisk, AJRisk
 
 """
 
+DOC_STRATA = """
+Type for identifying individuals in survival outcomes.
+
+Accepts any Number or String
+```julia-repl
+[Strata(i) for i in 1:10]
+```
+Used for the strata argument in PHModel (not yet implemented)
+
+"""
 ####### Primary methods
 
 DOC_COXPH = """
