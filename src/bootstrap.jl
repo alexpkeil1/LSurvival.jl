@@ -121,7 +121,8 @@ X = hcat(z, x)
 
 mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 
-mb = bootstrap(mainfit, 10, start=[0.0, 0.0], keepx=true, keepy=true)
+mb = bootstrap(mainfit, 10)
+
 LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
 """
 function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
@@ -134,5 +135,6 @@ function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
       LSurvival._fit!(mb; kwargs...)
       res[i,:] = mb.P._B
     end
+    res
 end
 bootstrap(m::PHModel, iter::Int; kwargs...) = bootstrap(MersenneTwister(), m, iter; kwargs...)
