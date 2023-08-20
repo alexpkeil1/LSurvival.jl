@@ -4,7 +4,7 @@
 #####################################################################################################################
 
 mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
-    R::G        # Survival response
+    R::Union{Nothing,G}        # Survival response
     times::AbstractVector
     surv::Vector{Float64}
     riskset::Vector{Float64}
@@ -12,7 +12,7 @@ mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
     fit::Bool
 end
 
-function KMSurv(R::G) where {G<:LSurvResp}
+function KMSurv(R::Union{Nothing,G}) where {G<:LSurvResp}
     times = R.eventtimes
     nt = length(times)
     surv = ones(Float64, nt)
@@ -22,7 +22,7 @@ function KMSurv(R::G) where {G<:LSurvResp}
 end
 
 mutable struct AJSurv{G<:LSurvCompResp} <: AbstractNPSurv
-    R::G        # Survival response
+    R::Union{Nothing,G}        # Survival response
     times::AbstractVector
     surv::Vector{Float64}
     risk::Matrix{Float64}
@@ -31,7 +31,7 @@ mutable struct AJSurv{G<:LSurvCompResp} <: AbstractNPSurv
     fit::Bool
 end
 
-function AJSurv(R::G) where {G<:LSurvCompResp}
+function AJSurv(R::Union{Nothing,G}) where {G<:LSurvCompResp}
     times = R.eventtimes
     net = length(R.eventtypes) - 1
     nt = length(times)
@@ -47,7 +47,7 @@ end
 # Fitting functions for non-parametric survival models
 #####################################################################################################################
 
-function _fit!(m::KMSurv; eps = 0.00000001, censval = 0, kwargs...)
+function _fit!(m::KMSurv; eps = 0.00000001, censval = 0, keepy = true, kwargs...)
     # there is some bad floating point issue with epsilon that should be tracked
     # R handles this gracefully
     # ties allowed
@@ -62,15 +62,12 @@ function _fit!(m::KMSurv; eps = 0.00000001, censval = 0, kwargs...)
         m.riskset[_i] = ni
     end
     m.surv = exp.(cumsum(_1mdovern))
+    m.R = keepy ? m.R : nothing
     m.fit = true
     m
 end
 
-function _fit!(
-    m::AJSurv;
-    #dvalues=[1.0, 2.0], 
-    eps = 0.00000001,
-)
+function _fit!(m::AJSurv; keepy = true, eps = 0.00000001)
     dvalues = m.R.eventtypes[2:end]
     nvals = length(dvalues)
     kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, weights = m.R.wts)
@@ -93,6 +90,7 @@ function _fit!(
         m.risk[:, jidx] = cumsum(m.risk[:, jidx])
     end
     m.fit = true
+    m.R = keepy ? m.R : nothing
     m
     #orderedtimes, S, ajest, riskset
 end;
@@ -105,7 +103,7 @@ $DOC_FIT_AJSURV
 
 $DOC_FIT_PHSURV
 """
-function StatsBase.fit!(m::T; kwargs...) where {T <: AbstractNPSurv}
+function StatsBase.fit!(m::T; kwargs...) where {T<:AbstractNPSurv}
     _fit!(m; kwargs...)
 end
 
@@ -177,19 +175,25 @@ function StatsBase.stderror(m::KMSurv)
 end
 
 
-function confint_normal(m::KMSurv; level=0.95)
+function confint_normal(m::KMSurv; level = 0.95)
     se = stderror(m)
-    halfalpha = (1.0-level)/2.0
+    halfalpha = (1.0 - level) / 2.0
     zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
     cimat = reduce(hcat, [m.surv .+ zcriti .* se for zcriti in zcrit])
     cimat
 end
 
-function confint_lognlog(m::KMSurv; level=0.95)
+function confint_lognlog(m::KMSurv; level = 0.95)
     se = stderror(m)
-    halfalpha = (1.0-level)/2.0
+    halfalpha = (1.0 - level) / 2.0
     zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
-    logci = reduce(hcat, [log.(m.surv) .* exp.(zcriti .* se ./ (m.surv .* log.(m.surv))) for zcriti in zcrit])
+    logci = reduce(
+        hcat,
+        [
+            log.(m.surv) .* exp.(zcriti .* se ./ (m.surv .* log.(m.surv))) for
+            zcriti in zcrit
+        ],
+    )
     cimat = exp.(logci)
     cimat
 end
@@ -198,23 +202,39 @@ end
 $DOC_VARIANCE_AJSURV
 """
 function StatsBase.stderror(m::AJSurv)
-    riski = m.risk[:,1]
-    d = sum(m.events, dims=2)
+    riski = m.risk[:, 1]
+    d = sum(m.events, dims = 2)
     sm1 = vcat(1.0, m.surv[1:end-1])
-    vv = [(cumsum((m.surv .* m.risk[:,j]) .* (m.surv .* m.risk[:,j]) .* (m.riskset .- 1.0) .* m.riskset .^(-3.0) .* d, dims=1) +
-     cumsum((sm1) .* (sm1) .* (1.0 .- 2.0 .* m.risk[:,j]) .* (m.riskset .- 1.0) .* m.riskset .^(-3.0) .* m.events[:,j], dims=1))
-     for j in 1:size(m.risk, 2)]
+    vv = [
+        (
+            cumsum(
+                (m.surv .* m.risk[:, j]) .* (m.surv .* m.risk[:, j]) .*
+                (m.riskset .- 1.0) .* m.riskset .^ (-3.0) .* d,
+                dims = 1,
+            ) + cumsum(
+                (sm1) .* (sm1) .* (1.0 .- 2.0 .* m.risk[:, j]) .* (m.riskset .- 1.0) .*
+                m.riskset .^ (-3.0) .* m.events[:, j],
+                dims = 1,
+            )
+        ) for j = 1:size(m.risk, 2)
+    ]
 
     var = reduce(hcat, vv)
     sqrt.(var)
 end
 
 
-function confint_normal(m::AJSurv; level=0.95)
+function confint_normal(m::AJSurv; level = 0.95)
     se = stderror(m)
-    halfalpha = (1.0-level)/2.0
+    halfalpha = (1.0 - level) / 2.0
     zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
-    cimat = reduce(hcat, [reduce(hcat, [m.risk[:,j] .+ zcriti .* se[:,j] for zcriti in zcrit]) for j in 1:size(m.events,2)])
+    cimat = reduce(
+        hcat,
+        [
+            reduce(hcat, [m.risk[:, j] .+ zcriti .* se[:, j] for zcriti in zcrit]) for
+            j = 1:size(m.events, 2)
+        ],
+    )
     cimat
 end
 
@@ -222,15 +242,17 @@ end
 """
 $DOC_VARIANCE_KMSURV
 """
-function StatsBase.confint(m::KMSurv; level=0.95, method="normal")
-    method == "lognlog" ? confint_lognlog(m,level=level) : confint_normal(m,level=level)
+function StatsBase.confint(m::KMSurv; level = 0.95, method = "normal")
+    method == "lognlog" ? confint_lognlog(m, level = level) :
+    confint_normal(m, level = level)
 end
 
 """
 $DOC_VARIANCE_AJSURV
 """
-function StatsBase.confint(m::AJSurv; level=0.95, method="normal")
-    method != "normal" ? @warn("only method=normal CI is implemented for AJSurv objects") : confint_normal(m,level=level)
+function StatsBase.confint(m::AJSurv; level = 0.95, method = "normal")
+    method != "normal" ? @warn("only method=normal CI is implemented for AJSurv objects") :
+    confint_normal(m, level = level)
 end
 
 function StatsBase.isfitted(m::M) where {M<:AJSurv}
