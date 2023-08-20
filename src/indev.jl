@@ -4,10 +4,28 @@
 # - using formulas
 
 if false
+using LSurvival, Random
+
+
+"""
+```
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+
+d, X = data[:, 4], data[:, 1:3]
+weights = rand(length(d))
+
+# survival outcome:
+R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+```
+"""
+function bootstrap(rng::MersenneTwister(), R::LSurvResp)
+  uid = unique(R.id)
+  bootid = sort(rand(uid, length(uid)))
+  idx = [findall(R.id .== bootid[i]) for i in 1:length(bootid)]
 
 
 end
-
 
 
 # in progress functions
