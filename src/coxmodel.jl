@@ -142,8 +142,11 @@ function _fit!(
     start = nothing,
     keepx = false,
     keepy = false,
+    bootstrap_sample = false,
+    bootstrap_rng = MersenneTwister(),
     kwargs...,
 )
+    m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
     m.P._B = start
     if haskey(kwargs, :ties)
         m.ties = kwargs[:ties]

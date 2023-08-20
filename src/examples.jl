@@ -100,6 +100,8 @@ ft1d = fit(PHModel, X, int, outt, d .* (event .== 1), maxiter = 0, start = [0.0,
 ft2d = fit(PHModel, X, int, outt, d .* (event .== 2), maxiter = 0, start = [0.0, 0.0])
 risk1d = risk_from_coxphmodels([ft1d, ft2d]) # compare with risk2 object
 
+
+
 ###################################################################
 # Under the hood of some of the structs/models
 ###################################################################
@@ -118,8 +120,18 @@ isfitted(M)  # confirm this is not yet "fitted"
 LSurvival._fit!(M, start=[0.0, 0.0])
 isfitted(M)  
 
+#################################################################################################################### 
+# space savers, bootstrapping
+####################################################################################################################
+res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+int = zeros(length(d)) # no late entry
+X = hcat(z, x)
+
+ft1big = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
+ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=false, keepy=false)
 
 
+Base.summarysize(x)
 
 
 #################################################################################################################### 
