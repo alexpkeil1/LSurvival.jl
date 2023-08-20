@@ -3,7 +3,6 @@
 # - robust standard error estimate for Cox model
 # - using formulas
 
-if false
 using LSurvival, Random
 
 
@@ -19,15 +18,15 @@ weights = rand(length(d))
 R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
 ```
 """
-function bootstrap(rng::MersenneTwister(), R::LSurvResp)
-  uid = unique(R.id)
-  bootid = sort(rand(rng, uid, length(uid)))
-  idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
-  idx = reduce(vcat, idxl)
-  nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
-  R.id[idx]
-  R2 = LSurvResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx],nid)
-  idx, R2
+function bootstrap(rng::MersenneTwister, R::LSurvResp)
+    uid = unique(R.id)
+    bootid = sort(rand(rng, uid, length(uid)))
+    idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
+    idx = reduce(vcat, idxl)
+    nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
+    R.id[idx]
+    R2 = LSurvResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], nid)
+    idx, R2
 end
 bootstrap(R::LSurvResp) = bootstrap(MersenneTwister(), R::LSurvResp)
 
@@ -49,35 +48,74 @@ function bootstrap(rng::MersenneTwister, R::LSurvCompResp)
     idx = reduce(vcat, idxl)
     nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
     R.id[idx]
-    R2 = LSurvCompResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx],nid)
+    R2 = LSurvCompResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], nid)
     idx, R2
-  end
-  bootstrap(R::LSurvCompResp) = bootstrap(MersenneTwister(), R::LSurvCompResp)
-  
-  """
-  ```
-  id, int, outt, data =
-  LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
-  
-  d, X = data[:, 4], data[:, 1:3]
-  weights = rand(length(d))
-  
-  # survival outcome:
-  R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
-  P = PHParms(X)
-  idx, R2 = bootstrap(R)
-  P2 = bootstrap(idx, P)
+end
+bootstrap(R::LSurvCompResp) = bootstrap(MersenneTwister(), R::LSurvCompResp)
 
-  Mod = PHModel(R2, P2)
-  LSurvival._fit!(R2, P2)
+"""
+```
+using LSurvival, Random
 
-  ```
-  
-  """
-    function bootstrap(idx::Vector{Int}, P::PHParms)
-      P2 = PHParms(P.X[idx,:])
-      idx, P2
-    end
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
+
+d, X = data[:, 4], data[:, 1:3]
+weights = rand(length(d))
+
+# survival outcome:
+R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+P = PHParms(X)
+
+Mod = PHModel(R, P)
+LSurvival._fit!(Mod, start=Mod.P._B)
+
+
+# careful propogation of bootstrap sampling
+idx, R2 = bootstrap(R)
+P2 = bootstrap(idx, P)
+Modb = PHModel(R2, P2)
+LSurvival._fit!(Mod, start=Mod.P._B)
+
+# convenience function for bootstrapping a model
+Modc = bootstrap(Mod)
+LSurvival._fit!(Modb, start=Modb.P._B)
+
+```
+"""
+function bootstrap(rng::MersenneTwister, m::PHModel)
+    idx, R2 = bootstrap(rng, m.R)
+    P2 = bootstrap(idx, m.P)
+    PHModel(R2, P2, m.ties, false, m.bh)
+end
+bootstrap(m::PHModel) = bootstrap(MersenneTwister(), m::PHModel)
+
+"""
+```
+using LSurvival, Random
+
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+
+d, X = data[:, 4], data[:, 1:3]
+weights = rand(length(d))
+
+# survival outcome:
+R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+P = PHParms(X)
+idx, R2 = bootstrap(R)
+P2 = bootstrap(idx, P)
+
+Mod = PHModel(R2, P2)
+LSurvival._fit!(Mod, start=Mod.P._B)
+
+```
+
+"""
+function bootstrap(rng::MersenneTwister, P::PHmodel)
+    P2 = PHParms(P.X[idx, :])
+    P2
+end
 
 
 # in progress functions

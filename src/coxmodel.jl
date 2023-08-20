@@ -12,7 +12,7 @@ mutable struct PHParms{
     H<:AbstractMatrix,
     I<:Real,
 } <: AbstractLSurvParms
-    X::D
+    X::Union{Nothing, D}
     _B::B                        # coefficient vector
     _r::R                        # linear predictor/risk
     _LL::L                 # partial likelihood history
@@ -23,7 +23,7 @@ mutable struct PHParms{
 end
 
 function PHParms(
-    X::D,
+    X::Union{Nothing, D},
     _B::B,
     _r::R,
     _LL::L,
@@ -41,7 +41,7 @@ function PHParms(
     return PHParms(X, _B, _r, _LL, _grad, _hess, n, p)
 end
 
-function PHParms(X::D) where {D<:AbstractMatrix}
+function PHParms(X::Union{Nothing, D}) where {D<:AbstractMatrix}
     n, p = size(X)
     PHParms(X, fill(0.0, p), fill(0.0, n), zeros(Float64, 1), fill(0.0, p), fill(0.0, p, p))
 end
@@ -58,7 +58,7 @@ Base.show(x::PHParms) = Base.show(stdout, x::PHParms)
 $DOC_PHMODEL    
 """
 mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
-    R::G        # Survival response
+    R::Union{Nothing, G}        # Survival response
     P::L        # parameters
     ties::String
     fit::Bool
@@ -69,7 +69,7 @@ end
 $DOC_PHMODEL 
 """
 function PHModel(
-    R::G,
+    R::Union{Nothing, G},
     P::L,
     ties::String,
     fit::Bool,
@@ -80,14 +80,14 @@ end
 """
 $DOC_PHMODEL  
 """
-function PHModel(R::G, P::L, ties::String) where {G<:LSurvResp,L<:AbstractLSurvParms}
+function PHModel(R::Union{Nothing, G}, P::L, ties::String) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, ties, false)
 end
 
 """
 $DOC_PHMODEL    
 """
-function PHModel(R::G, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
+function PHModel(R::Union{Nothing, G}, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, "efron")
 end
 
