@@ -233,14 +233,6 @@ function StatsBase.confint(m::AJSurv; level=0.95, method="normal")
     method != "normal" ? @warn("only method=normal CI is implemented for AJSurv objects") : confint_normal(m,level=level)
 end
 
-"""
-$DOC_VARIANCE_KMSURV
-"""
-function StatsBase.confint(m::KMSurv; level=0.95, method="normal")
-    method == "lognlog" ? confint_lognlog(m,level=level) : confint_normal(m,level=level)
-end
-
-
 function StatsBase.isfitted(m::M) where {M<:AJSurv}
     m.fit
 end
