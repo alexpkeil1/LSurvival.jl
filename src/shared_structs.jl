@@ -11,7 +11,7 @@ abstract type AbstractLSurvID end
 $DOC_ID
 """
 struct ID <: AbstractLSurvID
-    id::T where {T<:Union{Number,String}}
+    value::T where {T<:Union{Number,String}}
 end
 
 function Base.show(io::IO, x::I) where {I<:ID}
@@ -19,7 +19,24 @@ function Base.show(io::IO, x::I) where {I<:ID}
 end
 Base.show(x::I) where {I<:ID} = Base.show(stdout, x::I)
 
+function Base.isless(x::I, y::I) where {I<:ID}
+    Base.isless(x.value, y.value)
+end
 
+function Base.length(x::I) where {I<:ID}
+    Base.length(x.value)
+end
+
+
+function Base.iterate(x::ID, state = 1)
+    if state > x.value
+        return nothing
+    else
+        return state * state, state + 1
+    end
+end
+
+Base.iterate(S::Squares, state = 1) = state > S.count ? nothing : (state * state, state + 1)
 """
 $DOC_LSURVRESP
 """
@@ -243,7 +260,7 @@ function LSurvCompResp(
     return LSurvCompResp(enter, exit, y, id)
 end
 
-function Base.show(io::IO, x::T; maxrows::Int = 10) where {T <: AbstractLSurvResp}
+function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
     lefttruncate = [e == x.origin ? "[" : "(" for e in x.enter]
     rightcensor = [y > 0 ? "]" : ")" for y in x.y]
     enter = [@sprintf("%.2g", e) for e in x.enter]
@@ -273,4 +290,4 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T <: AbstractLSurvRes
     println(io, str)
 end
 
-Base.show(x::T; kwargs...) where {T <: AbstractLSurvResp}= Base.show(stdout, x; kwargs...)
+Base.show(x::T; kwargs...) where {T<:AbstractLSurvResp} = Base.show(stdout, x; kwargs...)
