@@ -276,7 +276,7 @@ function StatsBase.fit!(
         )
         rtol = kwargs[:convTol]
     end
-    if !issubset(keys(kwargs), (:maxIter, :convTol))
+    if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy))
         throw(ArgumentError("unsupported keyword argument"))
     end
     if haskey(kwargs, :tol)
@@ -320,7 +320,7 @@ function fit(
         throw(DimensionMismatch("number of rows in X and y must match"))
     end
 
-    R = LSurvResp(enter, exit, y, wts)
+    R = LSurvResp(enter, exit, y, wts, id)
     P = PHParms(X)
 
     res = M(R, P, ties)
