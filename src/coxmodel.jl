@@ -147,6 +147,7 @@ function _fit!(
     kwargs...,
 )
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
+    start = isnothing(start) ? zeros(length(m.P._B)) : start
     m.P._B = start
     if haskey(kwargs, :ties)
         m.ties = kwargs[:ties]
