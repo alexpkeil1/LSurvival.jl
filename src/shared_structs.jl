@@ -29,11 +29,8 @@ end
 
 
 function Base.iterate(x::ID, state = 1)
-    if state > x.value
-        return nothing
-    else
-        return state * state, state + 1
-    end
+    #unique(getfield.(data,:res_id))
+  nothing
 end
 
 """

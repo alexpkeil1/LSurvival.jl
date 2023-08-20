@@ -22,7 +22,7 @@ R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
 function bootstrap(rng::MersenneTwister(), R::LSurvResp)
   uid = unique(R.id)
   bootid = sort(rand(uid, length(uid)))
-  idx = [findall(R.id .== bootid[i]) for i in 1:length(bootid)]
+  idx = [findall(R.id .== bootidi) for bootidi in bootid]
 
 
 end
