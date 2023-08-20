@@ -21,11 +21,63 @@ R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
 """
 function bootstrap(rng::MersenneTwister(), R::LSurvResp)
   uid = unique(R.id)
-  bootid = sort(rand(uid, length(uid)))
-  idx = [findall(R.id .== bootidi) for bootidi in bootid]
-
-
+  bootid = sort(rand(rng, uid, length(uid)))
+  idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
+  idx = reduce(vcat, idxl)
+  nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
+  R.id[idx]
+  R2 = LSurvResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx],nid)
+  idx, R2
 end
+bootstrap(R::LSurvResp) = bootstrap(MersenneTwister(), R::LSurvResp)
+
+
+"""
+```
+z,x,t,d,event,weights =
+LSurvival.dgm_comprisk(MersenneTwister(1212), 300)
+enter = zeros(length(event))
+
+# survival outcome:
+R = LSurvCompResp(enter, t, event, weights, ID.(collect(1:length(t))))    # specification with ID only
+```
+"""
+function bootstrap(rng::MersenneTwister, R::LSurvCompResp)
+    uid = unique(R.id)
+    bootid = sort(rand(rng, uid, length(uid)))
+    idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
+    idx = reduce(vcat, idxl)
+    nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
+    R.id[idx]
+    R2 = LSurvCompResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx],nid)
+    idx, R2
+  end
+  bootstrap(R::LSurvCompResp) = bootstrap(MersenneTwister(), R::LSurvCompResp)
+  
+  """
+  ```
+  id, int, outt, data =
+  LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+  
+  d, X = data[:, 4], data[:, 1:3]
+  weights = rand(length(d))
+  
+  # survival outcome:
+  R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+  P = PHParms(X)
+  idx, R2 = bootstrap(R)
+  P2 = bootstrap(idx, P)
+
+  Mod = PHModel(R2, P2)
+  LSurvival._fit!(R2, P2)
+
+  ```
+  
+  """
+    function bootstrap(idx::Vector{Int}, P::PHParms)
+      P2 = PHParms(P.X[idx,:])
+      idx, P2
+    end
 
 
 # in progress functions

@@ -46,6 +46,13 @@ function PHParms(X::D) where {D<:AbstractMatrix}
     PHParms(X, fill(0.0, p), fill(0.0, n), zeros(Float64, 1), fill(0.0, p), fill(0.0, p, p))
 end
 
+function Base.show(io::IO, x::PHParms)
+    Base.println(io, "Slots: X, _B, _grad, _hess, _r, _n, p\n")
+    Base.println(io,  "Predictor matrix (X):")
+    Base.show(io,  "text/plain", x.X)
+end
+Base.show(x::PHParms) = Base.show(stdout, x::PHParms)
+
 
 """
 $DOC_PHMODEL    

@@ -40,7 +40,7 @@ import Base: convert, show
 
 # Model types
 export ID,
-    PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv, AbstractLSurvID
+    PHModel, KMSurv, AJSurv, PHSurv, PHParms, AbstractPH, AbstractNPSurv, AbstractLSurvID, AbstractLSurvParms
 # Outcome types
 export LSurvResp, LSurvCompResp
 # functions    
