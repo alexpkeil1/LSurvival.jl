@@ -5,12 +5,12 @@
 
 mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
     R::Union{Nothing,G}        # Survival response
-    times::AbstractVector
-    surv::Vector{Float64}
-    riskset::Vector{Float64}
-    events::Vector{Float64}
+    times::Vector{<:Real}
+    surv::Vector{<:Float64}
+    riskset::Vector{<:Real}
+    events::Vector{<:Real}
     fit::Bool
-end
+end 
 
 function KMSurv(R::Union{Nothing,G}) where {G<:LSurvResp}
     times = R.eventtimes
@@ -23,11 +23,11 @@ end
 
 mutable struct AJSurv{G<:LSurvCompResp} <: AbstractNPSurv
     R::Union{Nothing,G}        # Survival response
-    times::AbstractVector
-    surv::Vector{Float64}
-    risk::Matrix{Float64}
-    riskset::Vector{Float64}
-    events::Matrix{Float64}
+    times::Vector{<:Real}
+    surv::Vector{<:Float64}
+    risk::Matrix{<:Float64}
+    riskset::Vector{<:Real}
+    events::Matrix{<:Real}
     fit::Bool
 end
 
@@ -112,34 +112,36 @@ $DOC_FIT_KMSURV
 """
 function fit(
     ::Type{M},
-    enter::AbstractVector{<:Real},
-    exit::AbstractVector{<:Real},
-    y::Union{AbstractVector{<:Real},BitVector};
-    wts::AbstractVector{<:Real} = similar(y, 0),
-    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
-    offset::AbstractVector{<:Real} = similar(y, 0),
+    enter::Vector{<:Real},
+    exit::Vector{<:Real},
+    y::Y;
+    wts::Vector{<:Real} = similar(enter, 0),
+    id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
+    offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
-) where {M<:KMSurv}
+) where {M<:KMSurv, Y<:Union{Vector{<:Real},BitVector}}
 
     R = LSurvResp(enter, exit, y, wts, id)
     res = M(R)
 
     return fit!(res; fitargs...)
 end
+ 
+
 
 """
 $DOC_FIT_AJSURV
 """
 function fit(
     ::Type{M},
-    enter::AbstractVector{<:Real},
-    exit::AbstractVector{<:Real},
-    y::Union{AbstractVector{<:Real},BitVector};
-    wts::AbstractVector{<:Real} = similar(y, 0),
-    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
-    offset::AbstractVector{<:Real} = similar(y, 0),
+    enter::Vector{<:Real},
+    exit::Vector{<:Real},
+    y::Y;
+    wts::Vector{<:Real} = similar(enter, 0),
+    id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
+    offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
-) where {M<:AJSurv}
+) where {M<:AJSurv, Y<:Union{Vector{<:Real},BitVector}}
 
     R = LSurvCompResp(enter, exit, y, wts, id)
     res = M(R)
@@ -156,8 +158,8 @@ kaplan_meier(enter, exit, y, args...; kwargs...) =
 """
 $DOC_FIT_AJSURV
 """
-aalen_johansen(enter, exit, d, args...; kwargs...) =
-    fit(AJSurv, enter, exit, d, args...; kwargs...)
+aalen_johansen(enter, exit, y, args...; kwargs...) =
+    fit(AJSurv, enter, exit, y, args...; kwargs...)
 
 ##################################################################################################################### 
 # Summary functions for non-parametric survival models

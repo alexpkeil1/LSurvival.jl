@@ -3,7 +3,7 @@
 #####################################################################################################################
 
 abstract type AbstractLSurvID end
-#abstract type AbstractLSurvIDtest <: Real end
+#abstract type AbstractLSurvIDtest <: Float64 end
 
 
 
@@ -45,10 +45,10 @@ end
 $DOC_LSURVRESP
 """
 struct LSurvResp{
-    E<:AbstractVector,
-    X<:AbstractVector,
-    Y<:AbstractVector,
-    W<:AbstractVector,
+    E<:Vector,
+    X<:Vector,
+    Y<:Union{Vector{<:Real},BitVector},
+    W<:Vector,
     T<:Real,
     I<:AbstractLSurvID,
 } <: AbstractLSurvResp
@@ -74,10 +74,10 @@ function LSurvResp(
     wts::W,
     id::Vector{I},
 ) where {
-    E<:AbstractVector,
-    X<:AbstractVector,
-    Y<:AbstractVector,
-    W<:AbstractVector,
+    E<:Vector,
+    X<:Vector,
+    Y<:Union{Vector{<:Real},BitVector},
+    W<:Vector,
     I<:AbstractLSurvID,
 }
     ne = length(enter)
@@ -108,7 +108,7 @@ function LSurvResp(
     exit::X,
     y::Y,
     id::Vector{I},
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,I<:AbstractLSurvID}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
     wts = similar(exit, 0)
     return LSurvResp(enter, exit, y, wts, id)
 end
@@ -118,7 +118,7 @@ function LSurvResp(
     exit::X,
     y::Y,
     wts::W,
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},W<:Vector}
     ne = length(enter)
     nx = length(exit)
     ny = length(y)
@@ -145,12 +145,12 @@ function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     wts = similar(exit, 0)
     return LSurvResp(enter, exit, y, wts)
 end
 
-function LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
+function LSurvResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
     enter = zeros(eltype(exit), length(exit))
     return LSurvResp(enter, exit, y)
 end
@@ -159,15 +159,15 @@ end
 $DOC_LSURVCOMPRESP
 """
 struct LSurvCompResp{
-    E<:AbstractVector,
-    X<:AbstractVector,
-    Y<:AbstractVector,
-    W<:AbstractVector,
-    T<:Real,
+    E<:Vector,
+    X<:Vector,
+    Y<:Union{Vector{<:Real},BitVector},
+    W<:Vector,
     I<:AbstractLSurvID,
-    V<:AbstractVector,
+    V<:Vector,
     M<:AbstractMatrix,
-} <: AbstractLSurvResp
+    T<:Real
+    } <: AbstractLSurvResp
     enter::E
     "`exit`: Time at observation end"
     exit::X
@@ -194,10 +194,10 @@ function LSurvCompResp(
     wts::W,
     id::Vector{I},
 ) where {
-    E<:AbstractVector,
-    X<:AbstractVector,
-    Y<:AbstractVector,
-    W<:AbstractVector,
+    E<:Vector,
+    X<:Vector,
+    Y<:Union{Vector{<:Real},BitVector},
+    W<:Vector,
     I<:AbstractLSurvID,
 }
     ne = length(enter)
@@ -240,7 +240,7 @@ function LSurvCompResp(
     exit::X,
     y::Y,
     id::Vector{I},
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,I<:AbstractLSurvID}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
     wts = ones(Int64, length(y))
     return LSurvCompResp(enter, exit, y, wts, id)
 end
@@ -250,7 +250,7 @@ function LSurvCompResp(
     exit::X,
     y::Y,
     wts::W,
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector,W<:AbstractVector}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},W<:Vector}
     id = [ID(i) for i in eachindex(y)]
     return LSurvCompResp(enter, exit, y, wts, id)
 end
@@ -259,7 +259,7 @@ function LSurvCompResp(
     enter::E,
     exit::X,
     y::Y,
-) where {E<:AbstractVector,X<:AbstractVector,Y<:AbstractVector}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     id = [ID(i) for i in eachindex(y)]
     return LSurvCompResp(enter, exit, y, id)
 end
