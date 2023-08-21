@@ -3,9 +3,6 @@
 #####################################################################################################################
 
 abstract type AbstractLSurvID end
-#abstract type AbstractLSurvIDtest <: Float64 end
-
-
 
 """
 $DOC_ID
@@ -22,24 +19,19 @@ struct Strata <: AbstractLSurvID
 end
 
 
-function Base.show(io::IO, x::I) where {I<:ID}
+function Base.show(io::IO, x::I) where {I<:AbstractLSurvID}
     show(io, x.value)
 end
-Base.show(x::I) where {I<:ID} = Base.show(stdout, x::I)
+Base.show(x::I) where {I<:AbstractLSurvID} = Base.show(stdout, x::I)
 
-function Base.isless(x::I, y::I) where {I<:ID}
+function Base.isless(x::I, y::I) where {I<:AbstractLSurvID}
     Base.isless(x.value, y.value)
 end
 
-function Base.length(x::I) where {I<:ID}
+function Base.length(x::I) where {I<:AbstractLSurvID}
     Base.length(x.value)
 end
 
-
-function Base.iterate(x::ID, state = 1)
-    #unique(getfield.(data,:res_id))
-    nothing
-end
 
 """
 $DOC_LSURVRESP
@@ -212,7 +204,7 @@ function LSurvCompResp(
         )
     end
     if lw != 0 && lw != ny
-        throw(DimensionMismatch("wts must have length $n or length 0 but was $lw"))
+        throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
     end
     eventtimes = sort(unique(exit[findall(y .> 0)]))
     origin = minimum(enter)

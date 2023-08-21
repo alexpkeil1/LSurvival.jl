@@ -11,7 +11,7 @@ weights = rand(length(d))
 R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
 ```
 """
-function bootstrap(rng::MersenneTwister, R::LSurvResp)
+function bootstrap(rng::MersenneTwister, R::T) where {T<:LSurvResp}
     uid = unique(R.id)
     bootid = sort(rand(rng, uid, length(uid)))
     idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
@@ -21,7 +21,7 @@ function bootstrap(rng::MersenneTwister, R::LSurvResp)
     R2 = LSurvResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], nid)
     idx, R2
 end
-bootstrap(R::LSurvResp) = bootstrap(MersenneTwister(), R::LSurvResp)
+bootstrap(R::T) where {T<:LSurvResp} = bootstrap(MersenneTwister(), R::T)
 
 
 """
@@ -35,7 +35,7 @@ R = LSurvCompResp(enter, t, event, weights, ID.(collect(1:length(t))))    # spec
 bootstrap(R) # note that entire observations/clusters identified by id are kept
 ```
 """
-function bootstrap(rng::MersenneTwister, R::LSurvCompResp)
+function bootstrap(rng::MersenneTwister, R::T) where {T<:LSurvCompResp}
     uid = unique(R.id)
     bootid = sort(rand(rng, uid, length(uid)))
     idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
@@ -45,7 +45,7 @@ function bootstrap(rng::MersenneTwister, R::LSurvCompResp)
     R2 = LSurvCompResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], nid)
     idx, R2
 end
-bootstrap(R::LSurvCompResp) = bootstrap(MersenneTwister(), R::LSurvCompResp)
+bootstrap( R::T) where {T<:LSurvCompResp} = bootstrap(MersenneTwister(), R::T)
 
 """
 ```
@@ -78,6 +78,7 @@ end
 ```
 bootstrap(rng::MersenneTwister, m::PHModel)
 ```
+
 ```julia-repl
 using LSurvival, Random
 
@@ -124,6 +125,7 @@ Bootstrap Cox model coefficients
 ```
 LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
 ```
+
 ```julia-repl
 using LSurvival, Random
 res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
@@ -151,3 +153,56 @@ function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
 end
 bootstrap(m::PHModel, iter::Int; kwargs...) =
     bootstrap(MersenneTwister(), m, iter; kwargs...)
+
+
+
+"""
+using LSurvival
+using Random
+
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+
+d, X = data[:, 4], data[:, 1:3]
+wts = rand(length(d))
+
+km1 = kaplan_meier(int, outt, d, id=ID.(id), wts=wts)
+km2 = bootstrap(km1, keepy=false)
+km1
+
+km1.R
+km2.R
+
+"""
+function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:KMSurv}
+    _, R2 = bootstrap(rng, m.R)
+    boot = KMSurv(R2)
+    LSurvival._fit!(boot;kwargs...)
+end
+bootstrap(m::M;kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m;kwargs...)
+
+
+
+
+"""
+using LSurvival
+using Random
+
+z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
+enter = zeros(length(t))
+
+aj1 = aalen_johansen(enter, t, event, id=ID.(id), wts=wt)
+aj2 = bootstrap(aj1, keepy=false);
+aj1
+
+
+aj1.R
+aj2.R
+
+"""
+function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:AJSurv}
+    _, R2 = bootstrap(rng, m.R)
+    boot = AJSurv(R2)
+    LSurvival._fit!(boot;kwargs...)
+end
+bootstrap(m::M; kwargs...) where{M<:AJSurv} = bootstrap(MersenneTwister(), m;kwargs...)

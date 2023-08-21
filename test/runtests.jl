@@ -52,7 +52,9 @@ using Random
     enter = zeros(length(t))
 
     ajres = aalen_johansen(enter, t, event)
-    aalen_johansen(enter, t, event, wts = wt)
+    bootstrap(ajres)
+    ajres2 = aalen_johansen(enter, t, event, wts = wt)
+    bootstrap(ajres2)
     kms = kaplan_meier(enter, t, d, wts = wt)
 
     println(ajres)
@@ -68,8 +70,15 @@ using Random
     d2 = d .* Int.(event .== 2)
 
     ft2 = fit(PHModel, X, enter, t, (event .== 2), ties = "efron")
-    ft1 = fit(PHModel, X, enter, t, (event .== 1), ties = "efron", verbose = true)
+    ft1 = fit(PHModel, X, enter, t, (event .== 1), ties = "efron", verbose = true, keepx=true, keepy=true)
+    println(ft1)
+    println(bootstrap(ft1))
+    println(bootstrap(ft1, 2))
+    println(ft1)
     coxph(X, enter, t, d2, ties = "efron")
+
+    
+
     covarmat = sum(X, dims = 1) ./ size(X, 1)
     ciresb = risk_from_coxphmodels(
         [ft1, ft2];
