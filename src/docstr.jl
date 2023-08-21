@@ -194,7 +194,7 @@ PHModel(R::G, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
 ```
 Methods: fit, coef, confint, std_err, show
 
-```
+```julia-repl
 using LSurvival
 using Random
 import LSurvival: _stepcox!, dgm_comprisk
@@ -263,10 +263,13 @@ Used for the strata argument in PHModel (not yet implemented)
 ####### Primary methods
 
 DOC_COXPH ="""
+```
 coxph(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::AbstractVector; <keyword arguments>)
+```
 
 Fit a generalized Cox proportional hazards model to data. Alias for`fit(PHModel, ...)`.
-```
+
+```julia-repl
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -387,6 +390,7 @@ m = fit(KMSurv, enter, t, d)
 mw = fit(KMSurv, enter, t, d, wts=wt)
 ```
 or, equivalently:
+
 ```julia-repl
 kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
@@ -394,12 +398,18 @@ kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
 """
 
 DOC_VARIANCE_KMSURV ="""
+Greenwood's formula for variance and confidence intervals
+
 ```
 StatsBase.stderror(m::KMSurv)
-
+```
+```
 StatsBase.confint(m:KMSurv; level=0.95, method="normal")
 ```
-Greenwood's formula
+method:
+  - "normal" normality-based confidence intervals
+  - "lognlog" log(-log(S(t))) based confidence intervals
+
 
 ```julia-repl
 using LSurvival
