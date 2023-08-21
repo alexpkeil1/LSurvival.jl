@@ -438,17 +438,14 @@ end
 """
 $DOC_LGH_BRESLOW
 """
-function lgh_breslow!(
-    _den,
-    p::P,
-    j,
-    Xcases,
-    Xriskset,
-    _rcases,
-    _rriskset,
-    _wtcases,
-    _wtriskset,
-) where {P<:PHParms}
+function lgh_breslow!(_den, p::P, j) where {P<:PHParms}
+    Xcases = m.P.X[caseidx, :]
+    Xriskset = m.P.X[risksetidx, :]
+    _rcases = m.P._r[caseidx]
+    _rriskset = m.P._r[risksetidx]
+    _wtcases = m.R.wts[caseidx]
+    _wtriskset = m.R.wts[risksetidx]
+
     den = sum(_rriskset .* _wtriskset)
     p._LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
     #
@@ -471,18 +468,14 @@ end
 """
 $DOC_LGH_EFRON
 """
-function lgh_efron!(
-    _den,
-    p::P,
-    j,
-    Xcases,
-    Xriskset,
-    _rcases,
-    _rriskset,
-    _wtcases,
-    _wtriskset,
-    nties,
-) where {P<:PHParms}
+function lgh_efron!(_den, p::P, j, nties) where {P<:PHParms}
+    Xcases = m.P.X[caseidx, :]
+    Xriskset = m.P.X[risksetidx, :]
+    _rcases = m.P._r[caseidx]
+    _rriskset = m.P._r[risksetidx]
+    _wtcases = m.R.wts[caseidx]
+    _wtriskset = m.R.wts[risksetidx]
+
     effwts = efron_weights(nties)
     den = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
@@ -523,25 +516,13 @@ function lgh!(lowermethod3, _den, m::M, j, caseidx, risksetidx) where {M<:Abstra
             _den,
             m.P,
             j,
-            m.P.X[caseidx, :],
-            m.P.X[risksetidx, :],
-            m.P._r[caseidx],
-            m.P._r[risksetidx],
-            m.R.wts[caseidx],
-            m.R.wts[risksetidx],
             length(caseidx),  # nties
         )
     elseif whichmeth == 2
         lgh_breslow!(
             _den,
             m.P,
-            j,
-            m.P.X[caseidx, :],
-            m.P.X[risksetidx, :],
-            m.P._r[caseidx],
-            m.P._r[risksetidx],
-            m.R.wts[caseidx],
-            m.R.wts[risksetidx],
+            j
         )
     end
 end
