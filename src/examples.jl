@@ -357,8 +357,6 @@ tr = @btime rfun(int, outt, d, X, wt);
 tj = @btime jfun(int, outt, d, X, wt);
 tj2 = @btime jfun2(int, outt, d, X, wt);
 
-
-
 ###################################################################
 # checking baseline hazard against R
 ###################################################################

@@ -439,12 +439,12 @@ end
 $DOC_LGH_BRESLOW
 """
 function lgh_breslow!(_den, m::M, caseidx, risksetidx, j) where {M<:AbstractPH}
-    Xcases = m.P.X[caseidx, :]
-    Xriskset = m.P.X[risksetidx, :]
-    _rcases = m.P._r[caseidx]
-    _rriskset = m.P._r[risksetidx]
-    _wtcases = m.R.wts[caseidx]
-    _wtriskset = m.R.wts[risksetidx]
+    Xcases = view(m.P.X, caseidx, :)
+    Xriskset = view(m.P.X, risksetidx, :)
+    _rcases = view(m.P._r, caseidx)
+    _rriskset = view(m.P._r, risksetidx)
+    _wtcases = view(m.R.wts, caseidx)
+    _wtriskset = view(m.R.wts, risksetidx)
 
     den = sum(_rriskset .* _wtriskset)
     m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
@@ -469,12 +469,12 @@ end
 $DOC_LGH_EFRON
 """
 function lgh_efron!(_den, m::M, caseidx, risksetidx, j, nties) where {M<:AbstractPH}
-    Xcases = m.P.X[caseidx, :]
-    Xriskset = m.P.X[risksetidx, :]
-    _rcases = m.P._r[caseidx]
-    _rriskset = m.P._r[risksetidx]
-    _wtcases = m.R.wts[caseidx]
-    _wtriskset = m.R.wts[risksetidx]
+    Xcases = view(m.P.X, caseidx, :)
+    Xriskset = view(m.P.X, risksetidx, :)
+    _rcases = view(m.P._r, caseidx)
+    _rriskset = view(m.P._r, risksetidx)
+    _wtcases = view(m.R.wts, caseidx)
+    _wtriskset = view(m.R.wts, risksetidx)
 
     effwts = efron_weights(nties)
     den = sum(_wtriskset .* _rriskset)
