@@ -43,9 +43,13 @@ using Random
     print(R)
 
 
-    kaplan_meier(int, outt, d)
+    print(kaplan_meier(int, outt, d))
     #trivial case of non-competing events with late entry
-    aalen_johansen(int, outt, d)
+    print(aalen_johansen(int, outt, d))
+
+    print(bootstrap(MersenneTwister(123),kaplan_meier(int, outt, d)))
+    #trivial case of non-competing events with late entry
+    print(bootstrap(MersenneTwister(123),aalen_johansen(int, outt, d)))
 
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
