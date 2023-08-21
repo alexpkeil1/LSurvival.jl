@@ -684,6 +684,14 @@ mainfit
 """
 
 DOC_BOOTSTRAP_KMSURV ="""
+Bootstrap methods for Kaplan-Meier survival curve estimator
+
+  Returns:
+  - If using `bootstrap(fit)`: a single bootstrap draw
+  - If using `bootstrap(fit, 10)` (e.g.): 10 bootstrap draws of the survival probability at the end of follow up
+  
+  
+
 ```{julia-repl}
 using LSurvival
 using Random
@@ -706,6 +714,13 @@ km2.R
 """
 
 DOC_BOOTSTRAP_AJSURV ="""
+Bootstrap methods for Aalen-Johansen cumulative risk estimator
+
+Returns:
+- If using `bootstrap(fit)`: a single bootstrap draw
+- If using `bootstrap(fit, 10)` (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up
+
+
 ```{julia-repl}
 using LSurvival
 using Random
