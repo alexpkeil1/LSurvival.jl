@@ -74,6 +74,11 @@ function PHModel(
     ties::String,
     fit::Bool,
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
+    tl = ["efron", "breslow"]
+    if !issubset([ties], tl)
+        jtl = join(tl, ", ")
+        throw("`ties` must be one of: $jtl")
+    end
     return PHModel(R, P, ties, fit, zeros(Float64, length(R.eventtimes), 4))
 end
 
@@ -156,7 +161,6 @@ function _fit!(
     if haskey(kwargs, :ties)
         m.ties = kwargs[:ties]
     end
-    lowermethod3 = lowercase(m.ties[1:3])
     # Newton Raphson step size scaler
     λ = 1.0
     #
@@ -172,7 +176,7 @@ function _fit!(
             findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj)),
         )
     end
-    den, _sumwtriskset, _sumwtcase = _stepcox!(lowermethod3, m, risksetidxs, caseidxs)
+    den, _sumwtriskset, _sumwtcase = _stepcox!(m, risksetidxs, caseidxs)
     _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
@@ -201,7 +205,7 @@ function _fit!(
             throw("Log-partial-likelihood is infinite")
         end
         lastLL = m.P._LL[1]
-        den, _, _ = _stepcox!(lowermethod3, m, risksetidxs, caseidxs)
+        den, _, _ = _stepcox!(m, risksetidxs, caseidxs)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
     end
@@ -211,9 +215,9 @@ function _fit!(
     if verbose && (maxiter == 0)
         @warn "maxiter = 0, model coefficients set to starting values"
     end
-    if lowermethod3 == "bre"
+    if m.ties == "breslow"
         m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
-    elseif lowermethod3 == "efr"
+    elseif m.ties == "efron"
         m.bh = [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
     end
     m.P._LL = _llhistory
@@ -508,10 +512,10 @@ end
 $DOC_LGH
 """
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-function lgh!(lowermethod3, _den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
-    if lowermethod3 == "efr"
+function lgh!(_den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+    if m.ties == "efron"
         lgh_efron!(_den, m, caseidx, risksetidx, j, length(caseidx))
-    elseif lowermethod3 == "bre"
+    elseif m.ties == "breslow"
         lgh_breslow!(_den, m, caseidx, risksetidx, j)
     end
 end
@@ -520,7 +524,6 @@ end
 $DOC__STEPCOXi
 """
 function _stepcox!(
-    lowermethod3::String,
     m::M,
     # big indexes
     risksetidxs,
@@ -537,7 +540,7 @@ function _stepcox!(
     @inbounds for j = 1:ne
         risksetidx = risksetidxs[j]
         caseidx = caseidxs[j]
-        lgh!(lowermethod3, den, m, j, caseidx, risksetidx)
+        lgh!(den, m, j, caseidx, risksetidx)
         wtdriskset[j] = sum(m.R.wts[risksetidx])
         wtdcases[j] = sum(m.R.wts[caseidx])
     end # j

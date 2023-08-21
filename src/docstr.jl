@@ -202,7 +202,7 @@ import LSurvival: _stepcox!, dgm_comprisk
 z,x,t,d, event,wt = dgm_comprisk(MersenneTwister(1212), 100);
 enter = zeros(length(t));
 X = hcat(x,z);
-R = LSurvResp(enter, t, Int64.(d), wt)
+R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
  _fit!(mf)
@@ -368,7 +368,7 @@ using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
 X = hcat(x,rand(length(x)));
- #R = LSurvResp(enter, t, Int64.(d), wt)
+ #R = LSurvResp(enter, t, Int.(d), wt)
  #P = PHParms(X,"efron")
  #mod = PHModel(R,P, true)
  #_fit!(mod)
