@@ -520,6 +520,13 @@ function lgh!(_den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     end
 end
 
+
+function settozero!(P::PHParms)
+    P._LL .*= 0.0
+    P._grad .*= 0.0
+    P._hess .*= 0.0
+end
+
 """
 $DOC__STEPCOXi
 """
@@ -529,14 +536,11 @@ function _stepcox!(
     risksetidxs,
     caseidxs,
 ) where {M<:AbstractPH}
-    #_coxrisk!(_r, X, _B) # updates all elements of _r as exp(X*_B)
     _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
     # loop over event times
     ne = length(m.R.eventtimes)
     den, wtdriskset, wtdcases = zeros(ne), zeros(ne), zeros(ne)
-    m.P._LL .*= 0.0
-    m.P._grad .*= 0.0
-    m.P._hess .*= 0.0
+    settozero!(m.P)
     @inbounds for j = 1:ne
         risksetidx = risksetidxs[j]
         caseidx = caseidxs[j]
