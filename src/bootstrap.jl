@@ -75,40 +75,7 @@ function bootstrap(idx::Vector{Int}, P::PHParms)
 end
 
 """
-```
-bootstrap(rng::MersenneTwister, m::PHModel)
-```
-
-```julia-repl
-using LSurvival, Random
-
-id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
-
-d, X = data[:, 4], data[:, 1:3]
-weights = rand(length(d))
-
-# survival outcome:
-R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
-P = PHParms(X)
-
-Mod = PHModel(R, P)
-LSurvival._fit!(Mod, start=Mod.P._B)
-
-
-# careful propogation of bootstrap sampling
-idx, R2 = bootstrap(R)
-P2 = bootstrap(idx, P)
-Modb = PHModel(R2, P2)
-LSurvival._fit!(Mod, start=Mod.P._B)
-
-# convenience function for bootstrapping a model
-Modc = bootstrap(Mod)
-LSurvival._fit!(Modc, start=Modc.P._B)
-Modc.P.X = nothing
-Modc.R = nothing
-
-```
+$DOC_BOOTSTRAP_PHMODEL
 """
 function bootstrap(rng::MersenneTwister, m::PHModel)
     idx, R2 = bootstrap(rng, m.R)
@@ -118,30 +85,13 @@ end
 bootstrap(m::PHModel) = bootstrap(MersenneTwister(), m)
 
 
+
 """
-    bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
-
-Bootstrap Cox model coefficients
-```
-LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
-```
-
-```julia-repl
-using LSurvival, Random
-res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
-int = zeros(length(d)) # no late entry
-X = hcat(z, x)
-
-mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
-
-mb = bootstrap(mainfit, 1000)
-mainfit
-
-```
+$DOC_BOOTSTRAP_PHMODEL
 """
 function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
     if isnothing(m.R) || isnothing(m.P.X)
-        throw("Model is missing response or predictor matrix, use keepx=true, keepy=true")
+        throw("Model is missing response or predictor matrix, use keepx=true, keepy=true for original fit")
     end
     res = zeros(iter, length(coef(m)))
     @inbounds for i = 1:iter
@@ -156,23 +106,9 @@ bootstrap(m::PHModel, iter::Int; kwargs...) =
 
 
 
+
 """
-using LSurvival
-using Random
-
-id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
-
-d, X = data[:, 4], data[:, 1:3]
-wts = rand(length(d))
-
-km1 = kaplan_meier(int, outt, d, id=ID.(id), wts=wts)
-km2 = bootstrap(km1, keepy=false)
-km1
-
-km1.R
-km2.R
-
+$DOC_BOOTSTRAP_KMSURV
 """
 function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:KMSurv}
     _, R2 = bootstrap(rng, m.R)
@@ -184,21 +120,9 @@ bootstrap(m::M;kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m;kwar
 
 
 
+
 """
-using LSurvival
-using Random
-
-z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
-enter = zeros(length(t))
-
-aj1 = aalen_johansen(enter, t, event, id=ID.(id), wts=wt)
-aj2 = bootstrap(aj1, keepy=false);
-aj1
-
-
-aj1.R
-aj2.R
-
+$DOC_BOOTSTRAP_AJSURV
 """
 function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:AJSurv}
     _, R2 = bootstrap(rng, m.R)
@@ -206,3 +130,40 @@ function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:AJSurv}
     LSurvival._fit!(boot;kwargs...)
 end
 bootstrap(m::M; kwargs...) where{M<:AJSurv} = bootstrap(MersenneTwister(), m;kwargs...)
+
+
+"""
+$DOC_BOOTSTRAP_AJSURV
+"""
+function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:AJSurv}
+    if isnothing(m.R)
+        throw("Model is missing response matrix, use keepy=true for original fit")
+    end
+    res = zeros(iter, size(m.risk,2))
+    @inbounds for i = 1:iter
+        mb = bootstrap(rng, m)
+        LSurvival._fit!(mb; kwargs...)
+        res[i, :] = mb.risk[end,:]
+    end
+    res
+end
+bootstrap(m::M, iter::Int; kwargs...) where{M<:AJSurv} = bootstrap(MersenneTwister(), m, iter::Int;kwargs...)
+
+
+
+"""
+$DOC_BOOTSTRAP_KMSURV
+"""
+function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:KMSurv}
+    if isnothing(m.R) 
+        throw("Model is missing response matrix, use keepy=true for original fit")
+    end
+    res = zeros(iter, 1)
+    @inbounds for i = 1:iter
+        mb = bootstrap(rng, m)
+        LSurvival._fit!(mb; kwargs...)
+        res[i, :] = mb.surv[end:end]
+    end
+    res
+end
+bootstrap(m::M, iter::Int; kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m, iter::Int;kwargs...)
