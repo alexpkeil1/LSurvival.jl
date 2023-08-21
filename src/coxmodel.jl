@@ -10,7 +10,7 @@ mutable struct PHParms{
     R<:Vector{<:Float64},
     L<:Vector{<:Float64},
     H<:Matrix{<:Float64},
-    I<:Int64,
+    I<:Int,
 } <: AbstractLSurvParms
     X::Union{Nothing,D}
     _B::B                        # coefficient vector
@@ -118,7 +118,7 @@ function PHSurv(fitlist::Array{T}, eventtypes) where {T<:PHModel}
     bh = reduce(vcat, bhlist)
     sp = sortperm(bh[:, 4])
     bh = bh[sp, :]
-    ntimes::Int64 = size(bh, 1)
+    ntimes::Int = size(bh, 1)
     risk, surv = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes)
     times = bh[:, 4]
     event = bh[:, 5]

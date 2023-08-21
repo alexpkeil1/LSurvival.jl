@@ -352,7 +352,7 @@ function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=n
   bh = reduce(vcat, bhlist)
   sp = sortperm(bh[:,4])
   bh = bh[sp,:]
-  ntimes::Int64 = size(bh,1)
+  ntimes::Int = size(bh,1)
   ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes), ones(Float64,length(eventtypes))
   ch::Float64 = 0.0
   lsurv::Float64 = 1.0
@@ -397,7 +397,7 @@ end
     _B = isnothing(inits) ? zeros(p) : copy(inits)
     _r = zeros(Float64,n)
     #_basehaz = zeros(Float64, nevents) # baseline hazard estimate
-    #_riskset = zeros(Int64, nevents) # baseline hazard estimate
+    #_riskset = zeros(Int, nevents) # baseline hazard estimate
     _LL = zeros(1)
     _grad = zeros(p)
     _hess = zeros(p, p) #initialize

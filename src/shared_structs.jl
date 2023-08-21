@@ -89,7 +89,7 @@ function LSurvResp(
     eventtimes = sort(unique(exit[findall(y .> 0)]))
     origin = minimum(enter)
     if lw == 0
-        wts = ones(Int64, ny)
+        wts = ones(Int, ny)
     end
 
     return LSurvResp(enter, exit, y, wts, eventtimes, origin, id)
@@ -126,7 +126,7 @@ function LSurvResp(
         throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
     end
     if lw == 0
-        wts = ones(Int64, ny)
+        wts = ones(Int, ny)
     end
     id = [ID(i) for i in eachindex(y)]
     return LSurvResp(enter, exit, y, wts, id)
@@ -209,7 +209,7 @@ function LSurvCompResp(
     eventtimes = sort(unique(exit[findall(y .> 0)]))
     origin = minimum(enter)
     if lw == 0
-        wts = ones(Int64, ny)
+        wts = ones(Int, ny)
     end
     eventtypes = sort(unique(y))
     eventmatrix = reduce(hcat, [y .== e for e in eventtypes[2:end]])
@@ -233,7 +233,7 @@ function LSurvCompResp(
     y::Y,
     id::Vector{I},
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
-    wts = ones(Int64, length(y))
+    wts = ones(Int, length(y))
     return LSurvCompResp(enter, exit, y, wts, id)
 end
 
