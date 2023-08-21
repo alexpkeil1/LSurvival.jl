@@ -22,6 +22,7 @@ Abstract type for non-parametric survival models, including Kaplan-Meier, Aalen 
 DOC_LSURVRESP ="""
 
 Outcome type for survival outcome subject to left truncation and right censoring
+
 ```
 struct LSurvResp{
 E<:AbstractVector,
@@ -45,7 +46,9 @@ origin::T
 "`id`: person level identifier (must be wrapped in ID() function)"
 id::Vector{I}
 end
+
 ```
+
 ```
 function LSurvResp(
 enter::E,
@@ -61,6 +64,7 @@ W<:AbstractVector,
 I<:AbstractLSurvID,
 }
 ```
+
 ```
 LSurvResp(
 enter::E,
@@ -68,7 +72,9 @@ exit::X,
 y::Y,
 id::Vector{I},
 ) 
+
 ```
+
 ```
 LSurvResp(
 enter::E,
@@ -76,7 +82,9 @@ exit::X,
 y::Y,
 wts::W,
 ) 
+
 ```
+
 ```
 LSurvResp(
 enter::E,
@@ -84,6 +92,7 @@ exit::X,
 y::Y,
 )
 ```
+
 ```
 LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
 ```
@@ -92,6 +101,7 @@ LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
 DOC_LSURVCOMPRESP ="""
 
 Outcome type for competing risk survival outcomes subject to left truncation and right censoring
+
 ```
 struct LSurvCompResp{
 E<:AbstractVector,
@@ -121,7 +131,9 @@ eventtypes::V
 "`eventmatrix`: matrix of indicators on the observation level"
 eventmatrix::M
 end
+
 ```
+
 ```
 LSurvCompResp(
 enter::E,
@@ -131,6 +143,7 @@ wts::W,
 id::Vector{I}
 )
 ```
+
 ```
 LSurvCompResp(
 enter::E,
@@ -139,6 +152,7 @@ y::Y,
 id::Vector{I}
 )
 ```
+
 ```
 LSurvCompResp(
 enter::E,
@@ -147,6 +161,7 @@ y::Y,
 wts::W,
 )
 ```
+
 ```
 LSurvCompResp(
 enter::E,
@@ -158,6 +173,7 @@ y::Y,
 
 DOC_PHMODEL ="""
 PHModel: Mutable object type for proportional hazards regression
+
 ```
 mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
 R::G        # Survival response
@@ -177,6 +193,7 @@ PHModel(R::G, P::L, ties::String) where {G<:LSurvResp,L<:AbstractLSurvParms}
 PHModel(R::G, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
 ```
 Methods: fit, coef, confint, std_err, show
+
 ```
 using LSurvival
 using Random
@@ -198,6 +215,7 @@ Mutable type for proportional hazards models
 PHSsurv: Object type for proportional hazards regression
 
 Methods: fit, show
+
 ```
 mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
 fitlist::G        # Survival response
@@ -219,6 +237,7 @@ DOC_ID ="""
 Type for identifying individuals in survival outcomes.
 
 Accepts any Number or String
+
 ```julia-repl
 [ID(i) for i in 1:10]
 ```
@@ -234,6 +253,7 @@ DOC_STRATA ="""
 Type for identifying individuals in survival outcomes.
 
 Accepts any Number or String
+
 ```julia-repl
 [Strata(i) for i in 1:10]
 ```
@@ -264,6 +284,7 @@ DOC_FIT_PHSURV ="""
 Competing risk models:
 
 Calculate survival curve and cumulative incidence (risk) function, get a set of Cox models (PHModel objects) that are exhaustive for the outcome types
+
 ```
 fit(::Type{M},
 fitlist::AbstractVector{<:T},
@@ -271,12 +292,15 @@ fitlist::AbstractVector{<:T},
 fitargs...) where {M<:PHSurv, T <: PHModel}
 ```
 OR 
+
 ```
 risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
+
 ```
 
 
 fit for PHSurv objects
+
 ```julia-repl
 using LSurvival
 using Random
@@ -295,6 +319,7 @@ res2 = risk_from_coxphmodels([ft1, ft2])
 
 DOC_E_YEARSOFLIFELOST ="""
 Expected number of years of life lost due to cause k
+
 ```julia-repl
 using Distributions, Plots, Random
 plotly()
@@ -312,6 +337,7 @@ plot!(times_sd, ci_sd, label="SD", st=:step)
 plot(time0, eyll0, label="Overall", st=:step);
 plot!(time1, eyll1, label="AJ", st=:step);
 plot!(time2, eyll2, label="SD", st=:step) 
+
 ``` 
 """
 
@@ -319,6 +345,7 @@ plot!(time2, eyll2, label="SD", st=:step)
 
 DOC_FIT_ABSTRACPH ="""
 fit for AbstractPH objects
+
 ```
 fit(::Type{M},
 X::AbstractMatrix,#{<:FP},
@@ -331,6 +358,7 @@ wts::AbstractVector{<:Real}      = similar(y, 0),
 offset::AbstractVector{<:Real}   = similar(y, 0),
 fitargs...) where {M<:AbstractPH}
 ```
+
 ```julia-repl
 using LSurvival
 using Random
@@ -349,6 +377,7 @@ coeftable(m)
 
 DOC_FIT_KMSURV ="""
 fit for KMSurv objects
+
 ```julia-repl
 using LSurvival
 using Random
@@ -371,6 +400,7 @@ StatsBase.stderror(m::KMSurv)
 StatsBase.confint(m:KMSurv; level=0.95, method="normal")
 ```
 Greenwood's formula
+
 ```julia-repl
 using LSurvival
 using Random
@@ -381,6 +411,7 @@ mw = fit(KMSurv, enter, t, d, wts=wt)
 stderror(m)
 confint(m, method="normal")
 confint(m, method="lognlog") # log-log transformation
+
 ```
 """
 
@@ -396,6 +427,7 @@ confint(m, level=0.95)
 
 DOC_FIT_AJSURV ="""
 fit for AJSurv objects
+
 ```julia-repl
 using LSurvival
 using Random
@@ -420,6 +452,7 @@ lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset
 ```
  # for a given risk set
  #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
+
 ```julia-repl
 Xcases=X[caseidx,:]
 Xriskset=X[risksetidx,:]
@@ -443,6 +476,7 @@ DOC_LGH_EFRON ="""
 ```
 lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
 ```
+
 ```julia-repl
 # for a given risk set
 #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
@@ -476,6 +510,7 @@ under a specified method for handling ties
 
 DOC__STEPCOXi ="""
 calculate log likelihood, gradient, hessian at set value of coefficients
+
 ```julia-repl
 _stepcox!(
 lowermethod3,
@@ -509,6 +544,7 @@ eventtimes = sort(unique(_out[findall(d.==1)]))
 
 DOC_FIT_PHSURV ="""
 fit for AJSurv objects
+
 ```julia-repl
 using LSurvival
 using Random
@@ -571,14 +607,17 @@ using LSurvival
     # 100 individuals with two competing events
 z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
     
+
 ```
 """
 
 DOC_BOOTSTRAP_PHMODEL ="""
 Bootstrapping coefficients of a proportional hazards model
+
 ```
 bootstrap(rng::MersenneTwister, m::PHModel)
 ```
+
 ```julia-repl
 using LSurvival, Random
 
@@ -607,14 +646,17 @@ Modc = bootstrap(Mod)
 LSurvival._fit!(Modc, start=Modc.P._B)
 Modc.P.X = nothing
 Modc.R = nothing
+
 ```
 
 bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
 
 Bootstrap Cox model coefficients
+
 ```
 LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
 ```
+
 ```julia-repl
 using LSurvival, Random
 res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
@@ -625,6 +667,7 @@ mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 
 mb = bootstrap(mainfit, 1000)
 mainfit
+
 ```
 """
 
@@ -646,6 +689,7 @@ km1
 
 km1.R
 km2.R
+
 ```
 """
 
@@ -666,5 +710,6 @@ aj1
 
 aj1.R
 aj2.R
+
 ```
 """
