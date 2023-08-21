@@ -167,7 +167,7 @@ function _fit!(
     totiter = 0
     oldQ = floatmax()
     lastLL = -floatmax()
-    risksetidxs, caseidxs = [], []
+    risksetidxs, caseidxs = Array{Array{Int, 1}, 1}(), Array{Array{Int, 1}, 1}()
     @inbounds for _outj in m.R.eventtimes
         push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj)))
         #push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))) # implement with strata argument
@@ -176,7 +176,12 @@ function _fit!(
             findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj)),
         )
     end
-    den, _sumwtriskset, _sumwtcase = _stepcox!(m, risksetidxs, caseidxs)
+    _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
+    # loop over event times
+    ne = length(m.R.eventtimes)
+    den, _sumwtriskset, _sumwtcase = zeros(Float64,ne), zeros(Float64,ne), zeros(Float64,ne)
+    settozero!(m.P, den, _sumwtriskset, _sumwtcase)
+    den, _sumwtriskset, _sumwtcase = _stepcox!(m, risksetidxs, caseidxs, ne, den, _sumwtriskset, _sumwtcase)
     _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
@@ -205,7 +210,8 @@ function _fit!(
             throw("Log-partial-likelihood is infinite")
         end
         lastLL = m.P._LL[1]
-        den, _, _ = _stepcox!(m, risksetidxs, caseidxs)
+        settozero!(m.P, den, _sumwtriskset, _sumwtcase)
+        den, _, _ = _stepcox!(m, risksetidxs, caseidxs, ne, den, _sumwtriskset, _sumwtcase)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
     end
@@ -521,10 +527,13 @@ function lgh!(_den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
 end
 
 
-function settozero!(P::PHParms)
+function settozero!(P::PHParms, den, _sumwtriskset, _sumwtcase)
     P._LL .*= 0.0
     P._grad .*= 0.0
     P._hess .*= 0.0
+    den .*= 0.0
+    _sumwtriskset .*= 0.0
+    _sumwtcase .*= 0.0
 end
 
 """
@@ -533,22 +542,21 @@ $DOC__STEPCOXi
 function _stepcox!(
     m::M,
     # big indexes
-    risksetidxs,
-    caseidxs,
-) where {M<:AbstractPH}
-    _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
-    # loop over event times
-    ne = length(m.R.eventtimes)
-    den, wtdriskset, wtdcases = zeros(ne), zeros(ne), zeros(ne)
-    settozero!(m.P)
+    risksetidxs::Vector{Vector{T}},
+    caseidxs::Vector{Vector{T}},
+    ne::I, 
+    den::Vector{<:Real}, 
+    _sumwtriskset::Vector{<:Real}, 
+    _sumwtcase::Vector{<:Real}
+) where {M<:AbstractPH, I<:Int, T<:Int}
     @inbounds for j = 1:ne
         risksetidx = risksetidxs[j]
         caseidx = caseidxs[j]
         lgh!(den, m, j, caseidx, risksetidx)
-        wtdriskset[j] = sum(m.R.wts[risksetidx])
-        wtdcases[j] = sum(m.R.wts[caseidx])
+        _sumwtriskset[j] = sum(m.R.wts[risksetidx])
+        _sumwtcase[j] = sum(m.R.wts[caseidx])
     end # j
-    den, wtdriskset, wtdcases
+    den, _sumwtriskset, _sumwtcase
 end #function _stepcox!
 
 ##################################################################################################################### 
