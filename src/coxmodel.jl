@@ -5,12 +5,12 @@
 
 
 mutable struct PHParms{
-    D<:AbstractMatrix,
-    B<:AbstractVector,
-    R<:AbstractVector,
-    L<:AbstractVector,
-    H<:AbstractMatrix,
-    I<:Real,
+    D<:Matrix{<:Real},
+    B<:Vector{<:Float64},
+    R<:Vector{<:Float64},
+    L<:Vector{<:Float64},
+    H<:Matrix{<:Float64},
+    I<:Int64,
 } <: AbstractLSurvParms
     X::Union{Nothing,D}
     _B::B                        # coefficient vector
@@ -30,11 +30,11 @@ function PHParms(
     _grad::B,
     _hess::H,
 ) where {
-    D<:AbstractMatrix,
-    B<:AbstractVector,
-    R<:AbstractVector,
-    L<:AbstractVector,
-    H<:AbstractMatrix,
+    D<:Matrix{<:Real},
+    B<:Vector{<:Float64},
+    R<:Vector{<:Float64},
+    L<:Vector{<:Float64},
+    H<:Matrix{<:Float64},
 }
     n = length(_r)
     p = length(_B)
@@ -100,8 +100,8 @@ $DOC_PHSURV
 """
 mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
     fitlist::G        # Survival response
-    eventtypes::AbstractVector
-    times::AbstractVector
+    eventtypes::Vector
+    times::Vector
     surv::Vector{Float64}
     risk::Matrix{Float64}
     basehaz::Vector{Float64}
@@ -141,8 +141,8 @@ function _fit!(
     m::PHModel;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    atol::Real = sqrt(1e-8),
-    rtol::Real = 1e-8,
+    atol::Float64 = sqrt(1e-8),
+    rtol::Float64 = 1e-8,
     start = nothing,
     keepx = false,
     keepy = false,
@@ -227,8 +227,8 @@ function StatsBase.fit!(
     m::AbstractPH;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    atol::Real = 1e-6,
-    rtol::Real = 1e-6,
+    atol::Float64 = 1e-6,
+    rtol::Float64 = 1e-6,
     start = nothing,
     kwargs...,
 )
@@ -271,16 +271,16 @@ $DOC_FIT_ABSTRACPH
 """
 function fit(
     ::Type{M},
-    X::AbstractMatrix,#{<:FP},
-    enter::AbstractVector{<:Real},
-    exit::AbstractVector{<:Real},
-    y::Union{AbstractVector{<:Real},BitVector};
+    X::Matrix{<:Real},#{<:FP},
+    enter::Vector{<:Real},
+    exit::Vector{<:Real},
+    y::Y;
     ties = "breslow",
-    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
-    wts::AbstractVector{<:Real} = similar(y, 0),
-    offset::AbstractVector{<:Real} = similar(y, 0),
+    id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
+    wts::Vector{<:Real} = similar(enter, 0),
+    offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
-) where {M<:AbstractPH}
+) where {M<:AbstractPH,Y<:Union{Vector{<:Real},BitVector}}
 
     # Check that X and y have the same number of observations
     if size(X, 1) != size(y, 1)
@@ -312,7 +312,7 @@ function StatsBase.coef(m::M) where {M<:AbstractPH}
     m.P._B
 end
 
-function StatsBase.coeftable(m::M; level::Real = 0.95) where {M<:AbstractPH}
+function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     mwarn(m)
     beta = coef(m)
     std_err = stderror(m)
@@ -327,7 +327,7 @@ function StatsBase.coeftable(m::M; level::Real = 0.95) where {M<:AbstractPH}
     StatsBase.CoefTable(op, head, rown, 6, 5)
 end
 
-function StatsBase.confint(m::M; level::Real = 0.95) where {M<:AbstractPH}
+function StatsBase.confint(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     mwarn(m)
     beta = coef(m)
     std_err = stderror(m)
@@ -388,7 +388,7 @@ function StatsBase.weights(m::M) where {M<:AbstractPH}
     m.R.wts
 end
 
-function Base.show(io::IO, m::M; level::Real = 0.95) where {M<:AbstractPH}
+function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     if !m.fit
         println(io, "Model not yet fitted")
         return nothing
@@ -448,7 +448,7 @@ function lgh_breslow!(
     _rriskset,
     _wtcases,
     _wtriskset,
-) where {P<: PHParms}
+) where {P<:PHParms}
     den = sum(_rriskset .* _wtriskset)
     p._LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
     #
@@ -483,7 +483,6 @@ function lgh_efron!(
     _wtriskset,
     nties,
 ) where {P<:PHParms}
-
     effwts = efron_weights(nties)
     den = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
@@ -517,7 +516,7 @@ $DOC_LGH
 """
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
 function lgh!(lowermethod3, _den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
-        whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
+    whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
     isnothing(whichmeth) ? throw("Ties method not recognized") : true
     if whichmeth == 1
         lgh_efron!(
@@ -542,7 +541,7 @@ function lgh!(lowermethod3, _den, m::M, j, caseidx, risksetidx) where {M<:Abstra
             m.P._r[caseidx],
             m.P._r[risksetidx],
             m.R.wts[caseidx],
-            m.R.wts[risksetidx]
+            m.R.wts[risksetidx],
         )
     end
 end
@@ -568,14 +567,7 @@ function _stepcox!(
     @inbounds for j = 1:ne
         risksetidx = risksetidxs[j]
         caseidx = caseidxs[j]
-        lgh!(
-            lowermethod3,
-            den,
-            m,
-            j,
-            caseidx,
-            risksetidx,
-        )
+        lgh!(lowermethod3, den, m, j, caseidx, risksetidx)
         wtdriskset[j] = sum(m.R.wts[risksetidx])
         wtdcases[j] = sum(m.R.wts[caseidx])
     end # j
@@ -617,12 +609,7 @@ end
 """
 $DOC_FIT_PHSURV   
 """
-function fit(
-    ::Type{M},
-    fitlist::AbstractVector{<:T},
-    ;
-    fitargs...,
-) where {M<:PHSurv,T<:PHModel}
+function fit(::Type{M}, fitlist::Vector{<:T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
 
     res = M(fitlist)
 
