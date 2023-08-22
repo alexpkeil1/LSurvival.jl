@@ -167,29 +167,28 @@ function _fit!(
     totiter = 0
     oldQ = floatmax()
     lastLL = -floatmax()
-    risksetidxs, caseidxs = Array{Array{Int, 1}, 1}(), Array{Array{Int, 1}, 1}()
-    @inbounds for _outj in m.R.eventtimes
-        push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj)))
-        #push!(risksetidxs, findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))) # implement with strata argument
-        push!(
-            caseidxs,
-            findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj)),
-        )
-    end
-    _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
-    # loop over event times
     ne = length(m.R.eventtimes)
+    risksetidxs, caseidxs = Array{Array{Int, 1}, 1}(undef, ne), Array{Array{Int, 1}, 1}(undef, ne)
     den, _sumwtriskset, _sumwtcase = zeros(Float64,ne), zeros(Float64,ne), zeros(Float64,ne)
-    settozero!(m.P, den, _sumwtriskset, _sumwtcase)
-    den, _sumwtriskset, _sumwtcase = _stepcox!(m, risksetidxs, caseidxs, ne, den, _sumwtriskset, _sumwtcase)
+    @inbounds for j in 1:ne
+        _outj = m.R.eventtimes[j] 
+        fr = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
+        fc = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
+        risksetidxs[j] =  fr
+        caseidxs[j] = fc
+        _sumwtriskset[j] = sum(m.R.wts[fr])
+        _sumwtcase[j] = sum(m.R.wts[fc])    
+    end
+    # cox risk and set to zero were both in step cox - return them?
+    # loop over event times
+    _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
+    _settozero!(m.P)
+    _partial_LL!(m, risksetidxs, caseidxs, ne, den)
     _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
         totiter += 1
-        ######
-        # update 
-        #######
-        Q = 0.5 * (m.P._grad' * m.P._grad) #modified step size if gradient increases
+        # check convergence 
         likrat = (lastLL / m.P._LL[1])
         absdiff = abs(lastLL - m.P._LL[1])
         reldiff = max(likrat, inv(likrat)) - 1.0
@@ -197,6 +196,8 @@ function _fit!(
         if converged
             break
         end
+        # modify step size
+        Q = 0.5 * (m.P._grad' * m.P._grad) #modified step size if gradient increases
         if Q > oldQ # gradient has increased, indicating the maximum of a monotonic partial likelihood was overshot
             λ *= 0.5  # step-halving
         else
@@ -210,8 +211,9 @@ function _fit!(
             throw("Log-partial-likelihood is infinite")
         end
         lastLL = m.P._LL[1]
-        settozero!(m.P, den, _sumwtriskset, _sumwtcase)
-        den, _, _ = _stepcox!(m, risksetidxs, caseidxs, ne, den, _sumwtriskset, _sumwtcase)
+        _settozero!(m.P)
+        _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
+        _partial_LL!(m, risksetidxs, caseidxs, ne, den)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
     end
@@ -478,7 +480,7 @@ end
 """
 $DOC_LGH_EFRON
 """
-function lgh_efron!(_den, m::M, caseidx, risksetidx, j, nties) where {M<:AbstractPH}
+function lgh_efron!(den, m::M, caseidx, risksetidx, j, nties) where {M<:AbstractPH}
     Xcases = view(m.P.X, caseidx, :)
     Xriskset = view(m.P.X, risksetidx, :)
     _rcases = view(m.P._r, caseidx)
@@ -487,9 +489,9 @@ function lgh_efron!(_den, m::M, caseidx, risksetidx, j, nties) where {M<:Abstrac
     _wtriskset = view(m.R.wts, risksetidx)
 
     effwts = efron_weights(nties)
-    den = sum(_wtriskset .* _rriskset)
+    deni = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
-    dens = [den - denc * ew for ew in effwts]
+    dens = [deni - denc * ew for ew in effwts]
     m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
     #
     numg = Xriskset' * (_wtriskset .* _rriskset)
@@ -510,7 +512,7 @@ function lgh_efron!(_den, m::M, caseidx, risksetidx, j, nties) where {M<:Abstrac
     #_den[j] = den # Breslow estimator
     sw = sum(_wtcases)
     aw = sw / nties
-    _den[j] = 1.0 ./ sum(aw ./ dens) # using Efron estimator
+    den[j] = 1.0 ./ sum(aw ./ dens) # using Efron estimator
     nothing
 end
 
@@ -518,46 +520,40 @@ end
 $DOC_LGH
 """
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-function lgh!(_den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+function lgh!(den, m::M, j, caseidxs, risksetidxs) where {M<:AbstractPH}
+    risksetidx = risksetidxs[j]
+    caseidx = caseidxs[j]
     if m.ties == "efron"
-        lgh_efron!(_den, m, caseidx, risksetidx, j, length(caseidx))
+        lgh_efron!(den, m, caseidx, risksetidx, j, length(caseidx))
     elseif m.ties == "breslow"
-        lgh_breslow!(_den, m, caseidx, risksetidx, j)
+        lgh_breslow!(den, m, caseidx, risksetidx, j)
     end
 end
 
 
-function settozero!(P::PHParms, den, _sumwtriskset, _sumwtcase)
+function _settozero!(P::PHParms)
     P._LL .*= 0.0
     P._grad .*= 0.0
     P._hess .*= 0.0
-    den .*= 0.0
-    _sumwtriskset .*= 0.0
-    _sumwtcase .*= 0.0
 end
 
 """
 $DOC__STEPCOXi
+_partial_LL!(m, risksetidxs, caseidxs, ne, den)
 """
-function _stepcox!(
+function _partial_LL!(
     m::M,
     # big indexes
     risksetidxs::Vector{Vector{T}},
     caseidxs::Vector{Vector{T}},
     ne::I, 
-    den::Vector{<:Real}, 
-    _sumwtriskset::Vector{<:Real}, 
-    _sumwtcase::Vector{<:Real}
+    den::Vector{<:Real}
 ) where {M<:AbstractPH, I<:Int, T<:Int}
     @inbounds for j = 1:ne
-        risksetidx = risksetidxs[j]
-        caseidx = caseidxs[j]
-        lgh!(den, m, j, caseidx, risksetidx)
-        _sumwtriskset[j] = sum(m.R.wts[risksetidx])
-        _sumwtcase[j] = sum(m.R.wts[caseidx])
+        lgh!(den, m, j, caseidxs, risksetidxs)
     end # j
-    den, _sumwtriskset, _sumwtcase
-end #function _stepcox!
+    nothing
+end #function _partial_LL!
 
 ##################################################################################################################### 
 # fitting functions for PHSurv objects

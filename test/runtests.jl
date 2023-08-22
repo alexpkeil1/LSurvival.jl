@@ -11,6 +11,8 @@ using Random
     d, X = data[:, 4], data[:, 1:3]
     weights = rand(length(d))
 
+    println(coxph(X, int, outt, d))
+
     # survival outcome:
     R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
     print(R)
