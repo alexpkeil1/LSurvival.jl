@@ -525,9 +525,9 @@ $DOC_LGH
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
 function lgh!(den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     if m.ties == "efron"
-        lgh_efron!(den, m, caseid, risksetid, j, length(caseidx))
+        lgh_efron!(den, m, caseidx, risksetidx, j, length(caseidx))
     elseif m.ties == "breslow"
-        lgh_breslow!(den, m, caseid, risksetid, j)
+        lgh_breslow!(den, m, caseidx, risksetidx, j)
     end
 end
 
