@@ -172,7 +172,8 @@ function _fit!(
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
     den, _sumwtriskset, _sumwtcase =
         zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
-    @inbounds for j = 1:ne
+    #@inbounds for j = 1:ne
+    @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
         fr = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
         fc = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
@@ -441,6 +442,7 @@ calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z))) * 2
 
 function _coxrisk!(p::P) where {P<:PHParms}
     map!(z -> exp(z), p._r, p.X * p._B)
+    #p._r .= exp.(p.X * p._B)
     nothing
 end
 
@@ -452,7 +454,7 @@ end
 """
 $DOC_LGH_BRESLOW
 """
-function lgh_breslow!(_den, m::M, caseidx, risksetidx, j) where {M<:AbstractPH}
+function lgh_breslow!(den, m::M, caseidx, risksetidx, j) where {M<:AbstractPH}
     Xcases = view(m.P.X, caseidx, :)
     Xriskset = view(m.P.X, risksetidx, :)
     _rcases = view(m.P._r, caseidx)
@@ -460,17 +462,19 @@ function lgh_breslow!(_den, m::M, caseidx, risksetidx, j) where {M<:AbstractPH}
     _wtcases = view(m.R.wts, caseidx)
     _wtriskset = view(m.R.wts, risksetidx)
 
-    den = sum(_rriskset .* _wtriskset)
-    m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(den) * sum(_wtcases)
+    rw = _rriskset .* _wtriskset
+    sw = sum(_wtcases)
+    _den = sum(rw)
+    m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
     #
-    numg = Xriskset' * (_rriskset .* _wtriskset)
-    xbar = numg / den # risk-score-weighted average of X columns among risk set
+    numg = Xriskset' * rw
+    xbar = numg / _den # risk-score-weighted average of X columns among risk set
     m.P._grad .+= (Xcases .- xbar')' * (_wtcases)
     #
-    numgg = (Xriskset' * Diagonal(_rriskset .* _wtriskset) * Xriskset)
-    xxbar = numgg / den
-    m.P._hess .+= -(xxbar - xbar * xbar') * sum(_wtcases)
-    _den[j] = den
+    numgg = (Xriskset' * Diagonal(rw) * Xriskset)
+    xxbar = numgg / _den
+    m.P._hess .+= -(xxbar - xbar * xbar') * sw
+    den[j] = _den
     nothing
 end
 
@@ -490,6 +494,9 @@ function lgh_efron!(den, m::M, caseidx, risksetidx, j, nties) where {M<:Abstract
     _wtcases = view(m.R.wts, caseidx)
     _wtriskset = view(m.R.wts, risksetidx)
 
+    sw = sum(_wtcases)
+    aw = sw / nties
+
     effwts = efron_weights(nties)
     deni = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
@@ -501,20 +508,20 @@ function lgh_efron!(den, m::M, caseidx, risksetidx, j, nties) where {M<:Abstract
     numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
     xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
     m.P._grad .+= Xcases' * _wtcases
-    for i = 1:nties
-        m.P._grad .+= (-xbars[i]) * sum(_wtcases) / nties
-    end
+    #for i = 1:nties
+        m.P._grad .-= sum(xbars)
+        m.P._grad .*= aw
+    #end
     numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
     numggs =
         [numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts]
     xxbars = numggs ./ dens
     #
     for i = 1:nties
-        m.P._hess .-= (xxbars[i] - xbars[i] * xbars[i]') .* sum(_wtcases) / nties
+        m.P._hess .-= (xxbars[i] - xbars[i] * xbars[i]') 
+        m.P._hess .*= aw
     end
     #_den[j] = den # Breslow estimator
-    sw = sum(_wtcases)
-    aw = sw / nties
     den[j] = 1.0 ./ sum(aw ./ dens) # using Efron estimator
     nothing
 end
@@ -533,9 +540,9 @@ end
 
 
 function _settozero!(P::PHParms)
-    P._LL .*= 0.0
-    P._grad .*= 0.0
-    P._hess .*= 0.0
+    fill!(P._LL, 0.0)
+    fill!(P._grad, 0.0)
+    fill!(P._hess, 0.0)
 end
 
 """
@@ -550,10 +557,8 @@ function _partial_LL!(
     ne::I,
     den::Vector{<:Real},
 ) where {M<:AbstractPH,I<:Int,T<:Int}
-    @inbounds for j = 1:ne
-        risksetidx = risksetidxs[j]
-        caseidx = caseidxs[j]
-        lgh!(den, m, j, caseidx, risksetidx)
+    @inbounds @simd for j = 1:ne
+        lgh!(den, m, j, caseidxs[j], risksetidxs[j])
     end # j
     nothing
 end #function _partial_LL!
