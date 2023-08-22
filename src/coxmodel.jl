@@ -62,7 +62,7 @@ mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
     P::L        # parameters
     ties::String
     fit::Bool
-    bh::AbstractMatrix
+    bh::Matrix{Float64}
 end
 
 """
@@ -168,16 +168,18 @@ function _fit!(
     oldQ = floatmax()
     lastLL = -floatmax()
     ne = length(m.R.eventtimes)
-    risksetidxs, caseidxs = Array{Array{Int, 1}, 1}(undef, ne), Array{Array{Int, 1}, 1}(undef, ne)
-    den, _sumwtriskset, _sumwtcase = zeros(Float64,ne), zeros(Float64,ne), zeros(Float64,ne)
-    @inbounds for j in 1:ne
-        _outj = m.R.eventtimes[j] 
+    risksetidxs, caseidxs =
+        Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
+    den, _sumwtriskset, _sumwtcase =
+        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
+    @inbounds for j = 1:ne
+        _outj = m.R.eventtimes[j]
         fr = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
         fc = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
-        risksetidxs[j] =  fr
+        risksetidxs[j] = fr
         caseidxs[j] = fc
         _sumwtriskset[j] = sum(m.R.wts[fr])
-        _sumwtcase[j] = sum(m.R.wts[fc])    
+        _sumwtcase[j] = sum(m.R.wts[fc])
     end
     # cox risk and set to zero were both in step cox - return them?
     # loop over event times
@@ -211,8 +213,8 @@ function _fit!(
             throw("Log-partial-likelihood is infinite")
         end
         lastLL = m.P._LL[1]
-        _settozero!(m.P)
         _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
+        _settozero!(m.P)
         _partial_LL!(m, risksetidxs, caseidxs, ne, den)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
@@ -492,7 +494,8 @@ function lgh_efron!(den, m::M, caseidx, risksetidx, j, nties) where {M<:Abstract
     deni = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
     dens = [deni - denc * ew for ew in effwts]
-    m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
+    m.P._LL .+=
+        sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
     #
     numg = Xriskset' * (_wtriskset .* _rriskset)
     numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
@@ -520,13 +523,11 @@ end
 $DOC_LGH
 """
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-function lgh!(den, m::M, j, caseidxs, risksetidxs) where {M<:AbstractPH}
-    risksetidx = risksetidxs[j]
-    caseidx = caseidxs[j]
+function lgh!(den, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     if m.ties == "efron"
-        lgh_efron!(den, m, caseidx, risksetidx, j, length(caseidx))
+        lgh_efron!(den, m, caseid, risksetid, j, length(caseidx))
     elseif m.ties == "breslow"
-        lgh_breslow!(den, m, caseidx, risksetidx, j)
+        lgh_breslow!(den, m, caseid, risksetid, j)
     end
 end
 
@@ -546,11 +547,13 @@ function _partial_LL!(
     # big indexes
     risksetidxs::Vector{Vector{T}},
     caseidxs::Vector{Vector{T}},
-    ne::I, 
-    den::Vector{<:Real}
-) where {M<:AbstractPH, I<:Int, T<:Int}
+    ne::I,
+    den::Vector{<:Real},
+) where {M<:AbstractPH,I<:Int,T<:Int}
     @inbounds for j = 1:ne
-        lgh!(den, m, j, caseidxs, risksetidxs)
+        risksetidx = risksetidxs[j]
+        caseidx = caseidxs[j]
+        lgh!(den, m, j, caseidx, risksetidx)
     end # j
     nothing
 end #function _partial_LL!
