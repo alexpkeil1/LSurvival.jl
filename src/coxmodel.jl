@@ -409,7 +409,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     end
     ll = loglikelihood(m)
     llnull = nullloglikelihood(m)
-    chi2 = ll - llnull
+    chi2 = 2 * (ll - llnull)
     coeftab = coeftable(m, level = level)
     df = length(coeftab.rownms)
     lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
@@ -587,12 +587,13 @@ function basehaz!(m::M) where {M<:PHModel}
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
         risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
-        caseidx = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
+        caseidx =
+            findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
         nties = length(caseidx)
         denj!(den, m.P._r, m.R.wts, m.ties, caseidx, risksetidx, nties, j)
         _sumwtriskset[j] = sum(m.R.wts[risksetidx])
         _sumwtcase[j] = sum(m.R.wts[caseidx])
-end
+    end
     if m.ties == "breslow"
         m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
     elseif m.ties == "efron"
@@ -605,13 +606,13 @@ function denj!(den, _r, wts, method, caseidx, risksetidx, nties, j)
     _rriskset = view(_r, risksetidx)
     _wtcases = view(wts, caseidx)
     _wtriskset = view(wts, risksetidx)
-    effwts = efron_weights(nties)
-    sw = sum(_wtcases)
-    aw = sw / nties
     deni = sum(_wtriskset .* _rriskset)
     if method == "breslow"
         den[j] = deni # Breslow estimator
     elseif method == "efron"
+        effwts = efron_weights(nties)
+        sw = sum(_wtcases)
+        aw = sw / nties
         denc = sum(_wtcases .* _rcases)
         dens = [deni - denc * ew for ew in effwts]
         den[j] = 1.0 ./ sum(aw ./ dens) # using Efron estimator

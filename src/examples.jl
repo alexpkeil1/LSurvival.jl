@@ -385,9 +385,11 @@ coxcoef = cfit$coefficients
 coxcoef2 = cfit2$coefficients
 coxll = cfit$loglik
 coxvcov = vcov(cfit)
+coxvcov2 = vcov(cfit2)
 cfit
 """
 
+@rget coxvcov;
 @rget coxcoef;
 @rget coxcoef2;
 @rget coxll;
