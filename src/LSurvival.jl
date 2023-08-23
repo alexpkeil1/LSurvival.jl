@@ -62,6 +62,7 @@ export kaplan_meier,        # interface for estimating cumulative risk from non-
     ci_from_coxmodels    # (deprecated) interface for estimating cumulative risk from hazard specific Cox models
 #re-exports
 export bootstrap,
+    basehaz!,
     coef,
     coeftable,
     coefnames,

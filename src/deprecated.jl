@@ -127,9 +127,6 @@ function lgh_efron!(
     nothing
 end
 
-"""
-$DOC__STEPCOXi
-"""
 function _stepcox!(
     lowermethod3,
     # recycled parameters

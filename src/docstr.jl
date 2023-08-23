@@ -520,25 +520,18 @@ under a specified method for handling ties
 """
 
 
-DOC__STEPCOXi ="""
+DOC__PARTIAL_LLi ="""
 calculate log likelihood, gradient, hessian at set value of coefficients
 
 ```{julia-repl}
-_stepcox!(
-lowermethod3,
-    # recycled parameters
-    _LL::Vector, _grad::Vector, _hess::Matrix{Float64},
-    # data
-    _in::Vector, _out::Vector, d::Union{Vector, BitVector}, X, _wt::Vector,
-    # fixed parameters
-    _B::Vector, 
-    # indexs
-p::T, n::U, eventtimes::Vector,
-    # containers
-    _r::Vector,
-    # big indexes
-risksetidxs, caseidxs
-    ) where {T <: Int, U <: Int}
+function _partial_LL!(
+  m::M,
+  # big indexes
+  risksetidxs::Vector{Vector{T}},
+  caseidxs::Vector{Vector{T}},
+  ne::I,
+  den::Vector{<:Real},
+) where {M<:AbstractPH,I<:Int,T<:Int}
 ```
 wrapper: calculate log partial likelihood, gradient, hessian contributions across all risk sets
 under a specified method for handling ties (efron and breslow estimators only)

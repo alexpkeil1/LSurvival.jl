@@ -32,13 +32,17 @@ using Random
     println(jfun(int, outt, d, X, wt)[1:2])
     println(jfun2(int, outt, d, X, wt))
 
-    #tj = @time jfun(int, outt, d, X, wt)
-    #tj2 = @time jfun2(int, outt, d, X, wt)
+    tj = @time jfun(int, outt, d, X, wt)
+    tj2 = @time jfun2(int, outt, d, X, wt)
 
-    #tj = @time [jfun(int, outt, d, X, wt) for i in 1:10]
-    #tj2 = @time [jfun2(int, outt, d, X, wt) for i in 1:10]
+    tj = @time [jfun(int, outt, d, X, wt) for i in 1:10]
+    tj2 = @time [jfun2(int, outt, d, X, wt) for i in 1:10]
+    #
+    res = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9, keepx=true,keepy=true)
+    println(res.bh)
+    println(basehaz!(fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9, keepx=true,keepy=true)))
 
-#throw("temp stop")
+throw("temp stop")
     id, int, outt, data =
         LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
 
