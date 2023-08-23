@@ -516,8 +516,8 @@ function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Abst
     xxbars = numggs ./ dens
     #
     for i = 1:nties
-        hess .-= (xxbars[i] - xbars[i] * xbars[i]')
-        hess .*= aw
+        hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
+        #hess .*= 
     end
     nothing
 end

@@ -363,14 +363,15 @@ tj2 = @btime jfun2(int, outt, d, X, wt);
 ###################################################################
 using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
-id, int, outt, data = LSurvival.dgm(MersenneTwister(), 100, 100; afun = LSurvival.int_0)
+id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
 wt ./= (sum(wt) / length(wt))
+#wt ./ wt
 
-m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9);
-m2 = fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", rtol = 1e-9);
+m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9, keepx=true, keepy=true)
+m2 = fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", rtol = 1e-9, keepx=true, keepy=true)
 
 
 
