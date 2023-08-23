@@ -9,14 +9,15 @@ mutable struct PHParms{
     B<:Vector{<:Float64},
     R<:Vector{<:Float64},
     L<:Vector{<:Float64},
-    H<:Matrix{<:Float64},
+    G<:Union{Nothing, Vector{<:Float64}},
+    H<:Union{Nothing, Matrix{<:Float64}},
     I<:Int,
 } <: AbstractLSurvParms
     X::Union{Nothing,D}
     _B::B                        # coefficient vector
     _r::R                        # linear predictor/risk
     _LL::L                 # partial likelihood history
-    _grad::B     # gradient vector
+    _grad::G     # gradient vector
     _hess::H     # Hessian matrix
     n::I                     # number of observations
     p::I                     # number of parameters
@@ -27,14 +28,15 @@ function PHParms(
     _B::B,
     _r::R,
     _LL::L,
-    _grad::B,
+    _grad::G,
     _hess::H,
 ) where {
     D<:Matrix{<:Real},
     B<:Vector{<:Float64},
     R<:Vector{<:Float64},
     L<:Vector{<:Float64},
-    H<:Matrix{<:Float64},
+    G<:Union{Nothing, Vector{<:Float64}},
+    H<:Union{Nothing, Matrix{<:Float64}},
 }
     n = length(_r)
     p = length(_B)
