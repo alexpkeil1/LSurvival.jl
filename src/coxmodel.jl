@@ -449,7 +449,7 @@ end
 """
 $DOC_LGH_BRESLOW
 """
-function lgh_breslow!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+function lgh_breslow!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     Xcases = view(m.P.X, caseidx, :)
     Xriskset = view(m.P.X, risksetidx, :)
     _rcases = view(m.P._r, caseidx)
@@ -460,20 +460,20 @@ function lgh_breslow!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Ab
     rw = _rriskset .* _wtriskset
     sw = sum(_wtcases)
     _den = sum(rw)
-    if !isnothing(ll)
-        ll .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
+    if !isnothing(m.P._LL)
+        m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
     end
     #
-    if !isnothing(ll)
+    if !isnothing(m.P._grad)
         numg = Xriskset' * rw
         xbar = numg / _den # risk-score-weighted average of X columns among risk set
-        grad .+= (Xcases .- xbar')' * (_wtcases)
+        m.P._grad .+= (Xcases .- xbar')' * (_wtcases)
         #
     end
-    if !isnothing(hess)
+    if !isnothing(m.P._hess)
         numgg = (Xriskset' * Diagonal(rw) * Xriskset)
         xxbar = numgg / _den
-        hess .+= -(xxbar - xbar * xbar') * sw
+        m.P._hess .+= -(xxbar - xbar * xbar') * sw
     end
     nothing
 end
@@ -486,7 +486,7 @@ end
 """
 $DOC_LGH_EFRON
 """
-function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+function lgh_efron!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     nties = length(caseidx)
     Xcases = view(m.P.X, caseidx, :)
     Xriskset = view(m.P.X, risksetidx, :)
@@ -502,24 +502,24 @@ function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Abst
     deni = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
     dens = [deni - denc * ew for ew in effwts]
-    if !isnothing(ll)
-        ll .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases)
+    if !isnothing(m.P._LL)
+        m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases)
     end
-    if !isnothing(grad)
+    if !isnothing(m.P._grad)
         numg = Xriskset' * (_wtriskset .* _rriskset)
         numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
         xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
-        grad .+= Xcases' * _wtcases
-        grad .-= sum(xbars) * aw
+        m.P._grad .+= Xcases' * _wtcases
+        m.P._grad .-= sum(xbars) * aw
     end
-    if !isnothing(hess)
+    if !isnothing(m.P._hess)
         numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
         numggs = [
             numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts
         ]
         xxbars = numggs ./ dens
         for i = 1:nties
-            hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
+            m.P._hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
         end
     end
     nothing
@@ -530,11 +530,11 @@ end
 $DOC_LGH
 """
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
-function lgh!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+function lgh!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     if m.ties == "efron"
-        lgh_efron!(ll, grad, hess, m, j, caseidx, risksetidx)
+        lgh_efron!(m, j, caseidx, risksetidx)
     elseif m.ties == "breslow"
-        lgh_breslow!(ll, grad, hess, m, j, caseidx, risksetidx)
+        lgh_breslow!(m, j, caseidx, risksetidx)
     end
 end
 
@@ -559,7 +559,7 @@ function _update_PHParms!(
     _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
     _initializeobjective!(m.P)
     @inbounds @simd for j = 1:ne
-        lgh!(ll, grad, hess, m, j, caseidxs[j], risksetidxs[j])
+        lgh!(m, j, caseidxs[j], risksetidxs[j])
     end # j
     ll
 end #function _update_PHParms!
