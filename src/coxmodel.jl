@@ -182,7 +182,7 @@ function _fit!(
     end
     # cox risk and set to zero were both in step cox - return them?
     # loop over event times
-    _update_PHParms!(m.P._B, m.P._LL, m.P._grad, m.P._hess, m, risksetidxs, caseidxs, ne)
+    _update_PHParms!(m.P._B, m.P._LL, m.P._grad, m.P._hess, m, ne, caseidxs, risksetidxs)
     _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
@@ -216,9 +216,9 @@ function _fit!(
             m.P._grad,
             m.P._hess,
             m,
-            risksetidxs,
-            caseidxs,
             ne,
+            caseidxs,
+            risksetidxs,
         )
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
@@ -453,7 +453,7 @@ end
 """
 $DOC_LGH_BRESLOW
 """
-function lgh_breslow!(ll, grad, hess, m::M, caseidx, risksetidx, j) where {M<:AbstractPH}
+function lgh_breslow!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     Xcases = view(m.P.X, caseidx, :)
     Xriskset = view(m.P.X, risksetidx, :)
     _rcases = view(m.P._r, caseidx)
@@ -484,16 +484,8 @@ end
 """
 $DOC_LGH_EFRON
 """
-function lgh_efron!(
-    ll,
-    grad,
-    hess,
-    m::M,
-    caseidx,
-    risksetidx,
-    j,
-    nties,
-) where {M<:AbstractPH}
+function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
+    nties = length(caseidx)
     Xcases = view(m.P.X, caseidx, :)
     Xriskset = view(m.P.X, risksetidx, :)
     _rcases = view(m.P._r, caseidx)
@@ -537,9 +529,9 @@ $DOC_LGH
 #function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
 function lgh!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     if m.ties == "efron"
-        lgh_efron!(ll, grad, hess, m, caseidx, risksetidx, j, length(caseidx))
+        lgh_efron!(ll, grad, hess, m, j, caseidx, risksetidx)
     elseif m.ties == "breslow"
-        lgh_breslow!(ll, grad, hess, m, caseidx, risksetidx, j)
+        lgh_breslow!(ll, grad, hess, m, j, caseidx, risksetidx)
     end
 end
 
@@ -561,9 +553,9 @@ function _update_PHParms!(
     hess,
     m::M,
     # big indexes
-    risksetidxs::Vector{Vector{T}},
-    caseidxs::Vector{Vector{T}},
     ne::I,
+    caseidxs::Vector{Vector{T}},
+    risksetidxs::Vector{Vector{T}},
 ) where {M<:AbstractPH,I<:Int,T<:Int}
     _coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
     _initializeobjective!(m.P)
@@ -610,6 +602,9 @@ function denj!(den, _r, wts, method, caseidx, risksetidx, nties, j)
     if method == "breslow"
         den[j] = deni # Breslow estimator
     elseif method == "efron"
+        #deni = sum(_wtriskset .* _rriskset)
+        #denc = sum(_wtcases .* _rcases)
+        #dens = [den - denc * ew for ew in effwts]
         effwts = efron_weights(nties)
         sw = sum(_wtcases)
         aw = sw / nties

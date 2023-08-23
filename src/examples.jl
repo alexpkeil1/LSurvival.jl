@@ -361,6 +361,8 @@ tj2 = @btime jfun2(int, outt, d, X, wt);
 ###################################################################
 # checking baseline hazard against R
 ###################################################################
+using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
+
 id, int, outt, data = LSurvival.dgm(MersenneTwister(), 100, 100; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
@@ -395,6 +397,8 @@ cfit
 @rget coxll;
 @rget bh;
 @rget bh2;
+
+
 hcat(
     diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())],
     m.bh[2:end, 1],
