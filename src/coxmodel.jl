@@ -507,8 +507,8 @@ function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Abst
     xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
     grad .+= Xcases' * _wtcases
     #for i = 1:nties
-    grad .-= sum(xbars)
-    grad .*= aw
+    grad .-= sum(xbars) * aw
+    #grad .*= 
     #end
     numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
     numggs =
