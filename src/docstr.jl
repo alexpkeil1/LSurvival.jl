@@ -520,7 +520,7 @@ under a specified method for handling ties
 """
 
 
-DOC__PARTIAL_LLi ="""
+DOC__UPDATE_PHPARMS ="""
 calculate log likelihood, gradient, hessian at set value of coefficients
 
 ```{julia-repl}

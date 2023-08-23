@@ -500,24 +500,18 @@ function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Abst
     deni = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
     dens = [deni - denc * ew for ew in effwts]
-    ll .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) # gives same answer as R with weights
-    #
+    ll .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) 
     numg = Xriskset' * (_wtriskset .* _rriskset)
     numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
     xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
     grad .+= Xcases' * _wtcases
-    #for i = 1:nties
     grad .-= sum(xbars) * aw
-    #grad .*= 
-    #end
     numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
     numggs =
         [numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts]
     xxbars = numggs ./ dens
-    #
     for i = 1:nties
         hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
-        #hess .*= 
     end
     nothing
 end
@@ -543,7 +537,7 @@ function _initializeobjective!(P::PHParms)
 end
 
 """
-$DOC__PARTIAL_LLi
+$DOC__UPDATE_PHPARMS
 _update_PHParms!(m, risksetidxs, caseidxs, ne, den)
 """
 function _update_PHParms!(
@@ -562,7 +556,7 @@ function _update_PHParms!(
     @inbounds @simd for j = 1:ne
         lgh!(ll, grad, hess, m, j, caseidxs[j], risksetidxs[j])
     end # j
-    nothing
+    ll
 end #function _update_PHParms!
 
 
