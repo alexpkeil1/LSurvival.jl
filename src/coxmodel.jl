@@ -561,7 +561,7 @@ function _update_PHParms!(
     @inbounds @simd for j = 1:ne
         lgh!(m, j, caseidxs[j], risksetidxs[j])
     end # j
-    ll
+    m.P._LL
 end #function _update_PHParms!
 
 
