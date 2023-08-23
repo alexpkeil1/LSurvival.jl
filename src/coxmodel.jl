@@ -182,7 +182,7 @@ function _fit!(
     end
     # cox risk and set to zero were both in step cox - return them?
     # loop over event times
-    _update_PHParms!(m.P._B, m.P._LL, m.P._grad, m.P._hess, m, ne, caseidxs, risksetidxs)
+    _update_PHParms!(m, ne, caseidxs, risksetidxs)
     _llhistory = [m.P._LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
@@ -211,10 +211,6 @@ function _fit!(
         end
         lastLL = m.P._LL[1]
         _update_PHParms!(
-            m.P._B,
-            m.P._LL,
-            m.P._grad,
-            m.P._hess,
             m,
             ne,
             caseidxs,
@@ -554,10 +550,6 @@ $DOC__UPDATE_PHPARMS
 _update_PHParms!(m, risksetidxs, caseidxs, ne, den)
 """
 function _update_PHParms!(
-    beta,
-    ll,
-    grad,
-    hess,
     m::M,
     # big indexes
     ne::I,
