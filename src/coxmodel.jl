@@ -464,15 +464,21 @@ function lgh_breslow!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Ab
     rw = _rriskset .* _wtriskset
     sw = sum(_wtcases)
     _den = sum(rw)
-    m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
+    if !isnothing(ll)
+        ll .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
+    end
     #
-    numg = Xriskset' * rw
-    xbar = numg / _den # risk-score-weighted average of X columns among risk set
-    m.P._grad .+= (Xcases .- xbar')' * (_wtcases)
-    #
-    numgg = (Xriskset' * Diagonal(rw) * Xriskset)
-    xxbar = numgg / _den
-    m.P._hess .+= -(xxbar - xbar * xbar') * sw
+    if !isnothing(ll)
+        numg = Xriskset' * rw
+        xbar = numg / _den # risk-score-weighted average of X columns among risk set
+        grad .+= (Xcases .- xbar')' * (_wtcases)
+        #
+    end
+    if !isnothing(hess)
+        numgg = (Xriskset' * Diagonal(rw) * Xriskset)
+        xxbar = numgg / _den
+        hess .+= -(xxbar - xbar * xbar') * sw
+    end
     nothing
 end
 
@@ -520,7 +526,7 @@ function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Abst
             hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
         end
     end
-    ll
+    nothing
 end
 
 
