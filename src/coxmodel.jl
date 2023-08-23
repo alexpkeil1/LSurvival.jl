@@ -500,20 +500,27 @@ function lgh_efron!(ll, grad, hess, m::M, j, caseidx, risksetidx) where {M<:Abst
     deni = sum(_wtriskset .* _rriskset)
     denc = sum(_wtcases .* _rcases)
     dens = [deni - denc * ew for ew in effwts]
-    ll .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases) 
-    numg = Xriskset' * (_wtriskset .* _rriskset)
-    numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
-    xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
-    grad .+= Xcases' * _wtcases
-    grad .-= sum(xbars) * aw
-    numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
-    numggs =
-        [numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts]
-    xxbars = numggs ./ dens
-    for i = 1:nties
-        hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
+    if !isnothing(ll)
+        ll .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases)
     end
-    nothing
+    if !isnothing(grad)
+        numg = Xriskset' * (_wtriskset .* _rriskset)
+        numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
+        xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
+        grad .+= Xcases' * _wtcases
+        grad .-= sum(xbars) * aw
+    end
+    if !isnothing(hess)
+        numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
+        numggs = [
+            numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts
+        ]
+        xxbars = numggs ./ dens
+        for i = 1:nties
+            hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw
+        end
+    end
+    ll
 end
 
 
