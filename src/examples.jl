@@ -22,7 +22,8 @@ fit(PHModel, X, int, outt, d)
 coxph(X, int, outt, d)
 
 # using Breslow partial likelihood, adding in weights, and setting higher tolerance
-phfit = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-13, atol = 1e-8)
+phfit = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-13, atol = 1e-8, keepx=true, keepy=true)
+basehaz!(phfit)
 
 # extracting various bits from the model
 coef(phfit)

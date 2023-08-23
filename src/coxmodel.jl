@@ -170,8 +170,8 @@ function _fit!(
     ne = length(m.R.eventtimes)
     risksetidxs, caseidxs =
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
-    den, _sumwtriskset, _sumwtcase =
-        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
+    #den, _sumwtriskset, _sumwtcase =
+    #    zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
     #@inbounds for j = 1:ne
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
@@ -179,8 +179,6 @@ function _fit!(
         fc = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
         risksetidxs[j] = fr
         caseidxs[j] = fc
-        _sumwtriskset[j] = sum(m.R.wts[fr])
-        _sumwtcase[j] = sum(m.R.wts[fc])
     end
     # cox risk and set to zero were both in step cox - return them?
     # loop over event times
@@ -589,11 +587,12 @@ function basehaz!(m::M) where {M<:PHModel}
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
         risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
-        caseidx =
-            findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
+        caseidx = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
         nties = length(caseidx)
         denj!(den, m.P._r, m.R.wts, m.ties, caseidx, risksetidx, nties, j)
-    end
+        _sumwtriskset[j] = sum(m.R.wts[risksetidx])
+        _sumwtcase[j] = sum(m.R.wts[caseidx])
+end
     if m.ties == "breslow"
         m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
     elseif m.ties == "efron"
@@ -613,7 +612,7 @@ function denj!(den, _r, wts, method, caseidx, risksetidx, nties, j)
     if method == "breslow"
         den[j] = deni # Breslow estimator
     elseif method == "efron"
-        denc = sum(wts[caseidx] .* _rcases)
+        denc = sum(_wtcases .* _rcases)
         dens = [deni - denc * ew for ew in effwts]
         den[j] = 1.0 ./ sum(aw ./ dens) # using Efron estimator
     end
