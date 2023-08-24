@@ -12,8 +12,9 @@ function fit!(
     m::PHModel;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    atol::Float64 = sqrt(1e-8),
-    rtol::Float64 = 1e-8,
+    atol::Float64 = 0.0,
+    rtol::Float64 = 0.0,
+    gtol::Float64 = 1e-8,
     start = nothing,
     keepx = false,
     keepy = false,
@@ -82,6 +83,7 @@ function fit!(
         Optim.Options(
             f_abstol = atol,
             f_reltol = rtol,
+            g_tol = gtol,
             iterations = maxiter,
             store_trace = true,
         ),
@@ -122,8 +124,9 @@ m2 = PHModel(R2, P2);  #default is "efron" method for ties
 res
 res2
 
-res.P._LL[end]
-res2.P._LL[end]
+argmax([res.P._LL[end], res2.P._LL[end]])
+
+res.P._LL[end] - res2.P._LL[end]
 
 # in progress functions
 # taken from GLM.jl/src/linpred.jl

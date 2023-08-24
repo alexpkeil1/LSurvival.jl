@@ -9,8 +9,8 @@ mutable struct PHParms{
     B<:Vector{<:Float64},
     R<:Vector{<:Float64},
     L<:Vector{<:Float64},
-    G<:Union{Nothing, Vector{<:Float64}},
-    H<:Union{Nothing, Matrix{<:Float64}},
+    G<:Union{Nothing,Vector{<:Float64}},
+    H<:Union{Nothing,Matrix{<:Float64}},
     I<:Int,
 } <: AbstractLSurvParms
     X::Union{Nothing,D}
@@ -35,8 +35,8 @@ function PHParms(
     B<:Vector{<:Float64},
     R<:Vector{<:Float64},
     L<:Vector{<:Float64},
-    G<:Union{Nothing, Vector{<:Float64}},
-    H<:Union{Nothing, Matrix{<:Float64}},
+    G<:Union{Nothing,Vector{<:Float64}},
+    H<:Union{Nothing,Matrix{<:Float64}},
 }
     n = length(_r)
     p = length(_B)
@@ -191,40 +191,41 @@ function _fit!(
     while totiter < maxiter
         totiter += 1
         # check convergence 
-        likrat = (lastLL / m.P._LL[1])
-        absdiff = abs(lastLL - m.P._LL[1])
-        reldiff = max(likrat, inv(likrat)) - 1.0
-        #converged = (reldiff < atol) || (absdiff < rtol)
-        converged = (maximum(abs.(m.P._grad)) < gtol)
+        if false
+        # check convergence using ratio or absolute difference in partial likelihood
+            likrat = (lastLL / m.P._LL[1])
+            absdiff = abs(lastLL - m.P._LL[1])
+            reldiff = max(likrat, inv(likrat)) - 1.0
+            converged = (reldiff < atol) || (absdiff < rtol)
+        end
+        # check convergence using infinite norm of gradient
+        converged = (maximum(abs.(m.P._grad)) < gtol) 
         if converged
             break
         end
-        # modify step size
-        Q = 0.5 * (m.P._grad' * m.P._grad) #modified step size if gradient increases
-        if Q > oldQ # gradient has increased, indicating the maximum of a monotonic partial likelihood was overshot
+        # check for descent and modify step size if needed
+        #Q = 0.5 * (m.P._grad' * m.P._grad) #modified step size if gradient increases
+        Q = m.P._grad' * m.P._grad #l2 norm of vector
+        if Q > oldQ # gradient has increased, indicating the maximum  was overshot
             λ *= 0.5  # step-halving
         else
             λ = min(2.0λ, 1.0) # de-halving
         end
-        isnan(m.P._LL[1]) ? throw("Log-partial-likelihood is NaN") : true
+        isnan(m.P._LL[1]) ?
+        throw("Log-partial-likelihood is NaN: try different starting values") : true
         if abs(m.P._LL[1]) != Inf
             m.P._B .+= inv(-(m.P._hess)) * m.P._grad .* λ # newton raphson step
             oldQ = Q
         else
-            throw("Log-partial-likelihood is infinite")
+            throw("Log-partial-likelihood is not finite: check model inputs")
         end
         lastLL = m.P._LL[1]
-        _update_PHParms!(
-            m,
-            ne,
-            caseidxs,
-            risksetidxs,
-        )
+        _update_PHParms!(m, ne, caseidxs, risksetidxs)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
     end
     if (totiter == maxiter) && (maxiter > 0)
-        @warn "Algorithm did not converge after $totiter iterations"
+        @warn "Algorithm did not converge after $totiter iterations: check for collinearity of predictors"
     end
     if verbose && (maxiter == 0)
         @warn "maxiter = 0, model coefficients set to starting values"
@@ -508,7 +509,8 @@ function lgh_efron!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     denc = sum(_wtcases .* _rcases)
     dens = [deni - denc * ew for ew in effwts]
     if !isnothing(m.P._LL)
-        m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases)
+        m.P._LL .+=
+            sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases)
     end
     if !isnothing(m.P._grad)
         numg = Xriskset' * (_wtriskset .* _rriskset)
