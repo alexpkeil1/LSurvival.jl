@@ -150,6 +150,7 @@ function _fit!(
     maxiter::Integer = 500,
     atol::Float64 = sqrt(1e-8),
     rtol::Float64 = 1e-8,
+    gtol::Float64 = 1e-8,
     start = nothing,
     keepx = false,
     keepy = false,
@@ -193,7 +194,8 @@ function _fit!(
         likrat = (lastLL / m.P._LL[1])
         absdiff = abs(lastLL - m.P._LL[1])
         reldiff = max(likrat, inv(likrat)) - 1.0
-        converged = (reldiff < atol) || (absdiff < rtol)
+        #converged = (reldiff < atol) || (absdiff < rtol)
+        converged = (maximum(abs.(m.P._grad)) < gtol)
         if converged
             break
         end
@@ -241,6 +243,7 @@ function StatsBase.fit!(
     maxiter::Integer = 500,
     atol::Float64 = 1e-6,
     rtol::Float64 = 1e-6,
+    gtol::Float64 = 1e-8,
     start = nothing,
     kwargs...,
 )

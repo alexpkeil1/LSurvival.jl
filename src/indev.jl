@@ -61,7 +61,7 @@ function fit!(
         m.P._B = isnothing(beta) ? m.P._B : beta
         #
         LSurvival._update_PHParms!(m, ne, caseidxs, risksetidxs)
-        #
+        # turn into a minimization problem
         F = -m.P._LL[1]
         m.P._grad .*= -1.0
         m.P._hess .*= -1.0
@@ -72,16 +72,12 @@ function fit!(
         Optim.only_fgh!((F, G, H, beta) -> coxupdate!(F, G, H, beta, m)),
         start,
     )
-    opt = NewtonTrustRegion(;
-        initial_delta = 1.0,
-        delta_hat = 100.0,
-        eta = 0.1,
-        rho_lower = 0.25,
-        rho_upper = 0.75,
-    )
+    opt = NewtonTrustRegion()
+    #opt = IPNewton()
+    #opt = Newton()
     res = optimize(
         fgh!,
-        b0,
+        start,
         opt,
         Optim.Options(
             f_abstol = atol,
@@ -104,9 +100,9 @@ end
 
 
 
-id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0)
-data[:, 1] = round.(data[:, 1], digits = 3)
-d, X = data[:, 4], data[:, 1:3]
+id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0);
+data[:, 1] = round.(data[:, 1], digits = 3);
+d, X = data[:, 4], data[:, 1:3];
 
 
 # not-yet-fit PH model object
@@ -115,14 +111,19 @@ d, X = data[:, 4], data[:, 1:3]
 #isfitted(m)
 R = LSurvResp(int, outt, d)
 P = PHParms(X)
-m = PHModel(R, P)  #default is "efron" method for ties
-@btime LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx = true, keepy = true);
+m = PHModel(R, P);  #default is "efron" method for ties
+@btime res = LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx = true, keepy = true);
 
-R2 = LSurvResp(int, outt, d)
-P2 = PHParms(X)
-m2 = PHModel(R2, P2)  #default is "efron" method for ties
-@btime fit!(m2, start = [0.0, 0.0, 0.0], keepx = true, keepy = true);
+R2 = LSurvResp(int, outt, d);
+P2 = PHParms(X);
+m2 = PHModel(R2, P2);  #default is "efron" method for ties
+@btime res2 = fit!(m2, start = [0.0, 0.0, 0.0], keepx = true, keepy = true);
 
+res
+res2
+
+res.P._LL[end]
+res2.P._LL[end]
 
 # in progress functions
 # taken from GLM.jl/src/linpred.jl
