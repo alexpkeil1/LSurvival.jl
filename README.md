@@ -1,7 +1,7 @@
 # LSurvival
 
 [![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
-[![Main](https://img.shields.io/badge/docs-main-blue.svg)](https://alexpkeil1.github.io/LSurvival2.jl/main/)
+[![Main](https://img.shields.io/badge/docs-main-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/main/)
 
 These are some survival analysis functions that I was hoping to find in Julia and never did. Interface with StatsModels is developing. I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
 
