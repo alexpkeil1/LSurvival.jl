@@ -466,9 +466,9 @@ function lgh_breslow!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     if !isnothing(m.P._LL)
         #m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
         n = length(_wtcases)
-        m.P._LL .-= log(_den) * sw
+        m.P._LL[1] -= log(_den) * sw
         for i = 1:n
-            m.P._LL += _wtcases[i] * log(_rcases[i])
+            m.P._LL[1] += _wtcases[i] * log(_rcases[i])
         end
     end
     #
