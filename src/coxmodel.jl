@@ -288,7 +288,7 @@ function fit(
     enter::Vector{<:Real},
     exit::Vector{<:Real},
     y::Y;
-    ties = "breslow",
+    ties = "efron",
     id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     wts::Vector{<:Real} = similar(enter, 0),
     offset::Vector{<:Real} = similar(enter, 0),
