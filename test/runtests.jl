@@ -35,6 +35,9 @@ using Random
     tj = @time jfun(int, outt, d, X, wt)
     tj2 = @time jfun2(int, outt, d, X, wt)
 
+    tj = @time jfun(int, outt, d, X, wt)
+    tj2 = @time jfun2(int, outt, d, X, wt)
+
     tj = @time [jfun(int, outt, d, X, wt) for i in 1:10]
     tj2 = @time [jfun2(int, outt, d, X, wt) for i in 1:10]
     #

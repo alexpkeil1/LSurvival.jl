@@ -194,7 +194,7 @@ PHModel(R::G, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
 ```
 Methods: fit, coef, confint, std_err, show
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 import LSurvival: _stepcox!, dgm_comprisk
@@ -238,7 +238,7 @@ Type for identifying individuals in survival outcomes.
 
 Accepts any Number or String
 
-```{julia-repl}
+```{julia}
 [ID(i) for i in 1:10]
 ```
 
@@ -254,7 +254,7 @@ Type for identifying individuals in survival outcomes.
 
 Accepts any Number or String
 
-```{julia-repl}
+```{julia}
 [Strata(i) for i in 1:10]
 ```
 Used for the strata argument in PHModel (not yet implemented)
@@ -269,7 +269,7 @@ coxph(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::Abstrac
 
 Fit a generalized Cox proportional hazards model to data. Alias for`fit(PHModel, ...)`.
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -304,7 +304,7 @@ risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
 
 fit for PHSurv objects
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -323,7 +323,7 @@ res2 = risk_from_coxphmodels([ft1, ft2])
 DOC_E_YEARSOFLIFELOST ="""
 Expected number of years of life lost due to cause k
 
-```{julia-repl}
+```{julia}
 using Distributions, Plots, Random
 plotly()
 z,x,t,d, event,weights = dgm_comprisk(n=200, rng=MersenneTwister(1232));
@@ -362,7 +362,7 @@ offset::AbstractVector{<:Real}   = similar(y, 0),
 fitargs...) where {M<:AbstractPH}
 ```
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -381,7 +381,7 @@ coeftable(m)
 DOC_FIT_KMSURV ="""
 fit for KMSurv objects
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -391,7 +391,7 @@ mw = fit(KMSurv, enter, t, d, wts=wt)
 ```
 or, equivalently:
 
-```{julia-repl}
+```{julia}
 kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
 ```
@@ -411,7 +411,7 @@ method:
   - "lognlog" log(-log(S(t))) based confidence intervals
 
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -428,7 +428,7 @@ confint(m, method="lognlog") # log-log transformation
 DOC_VARIANCE_AJSURV ="""
 Greenwood's formula for variance and confidence intervals of a Aalen-Johansen risk function
 
-```{julia-repl}
+```{julia}
 res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
 m = fit(AJSurv, int, outt, event)
@@ -440,7 +440,7 @@ confint(m, level=0.95)
 DOC_FIT_AJSURV ="""
 Aalen-Johansen estimator for cumulative risk
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -450,7 +450,7 @@ m = fit(AJSurv, enter, t, event)
 mw = fit(AJSurv, enter, t, event, wts=wt)
 ```
 or, equivalently:
-```{julia-repl}
+```{julia}
 aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
 ```
@@ -458,6 +458,8 @@ aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
 
 
 ####### non-user functions
+
+# TODO: UPDATE
 DOC_LGH_BRESLOW ="""
 ```
 lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
@@ -465,7 +467,7 @@ lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset
  # for a given risk set
  #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
 
-```{julia-repl}
+```{julia}
 Xcases=X[caseidx,:]
 Xriskset=X[risksetidx,:]
  _rcases = _r[caseidx]
@@ -483,13 +485,13 @@ lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset
 ```
 """
 
-
+# TODO: UPDATE
 DOC_LGH_EFRON ="""
 ```
 lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
 ```
 
-```{julia-repl}
+```{julia}
 # for a given risk set
 #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
 Xcases=X[caseidx,:]
@@ -509,9 +511,9 @@ lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt,
 ```
 """
 
-
+# TODO: UPDATE
 DOC_LGH ="""
-```{julia-repl}
+```{julia}
 lgh!(lowermethod3,_den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
 ```
 wrapper: calculate log partial likelihood, gradient, hessian contributions for a single risk set
@@ -523,7 +525,7 @@ under a specified method for handling ties
 DOC__UPDATE_PHPARMS ="""
 calculate log likelihood, gradient, hessian at set value of coefficients
 
-```{julia-repl}
+```{julia}
 function _partial_LL!(
   m::M,
   # big indexes
@@ -535,7 +537,7 @@ function _partial_LL!(
 ```
 wrapper: calculate log partial likelihood, gradient, hessian contributions across all risk sets
 under a specified method for handling ties (efron and breslow estimators only)
-```{julia-repl}
+```{julia}
 p = size(X,2)
 _LL = zeros(1)
 _grad = zeros(p)
@@ -550,7 +552,7 @@ eventtimes = sort(unique(_out[findall(d.==1)]))
 DOC_FIT_PHSURV ="""
 fit for AJSurv objects
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -560,7 +562,7 @@ m = fit(AJSurv, enter, t, event)
 mw = fit(AJSurv, enter, t, event, wts=wt)
 ```
 or, equivalently:
-```{julia-repl}
+```{julia}
 aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
    ; <keyword arguments>)
 ```
@@ -576,7 +578,7 @@ dgm(n, maxT;afun=int_0, yfun=yprob, lfun=lprob)
 
 Where afun, yfun, and lfun are all functions that take arguments v,l,a and output time-specific values of a, y, and l respectively
 Example:
-```{julia-repl}
+```{julia}
 
 expit(mu) =  inv(1.0+exp(-mu))
 
@@ -607,7 +609,7 @@ dgm_comprisk(n)
         - n = sample size
 
 Example:
-```{julia-repl}
+```{julia}
 using LSurvival
     # 100 individuals with two competing events
 z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
@@ -623,7 +625,7 @@ Bootstrapping coefficients of a proportional hazards model
 bootstrap(rng::MersenneTwister, m::PHModel)
 ```
 
-```{julia-repl}
+```{julia}
 using LSurvival, Random
 
 id, int, outt, data =
@@ -662,7 +664,7 @@ Bootstrap Cox model coefficients
 LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
 ```
 
-```{julia-repl}
+```{julia}
 using LSurvival, Random
 res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
@@ -685,7 +687,7 @@ Bootstrap methods for Kaplan-Meier survival curve estimator
   
   
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 
@@ -714,7 +716,7 @@ Returns:
 - If using `bootstrap(fit, 10)` (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up
 
 
-```{julia-repl}
+```{julia}
 using LSurvival
 using Random
 
@@ -733,3 +735,7 @@ aj2.R
 
 ```
 """
+
+
+
+######## DEPRECATED FUNCTIONS ###############
