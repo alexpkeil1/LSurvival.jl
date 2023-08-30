@@ -452,6 +452,8 @@ end
 
 
 """
+Deprecated function
+
 Kaplan Meier for one observation per unit and no late entry
   (simple function)
 """
@@ -481,6 +483,8 @@ function km(t, d; weights = nothing)
 end
 
 """
+Deprecated function
+
 Kaplan Meier with late entry, possibly multiple observations per unit
 (simple function)
 """
@@ -511,6 +515,8 @@ end
 # tt = orderedtimes[_i]
 
 """
+Deprecated function
+
 Aalen-Johansen (survival) with late entry, possibly multiple observations per unit
   (simple function)
 """
@@ -544,6 +550,8 @@ end;
 
 
 """
+Deprecated function
+
 Kaplan Meier with late entry, possibly multiple observations per unit
 
 Usage: kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
@@ -589,6 +597,8 @@ end
 =#
 
 """
+Deprecated function
+
 Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit, non-repeatable events
 Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
 
@@ -644,6 +654,8 @@ end
 =#
 
 """
+Deprecated function
+
  Non-parametric sub-distribution hazard estimator
   estimating cumulative incidence via the subdistribution hazard function
 
@@ -715,6 +727,8 @@ end;
 
 
 """
+Deprecated function
+
 $DOC_E_YEARSOFLIFELOST
 """
 function e_yearsoflifelost(time, ci)
