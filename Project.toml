@@ -1,7 +1,7 @@
 name = "LSurvival"
 uuid = "edbbf5c1-874b-40a5-8c9f-d8fc918aacaa"
 authors = ["Alex Keil"]
-version = "0.12.1"
+version = "0.12.2"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -16,6 +16,8 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [compat]
 Distributions = "^0"
+LineSearches = "7"
+StatsBase = "^0.34"
 julia = "^1"
 
 [extras]

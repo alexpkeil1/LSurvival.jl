@@ -291,7 +291,7 @@ function fit(
     enter::Vector{<:Real},
     exit::Vector{<:Real},
     y::Y;
-    ties = "breslow",
+    ties = "efron",
     id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     wts::Vector{<:Real} = similar(enter, 0),
     offset::Vector{<:Real} = similar(enter, 0),
@@ -467,13 +467,18 @@ function lgh_breslow!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     sw = sum(_wtcases)
     _den = sum(rw)
     if !isnothing(m.P._LL)
-        m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
+        #m.P._LL .+= sum(_wtcases .* log.(_rcases)) .- log(_den) * sw
+        n = length(_wtcases)
+        m.P._LL[1] -= log(_den) * sw
+        for i = 1:n
+            m.P._LL[1] += _wtcases[i] * log(_rcases[i])
+        end
     end
     #
     if !isnothing(m.P._grad)
         numg = Xriskset' * rw
         xbar = numg / _den # risk-score-weighted average of X columns among risk set
-        m.P._grad .+= (Xcases .- xbar')' * (_wtcases)
+        m.P._grad .+= (Xcases .- xbar')' * _wtcases
         #
     end
     if !isnothing(m.P._hess)
@@ -487,7 +492,6 @@ end
 function efron_weights(m)
     [(l - 1) / m for l = 1:m]
 end
-
 
 """
 $DOC_LGH_EFRON
@@ -505,25 +509,27 @@ function lgh_efron!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
     aw = sw / nties
 
     effwts = efron_weights(nties)
-    deni = sum(_wtriskset .* _rriskset)
-    denc = sum(_wtcases .* _rcases)
+    WR = _wtriskset .* _rriskset
+    WC = _wtcases .* _rcases
+    deni = sum(WR)
+    denc = sum(WC)
     dens = [deni - denc * ew for ew in effwts]
     if !isnothing(m.P._LL)
         m.P._LL .+=
             sum(_wtcases .* log.(_rcases)) .- sum(log.(dens)) * 1 / nties * sum(_wtcases)
     end
     if !isnothing(m.P._grad)
-        numg = Xriskset' * (_wtriskset .* _rriskset)
-        numgs = [numg .- ew * Xcases' * (_wtcases .* _rcases) for ew in effwts]
+        numg = Xriskset' * (WR)
+        XtW = Xcases' * WC
+        numgs = [numg .- ew * XtW for ew in effwts]
         xbars = numgs ./ dens # risk-score-weighted average of X columns among risk set
         m.P._grad .+= Xcases' * _wtcases
         m.P._grad .-= sum(xbars) * aw
     end
     if !isnothing(m.P._hess)
-        numgg = (Xriskset' * Diagonal(_wtriskset .* _rriskset) * Xriskset)
-        numggs = [
-            numgg .- ew .* Xcases' * Diagonal(_wtcases .* _rcases) * Xcases for ew in effwts
-        ]
+        numgg = Xriskset' * Diagonal(WR) * Xriskset
+        XtWX = Xcases' * Diagonal(WC) * Xcases
+        numggs = [numgg .- ew .* XtWX for ew in effwts]
         xxbars = numggs ./ dens
         for i = 1:nties
             m.P._hess .-= (xxbars[i] - xbars[i] * xbars[i]') * aw

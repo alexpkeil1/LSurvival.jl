@@ -1,27 +1,38 @@
-# LSurvival
+```@meta
+CurrentModule = LSurvival=
+```
 
-[![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
-[![Main](https://img.shields.io/badge/docs-main-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/main/)
+# [LSurvival](https://github.com/alexpkeil1/LSurvival.jl).
 
-These are some survival analysis functions that I was hoping to find in Julia and never did. Interface with StatsModels is developing. I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
+Survival analysis functions in Julia for time-to-event outcomes that can include:
+- Loss-to-follow-up/right censoring
+- Late entry/left truncation (not available in the Survival.jl package)
+- "Person-period" data structures (not available in the Survival.jl package)
+- Observation weights (not available in the Survival.jl package)
+- Competing risks (not available in the Survival.jl package)
 
-This module handles:
-- Cox proportional hazards model with Efron's method or Breslow's method for ties
-- Non-parametric survival function estimation via Kaplan-Meier
-- Non-parametric survival function estimation under competing risks via Aalen-Johansen estimator
-- Late entry/left trunctation and right censoring (all estimators)
-- Baseline hazard estimator from a Cox model
-- Cumulative incidence estimation from a set of Cox models
+Capabilities include estimators for
+- Kaplan-Meier non-parametric conditional risk functions
+- Aalen-Johansen non-parametric cause-specific unconditional risk functions
+- Cox proportional hazards model (Efron's or Breslow's methods for ties)
 
-Add this package via Julia's package manager:
+Convenience functions enable:
+- Non-parametric bootstrapping, cluster-bootstrapping
+- Estimating baseline hazards from a Cox Model
+- Estimating cause-specific risk from an exhaustive set of Cox models for competing risk outcomes
+- Simple simulation of competing and non-competing survival events
 
-`add https://github.com/alexpkeil1/LSurvival.jl`
+Plans to include:
+- cluster robust variance estimation (without bootstrapping)
 
-or directly in Julia
+Report issues [here](https://github.com/alexpkeil1/LSurvival.jl/issues)
 
-`using Pkg; Pkg.add(url="https://github.com/alexpkeil1/LSurvival.jl")`
+## Installation 
+```{julia}
+using Pkg; Pkg.add(url = "https://github.com/alexpkeil1/LSurvival.jl")
+```
 
-
+## Quick examples
 ```{julia}
 using Random, LSurvival, Distributions, LinearAlgebra
 
@@ -125,5 +136,15 @@ LSurvCompResp(enter, t, event)
 # can use the ID type to refer to units with multiple observations
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
 LSurvResp(int, outt, data[:,4], ID.(id))
+```
 
+## Index of functions
+
+```@index
+```
+
+## Function help 
+
+```@autodocs
+Modules = [LSurvival]
 ```

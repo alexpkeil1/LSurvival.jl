@@ -40,7 +40,7 @@ phfitinit = fit(PHModel, X, int, outt, d, wts = wt, start = [6.0, -2, 3.0])
 fit(KMSurv, int, outt, d, wts = wt)
 kfit = kaplan_meier(int, outt, d, wts = wt)
 
-fitted(kfit)
+isfitted(kfit)
 show(stdout, kfit, maxrows = 40)
 
 ###################################################################
@@ -269,6 +269,7 @@ vcov(m2)
 ###################################################################
 # Time benchmarks using simulated data, calling R vs. using Julia
 ###################################################################
+using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
 
 id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100; afun = LSurvival.int_0)
@@ -349,7 +350,7 @@ function jfun(int, outt, d, X, wt)
 end
 
 function jfun2(int, outt, d, X, wt)
-    fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", rtol = 1e-9)
+    fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", gtol = 1e-4)
 end
 
 @rput int outt d X wt;
@@ -370,8 +371,8 @@ wt = rand(length(d))
 wt ./= (sum(wt) / length(wt))
 #wt ./ wt
 
-m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9, keepx=true, keepy=true)
-m2 = fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", rtol = 1e-9, keepx=true, keepy=true)
+m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", keepx=true, keepy=true)
+m2 = fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", keepx=true, keepy=true)
 
 
 

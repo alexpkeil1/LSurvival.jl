@@ -1,16 +1,16 @@
 
 function _coxrisk!(_r, X, B)
-  map!(z -> exp(z), _r, X * B)
-  nothing
+    map!(z -> exp(z), _r, X * B)
+    nothing
 end
 
 function _coxrisk(X, B)
-  _r = ones(size(X, 1))
-  _coxrisk!(_r, X, B)
+    _r = ones(size(X, 1))
+    _coxrisk!(_r, X, B)
 end
 
 """
-$DOC_LGH
+deprecated function
 """
 function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
@@ -50,7 +50,7 @@ function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, 
 end
 
 """
-$DOC_LGH_BRESLOW
+Deprecated function
 """
 function lgh_breslow!(
     _den,
@@ -81,7 +81,7 @@ function lgh_breslow!(
 end
 
 """
-$DOC_LGH_EFRON
+Deprecated function
 """
 function lgh_efron!(
     _den,
@@ -168,11 +168,13 @@ function _stepcox!(
     den, wtdriskset, wtdcases
 end #function _stepcox!
 
-#= #################################################################################################################### 
-Newton raphson wrapper function
-=# ############################################################################################################d########
+##################################################################################################################### 
+# Newton raphson wrapper function
+############################################################################################################d########
 
 """
+Deprecated function
+
 Estimate parameters of an extended Cox model
 
 Using: Newton raphson algorithm with modified/adaptive step sizes
@@ -212,108 +214,144 @@ Examples:
     
 ```
 """
-function coxmodel(_in::Array{<:Real,1}, _out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; weights=nothing, method="efron", inits=nothing , tol=10e-9,maxiter=500)
-  #(_in::Array{Float64}, _out::Array{Float64}, d, X::Array{Float64,2}, _wt::Array{Float64})=args
-  #### move #####
-   if isnothing(weights)
-    weights = ones(size(_in, 1))
-   end
-   if size(_out,1)==0
-    throw("error in function call")
-   end
-   conts = containers(_in, _out, d, X, weights, inits)
-   #(n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess) = conts
-   (n,p, eventtimes,_B,_r,_LL,_grad,_hess) = conts
-   #
-   lowermethod3 = lowercase(method[1:3])
-   # tuning params
-   totiter=0
-   λ=1.0
-   absdiff = tol*2.
-   oldQ = floatmax() 
-   #bestb = _B
-   lastLL = -floatmax()
-   risksetidxs, caseidxs = [], []
-   @inbounds for _outj in eventtimes
-     push!(risksetidxs, findall((_in .< _outj) .&& (_out .>= _outj)))
-     push!(caseidxs, findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj)))
-   end
-   den, _sumwtriskset, _sumwtcase = _stepcox!(lowermethod3, 
-      _LL, _grad, _hess,
-      _in, _out, d, X, weights,
-      _B, p, n, eventtimes,_r, 
-      risksetidxs, caseidxs)
-  _llhistory = [_LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
-  converged = false
-  # repeat newton raphson steps until convergence or max iterations
-  while totiter<maxiter
-    totiter +=1
-    ######
-    # update 
-    #######
-    Q = 0.5 * (_grad'*_grad) #modified step size if gradient increases
-    likrat = (lastLL/_LL[1])
-    absdiff = abs(lastLL-_LL[1])
-    reldiff = max(likrat, inv(likrat)) -1.0
-    converged = (reldiff < tol) || (absdiff < sqrt(tol))
-    if converged
-      break
+function coxmodel(
+    _in::Array{<:Real,1},
+    _out::Array{<:Real,1},
+    d::Array{<:Real,1},
+    X::Array{<:Real,2};
+    weights = nothing,
+    method = "efron",
+    inits = nothing,
+    tol = 10e-9,
+    maxiter = 500,
+)
+    #(_in::Array{Float64}, _out::Array{Float64}, d, X::Array{Float64,2}, _wt::Array{Float64})=args
+    #### move #####
+    if isnothing(weights)
+        weights = ones(size(_in, 1))
     end
-    if Q > oldQ
-      λ *= 0.5  # step-halving
-    else
-      λ = min(2.0λ, 1.) # de-halving
-      #bestb = _B
-      nothing
+    if size(_out, 1) == 0
+        throw("error in function call")
     end
-    isnan(_LL[1]) ? throw("Log-partial-likelihood is NaN") : true
-    if abs(_LL[1]) != Inf
-      _B .+= inv(-(_hess))*_grad.*λ # newton raphson step
-      oldQ=Q
-    else
-       throw("log-partial-likelihood is infinite")
+    conts = containers(_in, _out, d, X, weights, inits)
+    #(n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess) = conts
+    (n, p, eventtimes, _B, _r, _LL, _grad, _hess) = conts
+    #
+    lowermethod3 = lowercase(method[1:3])
+    # tuning params
+    totiter = 0
+    λ = 1.0
+    absdiff = tol * 2.0
+    oldQ = floatmax()
+    #bestb = _B
+    lastLL = -floatmax()
+    risksetidxs, caseidxs = [], []
+    @inbounds for _outj in eventtimes
+        push!(risksetidxs, findall((_in .< _outj) .&& (_out .>= _outj)))
+        push!(caseidxs, findall((d .> 0) .&& isapprox.(_out, _outj) .&& (_in .< _outj)))
     end
-    lastLL = _LL[1]
-    den, _, _ = _stepcox!(lowermethod3,
-      _LL, _grad, _hess,
-      _in, _out, d, X, weights,
-      _B, p, n, eventtimes,_r, 
-      risksetidxs, caseidxs)
-    push!(_llhistory, _LL[1])
-  end
-  if totiter==maxiter
-    @warn "Algorithm did not converge after $totiter iterations"
-  end
-  if lowermethod3 == "bre"
-    bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
-  elseif lowermethod3 == "efr"
-    bh = [1.0 ./ den _sumwtriskset _sumwtcase eventtimes]
-  end
-  (_B, _llhistory, _grad, _hess, bh)
-end
-;
-coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2};kwargs...) = coxmodel(zeros(typeof(_out), length(_out)), _out, d, X;kwargs...)
+    den, _sumwtriskset, _sumwtcase = _stepcox!(
+        lowermethod3,
+        _LL,
+        _grad,
+        _hess,
+        _in,
+        _out,
+        d,
+        X,
+        weights,
+        _B,
+        p,
+        n,
+        eventtimes,
+        _r,
+        risksetidxs,
+        caseidxs,
+    )
+    _llhistory = [_LL[1]] # if inits are zero, 2*(_llhistory[end] - _llhistory[1]) is the likelihood ratio test on all predictors
+    converged = false
+    # repeat newton raphson steps until convergence or max iterations
+    while totiter < maxiter
+        totiter += 1
+        ######
+        # update 
+        #######
+        Q = 0.5 * (_grad' * _grad) #modified step size if gradient increases
+        likrat = (lastLL / _LL[1])
+        absdiff = abs(lastLL - _LL[1])
+        reldiff = max(likrat, inv(likrat)) - 1.0
+        converged = (reldiff < tol) || (absdiff < sqrt(tol))
+        if converged
+            break
+        end
+        if Q > oldQ
+            λ *= 0.5  # step-halving
+        else
+            λ = min(2.0λ, 1.0) # de-halving
+            #bestb = _B
+            nothing
+        end
+        isnan(_LL[1]) ? throw("Log-partial-likelihood is NaN") : true
+        if abs(_LL[1]) != Inf
+            _B .+= inv(-(_hess)) * _grad .* λ # newton raphson step
+            oldQ = Q
+        else
+            throw("log-partial-likelihood is infinite")
+        end
+        lastLL = _LL[1]
+        den, _, _ = _stepcox!(
+            lowermethod3,
+            _LL,
+            _grad,
+            _hess,
+            _in,
+            _out,
+            d,
+            X,
+            weights,
+            _B,
+            p,
+            n,
+            eventtimes,
+            _r,
+            risksetidxs,
+            caseidxs,
+        )
+        push!(_llhistory, _LL[1])
+    end
+    if totiter == maxiter
+        @warn "Algorithm did not converge after $totiter iterations"
+    end
+    if lowermethod3 == "bre"
+        bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase eventtimes]
+    elseif lowermethod3 == "efr"
+        bh = [1.0 ./ den _sumwtriskset _sumwtcase eventtimes]
+    end
+    (_B, _llhistory, _grad, _hess, bh)
+end;
+coxmodel(_out::Array{<:Real,1}, d::Array{<:Real,1}, X::Array{<:Real,2}; kwargs...) =
+    coxmodel(zeros(typeof(_out), length(_out)), _out, d, X; kwargs...)
 
 
 
-function cox_summary(args; alpha=0.05, verbose=true)
+function cox_summary(args; alpha = 0.05, verbose = true)
     beta, ll, g, h, basehaz = args
     std_err = sqrt.(diag(-inv(h)))
-    z = beta./std_err
-    zcrit = quantile.(Distributions.Normal(), [alpha/2.0, 1.0-alpha/2.0])
-    lci = beta .+ zcrit[1]*std_err
-    uci = beta .+ zcrit[2]*std_err
+    z = beta ./ std_err
+    zcrit = quantile.(Distributions.Normal(), [alpha / 2.0, 1.0 - alpha / 2.0])
+    lci = beta .+ zcrit[1] * std_err
+    uci = beta .+ zcrit[2] * std_err
     pval = calcp.(z)
     op = hcat(beta, std_err, lci, uci, z, pval)
-    verbose ? true : return(op)
-    chi2 =  ll[end] - ll[1] 
+    verbose ? true : return (op)
+    chi2 = ll[end] - ll[1]
     df = length(beta)
     lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
-    head = ["ln(HR)","StdErr","LCI","UCI","Z","P(>|Z|)"]
-    rown = ["b$i" for i in 1:size(op)[1]]
-    coeftab = CoefTable(op, head, rown, 6,5 )
-    iob = IOBuffer();
-    println(iob, coeftab);
+    head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
+    rown = ["b$i" for i = 1:size(op)[1]]
+    coeftab = CoefTable(op, head, rown, 6, 5)
+    iob = IOBuffer()
+    println(iob, coeftab)
     str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
     str *= String(take!(iob))
     str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
@@ -322,10 +360,11 @@ function cox_summary(args; alpha=0.05, verbose=true)
     str *= "Newton-Raphson iterations: $(length(ll)-1)"
     println(str)
     op
-  end
+end
 
 
-  """
+"""
+Deprecated function
   Estimating cumulative incidence from two or more cause-specific Cox models
   
   z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)
@@ -344,161 +383,175 @@ function cox_summary(args; alpha=0.05, verbose=true)
   ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)
   ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2])
   """
-function ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=nothing, covarmat=nothing)
-  bhlist = [hcat(bh, fill(eventtypes[i], size(bh,1))) for (i,bh) in enumerate(bhlist)]
-  bh = reduce(vcat, bhlist)
-  sp = sortperm(bh[:,4])
-  bh = bh[sp,:]
-  ntimes::Int = size(bh,1)
-  ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes), ones(Float64,length(eventtypes))
-  ch::Float64 = 0.0
-  lsurv::Float64 = 1.0
-  if !isnothing(coeflist)
-    @inbounds for (j,d) in enumerate(eventtypes)
-      hr[j] = exp(dot(covarmat, coeflist[j]))
-    end 
-  end
-  lci = zeros(length(eventtypes))
-  @inbounds for i in 1:ntimes
-    @inbounds for (j,d) in enumerate(eventtypes)
-      if bh[i,5] == d
-        bh[i,1] *= hr[j]
-        ci[i,j] =  lci[j] + bh[i,1] * lsurv 
-      else 
-        ci[i,j] =  lci[j]
-      end
+function ci_from_coxmodels(
+    bhlist;
+    eventtypes = [1, 2],
+    coeflist = nothing,
+    covarmat = nothing,
+)
+    bhlist = [hcat(bh, fill(eventtypes[i], size(bh, 1))) for (i, bh) in enumerate(bhlist)]
+    bh = reduce(vcat, bhlist)
+    sp = sortperm(bh[:, 4])
+    bh = bh[sp, :]
+    ntimes::Int = size(bh, 1)
+    ci, surv, hr = zeros(Float64, ntimes, length(eventtypes)),
+    fill(1.0, ntimes),
+    ones(Float64, length(eventtypes))
+    ch::Float64 = 0.0
+    lsurv::Float64 = 1.0
+    if !isnothing(coeflist)
+        @inbounds for (j, d) in enumerate(eventtypes)
+            hr[j] = exp(dot(covarmat, coeflist[j]))
+        end
     end
-    ch += bh[i,1]
-    surv[i] = exp(-ch)
-    lsurv = surv[i]
-    lci = ci[i,:]
-  end
-  ci, surv, bh[:,5], bh[:,4]
+    lci = zeros(length(eventtypes))
+    @inbounds for i = 1:ntimes
+        @inbounds for (j, d) in enumerate(eventtypes)
+            if bh[i, 5] == d
+                bh[i, 1] *= hr[j]
+                ci[i, j] = lci[j] + bh[i, 1] * lsurv
+            else
+                ci[i, j] = lci[j]
+            end
+        end
+        ch += bh[i, 1]
+        surv[i] = exp(-ch)
+        lsurv = surv[i]
+        lci = ci[i, :]
+    end
+    ci, surv, bh[:, 5], bh[:, 4]
 end
 
 
-  function containers(in, out, d, X, wt, inits)
-    if size(out,1)==0
-      throw("error in function call")
-     end
-    if isnothing(wt)
-      wt = ones(size(in, 1))
+function containers(in, out, d, X, wt, inits)
+    if size(out, 1) == 0
+        throw("error in function call")
     end
-    @assert length(size(X))==2
-    n,p = size(X)
+    if isnothing(wt)
+        wt = ones(size(in, 1))
+    end
+    @assert length(size(X)) == 2
+    n, p = size(X)
     # indexes,counters
     #eventidx = findall(d .> 0)
     eventtimes = sort(unique(out[findall(d .> 0)]))
     #nevents = length(eventidx);
     # containers
     _B = isnothing(inits) ? zeros(p) : copy(inits)
-    _r = zeros(Float64,n)
+    _r = zeros(Float64, n)
     #_basehaz = zeros(Float64, nevents) # baseline hazard estimate
     #_riskset = zeros(Int, nevents) # baseline hazard estimate
     _LL = zeros(1)
     _grad = zeros(p)
     _hess = zeros(p, p) #initialize
     #(n,p,eventidx, eventtimes,nevents,_B,_r, _basehaz, _riskset,_LL,_grad,_hess)
-    n,p, eventtimes,_B,_r,_LL,_grad,_hess
-  end
-  
+    n, p, eventtimes, _B, _r, _LL, _grad, _hess
+end
+
 
 
 
 """
+Deprecated function
+
 Kaplan Meier for one observation per unit and no late entry
   (simple function)
 """
-function km(t,d; weights=nothing)
-  # no ties allowed
-  if isnothing(weights) || isnan(weights[1])
-    weights = ones(length(t))
-  end
-  censval = zero(eltype(d))
-  orderedtimes = sortperm(t)
-  _t = t[orderedtimes]
-  _d = d[orderedtimes]
-  _weights = weights[orderedtimes]
-  whichd = findall( d .> zeros(eltype(d), 1))
-  riskset = zeros(Float64, length(t)) # risk set size
- # _dtimes = _t[whichd] # event times
-  #_dw = weights[whichd]     # weights at times
-  _1mdovern = zeros(Float64, length(_t))
-  for (_i,_ti) in enumerate(_t)
-    R = findall(_t .>= _ti) # risk set
-    ni = sum(_weights[R]) # sum of weights in risk set
-    di = _weights[_i]*(_d[_i] .> censval)
-    riskset[_i] = ni
-    _1mdovern[_i] = 1.0 - di/ni
-  end
-  _t, cumprod(_1mdovern), riskset
+function km(t, d; weights = nothing)
+    # no ties allowed
+    if isnothing(weights) || isnan(weights[1])
+        weights = ones(length(t))
+    end
+    censval = zero(eltype(d))
+    orderedtimes = sortperm(t)
+    _t = t[orderedtimes]
+    _d = d[orderedtimes]
+    _weights = weights[orderedtimes]
+    whichd = findall(d .> zeros(eltype(d), 1))
+    riskset = zeros(Float64, length(t)) # risk set size
+    # _dtimes = _t[whichd] # event times
+    #_dw = weights[whichd]     # weights at times
+    _1mdovern = zeros(Float64, length(_t))
+    for (_i, _ti) in enumerate(_t)
+        R = findall(_t .>= _ti) # risk set
+        ni = sum(_weights[R]) # sum of weights in risk set
+        di = _weights[_i] * (_d[_i] .> censval)
+        riskset[_i] = ni
+        _1mdovern[_i] = 1.0 - di / ni
+    end
+    _t, cumprod(_1mdovern), riskset
 end
 
 """
+Deprecated function
+
 Kaplan Meier with late entry, possibly multiple observations per unit
 (simple function)
 """
-function km(in,out,d; weights=nothing, eps = 0.00000001)
-   # there is some bad floating point issue with epsilon that should be tracked
-   # R handles this gracefully
-  # ties allowed
-  if isnothing(weights) || isnan(weights[1])
-    weights = ones(length(in))
-  end
-  censval = zero(eltype(d))
-  times = unique(out)
-  orderedtimes = sort(times)
-  riskset = zeros(Float64, length(times)) # risk set size
-  #_dt = zeros(length(orderedtimes))
-  _1mdovern = ones(length(orderedtimes))
-  for (_i,tt) in enumerate(orderedtimes)
-    R = findall((out .>= tt) .& (in .< (tt-eps)) ) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
-    ni = sum(weights[R]) # sum of weights in risk set
-    di = sum(weights[R] .* (d[R] .> censval) .* (out[R] .== tt))
-    _1mdovern[_i] = log(1.0 - di/ni)
-    riskset[_i] = ni
-  end
-  orderedtimes, exp.(cumsum(_1mdovern)), riskset
+function km(in, out, d; weights = nothing, eps = 0.00000001)
+    # there is some bad floating point issue with epsilon that should be tracked
+    # R handles this gracefully
+    # ties allowed
+    if isnothing(weights) || isnan(weights[1])
+        weights = ones(length(in))
+    end
+    censval = zero(eltype(d))
+    times = unique(out)
+    orderedtimes = sort(times)
+    riskset = zeros(Float64, length(times)) # risk set size
+    #_dt = zeros(length(orderedtimes))
+    _1mdovern = ones(length(orderedtimes))
+    for (_i, tt) in enumerate(orderedtimes)
+        R = findall((out .>= tt) .& (in .< (tt - eps))) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
+        ni = sum(weights[R]) # sum of weights in risk set
+        di = sum(weights[R] .* (d[R] .> censval) .* (out[R] .== tt))
+        _1mdovern[_i] = log(1.0 - di / ni)
+        riskset[_i] = ni
+    end
+    orderedtimes, exp.(cumsum(_1mdovern)), riskset
 end
 
 # i = 123
 # tt = orderedtimes[_i]
 
 """
+Deprecated function
+
 Aalen-Johansen (survival) with late entry, possibly multiple observations per unit
   (simple function)
 """
-function aj(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
-  if isnothing(weights) || isnan(weights[1])
-    weights = ones(length(in))
-  end
-  nvals = length(dvalues)
-  # overall survival via Kaplan-Meier
-  orderedtimes, S, riskset = km(in,out,d, weights=weights, eps=eps) # note ordered times are unique
-  Sm1 = vcat(1.0, S)
-  ajest = zeros(length(orderedtimes), nvals)
-  _d = zeros(length(out), nvals)
-  for (jidx,j) in enumerate(dvalues)
-    _d[:,jidx] = (d .== j)
-  end
-  for (_i,tt) in enumerate(orderedtimes)
-    R = findall((out .>= tt) .& (in .< (tt-eps))) # risk set
-    weightsR = weights[R]
-    ni = sum(weightsR) # sum of weights/weighted individuals in risk set
-    for (jidx,j) in enumerate(dvalues)
-      dij = sum(weightsR .* _d[R,jidx] .* (out[R] .== tt))
-      ajest[_i, jidx] = Sm1[_i] * dij/ni
+function aj(in, out, d; dvalues = [1.0, 2.0], weights = nothing, eps = 0.00000001)
+    if isnothing(weights) || isnan(weights[1])
+        weights = ones(length(in))
     end
-  end
-  for jidx in 1:nvals
-    ajest[:,jidx] = 1.0 .- cumsum(ajest[:,jidx])
-  end
-  orderedtimes, S, ajest, riskset
-end
-;
+    nvals = length(dvalues)
+    # overall survival via Kaplan-Meier
+    orderedtimes, S, riskset = km(in, out, d, weights = weights, eps = eps) # note ordered times are unique
+    Sm1 = vcat(1.0, S)
+    ajest = zeros(length(orderedtimes), nvals)
+    _d = zeros(length(out), nvals)
+    for (jidx, j) in enumerate(dvalues)
+        _d[:, jidx] = (d .== j)
+    end
+    for (_i, tt) in enumerate(orderedtimes)
+        R = findall((out .>= tt) .& (in .< (tt - eps))) # risk set
+        weightsR = weights[R]
+        ni = sum(weightsR) # sum of weights/weighted individuals in risk set
+        for (jidx, j) in enumerate(dvalues)
+            dij = sum(weightsR .* _d[R, jidx] .* (out[R] .== tt))
+            ajest[_i, jidx] = Sm1[_i] * dij / ni
+        end
+    end
+    for jidx = 1:nvals
+        ajest[:, jidx] = 1.0 .- cumsum(ajest[:, jidx])
+    end
+    orderedtimes, S, ajest, riskset
+end;
 
 
 """
+Deprecated function
+
 Kaplan Meier with late entry, possibly multiple observations per unit
 
 Usage: kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
@@ -544,6 +597,8 @@ end
 =#
 
 """
+Deprecated function
+
 Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit, non-repeatable events
 Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
 
@@ -599,6 +654,8 @@ end
 =#
 
 """
+Deprecated function
+
  Non-parametric sub-distribution hazard estimator
   estimating cumulative incidence via the subdistribution hazard function
 
@@ -637,33 +694,41 @@ Examples:
   
 ```
 """
-function subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.0)
-  @warn "This function is not appropriate for data with censoring"
-  # ties allowed
-  dmain = dvalues[1]
-  if isnothing(weights) || isnan(weights[1])
-    weights = ones(length(in))
-  end
-  censval = zero(eltype(d))
-  times_dmain = unique(out[findall(d .== dmain)])
-  orderedtimes_dmain = sort(times_dmain)
-  _haz = ones(length(orderedtimes_dmain))
-  @inbounds for (_i,tt) in enumerate(orderedtimes_dmain)
-    aliveandatriskidx = findall((in .< (tt-eps)) .&& (out .>= tt))
-    hadcompidx = findall((out .<= tt) .&& (d .!= dmain))
-    dmain_now = findall((out .== tt) .&& (d .== dmain))
-    pseudoR = union(aliveandatriskidx, hadcompidx) 
-    casesidx = intersect(dmain_now, aliveandatriskidx)
-    ni = sum(weights[pseudoR]) # sum of weights in risk set
-    di = sum(weights[casesidx])
-    _haz[_i] = di/ni
-  end
-  orderedtimes_dmain, cumsum(_haz), 1.0 .- exp.(.-cumsum(_haz)), [:times, :cumhaz, :ci]
-end
-;
+function subdistribution_hazard_cuminc(
+    in,
+    out,
+    d;
+    dvalues = [1.0, 2.0],
+    weights = nothing,
+    eps = 0.0,
+)
+    @warn "This function is not appropriate for data with censoring"
+    # ties allowed
+    dmain = dvalues[1]
+    if isnothing(weights) || isnan(weights[1])
+        weights = ones(length(in))
+    end
+    censval = zero(eltype(d))
+    times_dmain = unique(out[findall(d .== dmain)])
+    orderedtimes_dmain = sort(times_dmain)
+    _haz = ones(length(orderedtimes_dmain))
+    @inbounds for (_i, tt) in enumerate(orderedtimes_dmain)
+        aliveandatriskidx = findall((in .< (tt - eps)) .&& (out .>= tt))
+        hadcompidx = findall((out .<= tt) .&& (d .!= dmain))
+        dmain_now = findall((out .== tt) .&& (d .== dmain))
+        pseudoR = union(aliveandatriskidx, hadcompidx)
+        casesidx = intersect(dmain_now, aliveandatriskidx)
+        ni = sum(weights[pseudoR]) # sum of weights in risk set
+        di = sum(weights[casesidx])
+        _haz[_i] = di / ni
+    end
+    orderedtimes_dmain, cumsum(_haz), 1.0 .- exp.(.-cumsum(_haz)), [:times, :cumhaz, :ci]
+end;
 
 
 """
+Deprecated function
+
 $DOC_E_YEARSOFLIFELOST
 """
 function e_yearsoflifelost(time, ci)
