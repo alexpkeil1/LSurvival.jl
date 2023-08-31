@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(LSurvival, :DocTestSetup, :(using LSurvival); recursive=true
 makedocs(;
 #   modules=[LSurvival],
    authors="Alex Keil <alex.keil@nih.gov>",
-   repo="https://github.com/alexpkeil1/LSurvival.jl.git",
+   repo="https://github.com/alexpkeil1/LSurvival.jl",
    sitename="LSurvival.jl",
 #   format=Documenter.HTML(;
 #       prettyurls=get(ENV, "CI", "false") == "true",
@@ -23,6 +23,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/alexpkeil1/LSurvival.jl.git",
+    repo="github.com/alexpkeil1/LSurvival.jl",
     devbranch="main"
 )
