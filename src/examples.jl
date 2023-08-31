@@ -25,7 +25,7 @@ tab = (
     in=int, out=outt, d=d, x = data[:,1], z1 = data[:,2], z2 = data[:,3]
 )
 
-ft = coxph(@formula(Surv(in,out,d)~x+z1+z2+z1*z2),tab, contrasts = Dict(:z1 => CategoricalTerm))
+ft = coxph(@formula(Surv(in,out,d)~x+x^2+z1+z2+z1*z2),tab, contrasts = Dict(:z1 => CategoricalTerm))
 ft.formula
 
 # using Breslow partial likelihood, adding in weights, and setting higher tolerance
