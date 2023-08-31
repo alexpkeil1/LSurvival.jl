@@ -1,6 +1,6 @@
-using Documenter, LSurvival
+using Documenter, LSurvival, Random, Distributions, LinearAlgebra
 
-DocMeta.setdocmeta!(LSurvival, :DocTestSetup, :(using LSurvival); recursive = true)
+#DocMeta.setdocmeta!(LSurvival, :DocTestSetup, :(using LSurvival); recursive = true)
 
 makedocs(;
     format = Documenter.HTML(),
@@ -13,5 +13,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo = "github.com/alexpkeil1/LSurvival.jl.git"
+    repo = "github.com/alexpkeil1/LSurvival.jl.git",
 )
