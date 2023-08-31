@@ -1,8 +1,0 @@
-#Using DocumenterTools; DocumenterTools.genkeys(user="alexpkeil1", repo="LSurvival.jl")
-#┌ Info: Add the key below as a new 'Deploy key' on GitHub (https://github.com/alexpkeil1/LSurvival.jl/settings/keys) with read and write access.
-#└ The 'Title' field can be left empty as GitHub can infer it from the key comment.
-
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDJsM3zP+wolfgk7U521V7wQ7qiodR4/TnimQJNl/ai9vM23mcIrNxXiEqV+jrp/F7hQZ6shUEp4PL1tZtqcBKYdwf91oC0/s7goh6sipp4H9aNU17fzmpYWdpmyUgyVyMB6nJMUJceKQeRWOtTwnCxTX08nntTPbCj8f0vEUoWMHaaMPaV7qiCXd2AyIInaLWdwy/mQvoEyjzGK250VMJf15RIihLUmxVqoOHVFJicb+okCIq6NdgDVkP+Ro4QxIihtRt8fHpGu7ePcgu7OXu7G/e41a/L5sDvRg7Z5j10ODXcsAyy/IwFK6MftH4XD2El5y/ExAVUwk/jN1hxLFzZuMLpZGbmmVh/GEipU/o/FEwFVhzH73WjCDQy/YnpO43WiZkSxoTMK6od7MfRedCRLtc+tJFTccoXt1HiWgUDGbI8AmzH9Q9d9f+k7/ZRXUfA5/Y5gt16/95/ROaicEWE6ar9/OkNG2RWnTxXYt/uXFaeizK1hhKAyeAMTHZfkHE= Documenter
-
-
-
