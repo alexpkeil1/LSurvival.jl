@@ -1,19 +1,24 @@
-name: Documenter
+name: Documentation
+
 on:
   push:
-    branches: [main]
-    tags: [v*]
+    branches:
+      - main # update to match your development branch (master, main, dev, trunk, ...)
+    tags: '*'
   pull_request:
 
 jobs:
-  Documenter:
+  build:
     permissions:
       contents: write
-    name: Documentation
+      statuses: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+      - name: Install dependencies
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
+        run: julia --project=docs/ docs/make.jl

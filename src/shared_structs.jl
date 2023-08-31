@@ -3,6 +3,7 @@
 #####################################################################################################################
 
 abstract type AbstractLSurvID end
+abstract type AbstractSurvTime end
 
 """
 $DOC_ID
@@ -31,6 +32,22 @@ end
 function Base.length(x::I) where {I<:AbstractLSurvID}
     Base.length(x.value)
 end
+
+
+struct Surv{E<:Real,X<:Real,Y<:Real} <: AbstractSurvTime
+    enter::E
+    exit::X
+    y::Y
+end
+
+function Surv(exit::X, y::Y) where {X<:Real,Y<:Real}
+    return Surv(0.0, exit, y)
+end
+
+function Surv(exit::X) where {X<:Real}
+    return Surv(0.0, exit, true)
+end
+
 
 
 """
@@ -96,6 +113,18 @@ function LSurvResp(
 end
 
 function LSurvResp(
+    y::Vector{Y},
+    wts::W,
+    id::Vector{I},
+) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvID}
+    enter = [yi.enter for yi in y]
+    exit = [yi.exit for yi in y]
+    d = [yi.y for yi in y]
+    return LSurvResp(enter, exit, d, wts, id)
+end
+
+
+function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
@@ -158,8 +187,8 @@ struct LSurvCompResp{
     I<:AbstractLSurvID,
     V<:Vector,
     M<:AbstractMatrix,
-    T<:Real
-    } <: AbstractLSurvResp
+    T<:Real,
+} <: AbstractLSurvResp
     enter::E
     "`exit`: Time at observation end"
     exit::X
@@ -260,7 +289,7 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
     lefttruncate = [e == x.origin ? "[" : "(" for e in x.enter]
     rightcensor = [y > 0 ? "]" : ")" for y in x.y]
     enter = [@sprintf("%.2g", e) for e in x.enter]
-    exeunt = [@sprintf("%2.g", e) for e in x.exit]
+    exeunt = [@sprintf("%.2g", e) for e in x.exit]
     pr = [
         join([lefttruncate[i], enter[i], ",", exeunt[i], rightcensor[i]], "") for
         i in eachindex(exeunt)
@@ -287,3 +316,14 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
 end
 
 Base.show(x::T; kwargs...) where {T<:AbstractLSurvResp} = Base.show(stdout, x; kwargs...)
+
+function Base.show(io::IO, x::T) where {T<:AbstractSurvTime}
+    lefttruncate = x.enter == 0 ? "[" : "(" 
+    rightcensor = x.y > 0 ? "]" : ")" 
+    enter = @sprintf("%.2g", x.enter)
+    exeunt = @sprintf("%.2g", x.exit)
+    pr = join([lefttruncate, enter, ",", exeunt, rightcensor], "")
+    print(io, pr)
+end
+
+Base.show(x::T; kwargs...) where {T<:AbstractSurvTime} = Base.show(stdout, x; kwargs...)

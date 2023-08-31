@@ -38,12 +38,22 @@ using Random
     tj = @time jfun(int, outt, d, X, wt)
     tj2 = @time jfun2(int, outt, d, X, wt)
 
-    tj = @time [jfun(int, outt, d, X, wt) for i in 1:10]
-    tj2 = @time [jfun2(int, outt, d, X, wt) for i in 1:10]
+    tj = @time [jfun(int, outt, d, X, wt) for i = 1:10]
+    tj2 = @time [jfun2(int, outt, d, X, wt) for i = 1:10]
     #
-    res = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9, keepx=true,keepy=true)
+    res = fit(
+        PHModel,
+        X,
+        int,
+        outt,
+        d,
+        wts = wt,
+        ties = "breslow",
+        rtol = 1e-9,
+        keepx = true,
+        keepy = true,
+    )
 
-#throw("temp stop")
     id, int, outt, data =
         LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
 
@@ -51,6 +61,21 @@ using Random
     weights = rand(length(d))
 
     println(coxph(X, int, outt, d))
+
+    tab = (
+        entertime = int,
+        exittime = outt,
+        death = data[:, 4] .== 1,
+        x = data[:, 1],
+        z1 = data[:, 2],
+        z2 = data[:, 3],
+    )
+
+    f = @formula(Surv(entertime, exittime, death) ~ x + z1 + z2)
+    ft = coxph(f, tab)
+    println("formula fit")
+    println(ft)
+
 
     # survival outcome:
     R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only

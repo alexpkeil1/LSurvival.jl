@@ -140,6 +140,8 @@ function PHSurv(fitlist::Array{T}) where {T<:PHModel}
     PHSurv(fitlist, eventtypes)
 end
 
+StatsModels.drop_intercept(::Type{T}) where {T<:PHModel} = true
+
 ##################################################################################################################### 
 # fitting functions for PHModel objects
 #####################################################################################################################
@@ -253,10 +255,7 @@ function StatsBase.fit!(
         maxiter = kwargs[:maxIter]
     end
     if haskey(kwargs, :convTol)
-        Base.depwarn(
-            "'convTol' argument is deprecated, use `gtol` instead",
-            :fit!,
-        )
+        Base.depwarn("'convTol' argument is deprecated, use `gtol` instead", :fit!)
         gtol = kwargs[:convTol]
     end
     if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy))
@@ -312,11 +311,53 @@ function fit(
 end
 
 
+function modelframe(
+    f::FormulaTerm,
+    data,
+    contrasts::AbstractDict,
+    ::Type{M},
+) where {M<:AbstractPH}
+    Tables.istable(data) ||
+        throw(ArgumentError("expected data in a Table, got $(typeof(data))"))
+    t = Tables.columntable(data)
+    msg = StatsModels.checknamesexist(f, t)
+    msg != "" && throw(ArgumentError(msg))
+    data, _ = StatsModels.missing_omit(t, f)
+    sch = schema(f, data, contrasts)
+    f = apply_schema(f, sch, M)
+    f, modelcols(f, data)
+end
+
+
+function fit(
+    ::Type{M},
+    f::FormulaTerm,
+    data;
+    ties = "efron",
+    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(getindex(data,1))],
+    wts::AbstractVector{<:Real} = similar(getindex(data,1), 0),
+    offset::AbstractVector{<:Real} = similar(getindex(data,1), 0),
+    contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
+    fitargs...,
+) where {M<:AbstractPH}
+    f, (y, X) = modelframe(f, data, contrasts, M)
+    R = LSurvResp(y, wts, id)
+    P = PHParms(X)
+    res = M(R, P, ties)
+    return fit!(res; fitargs...)
+end
+
+
 """
 $DOC_FIT_ABSTRACPH
 """
 coxph(X, enter, exit, y, args...; kwargs...) =
     fit(PHModel, X, enter, exit, y, args...; kwargs...)
+
+"""
+
+"""
+coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 
 
 ##################################################################################################################### 

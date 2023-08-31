@@ -46,10 +46,12 @@ export ID,
     AJSurv,
     PHSurv,
     PHParms,
+    Surv,
     AbstractPH,
     AbstractNPSurv,
     AbstractLSurvID,
-    AbstractLSurvParms
+    AbstractLSurvParms,
+    AbstractSurvTime
 # Outcome types
 export LSurvResp, LSurvCompResp
 # functions    

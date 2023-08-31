@@ -79,6 +79,19 @@ m2 = fit(PHModel, X, int, outt, d, ties = "efron", wts = wt)
 #equivalent
 m2b = coxph(X, int, outt, d, ties = "efron", wts = wt)
 
+# using the formula interface
+tab = (
+    entertime = int,
+    exittime = outt,
+    death = data[:, 4] .== 1,
+    x = data[:, 1],
+    z1 = data[:, 2],
+    z2 = data[:, 3],
+)
+m2c = coxph(@formula(Surv(entertime, exittime, death) ~ x + z1 + z2), tab, wts = wt)
+m2d = fit(PHModel, @formula(Surv(entertime, exittime, death) ~ x + z1 + z2), tab, wts = wt)
+
+
 # Kaplan-Meier estimator of the cumulative risk/survival
 res = kaplan_meier(int, outt, d)
 
@@ -109,8 +122,8 @@ function dgm_comprisk(; n = 100, rng = MersenneTwister())
 end
 
 z, x, t, d, event, wt = dgm_comprisk(; n = 100, rng = MersenneTwister())
-X = hcat(x,z)
-enter = t .* rand(100)*0.02 # create some fake entry times
+X = hcat(x, z)
+enter = t .* rand(100) * 0.02 # create some fake entry times
 
 res = aalen_johansen(enter, t, event; wts = wt)
 fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = "breslow", wts = wt)
@@ -124,6 +137,5 @@ LSurvCompResp(enter, t, event)
 
 # can use the ID type to refer to units with multiple observations
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
-LSurvResp(int, outt, data[:,4], ID.(id))
-
+LSurvResp(int, outt, data[:, 4], ID.(id))
 ```
