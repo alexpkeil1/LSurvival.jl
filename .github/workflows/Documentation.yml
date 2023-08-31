@@ -1,31 +1,22 @@
 name: Documentation
-# Modelled from SymbolicRegression
-
+# taken from GLM
+concurrency:
+  group: ${{ github.head_ref }}.docs
+  cancel-in-progress: true
 on:
   push:
     branches:
-      - main
+      - 'main'
     tags: '*'
-
+  pull_request:
 jobs:
-  build:
+  Documenter:
+    name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: '1'
-      - name: "Cache dependencies"
-        uses: julia-actions/cache@v1
-      - name: Force use of updated Julia registry
-        run: |
-          rm -rf ~/.julia/registries/General
-          julia -e 'ENV["JULIA_PKG_SERVER"]=""; using Pkg; Pkg.update()'
-      - name: "Install dependencies"
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-      - name: "Build and deploy"
+      - uses: julia-actions/julia-buildpkg@latest
+      - uses: julia-actions/julia-docdeploy@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
-        run: julia --project=docs/ docs/make.jl
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
