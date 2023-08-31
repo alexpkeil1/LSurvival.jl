@@ -7,7 +7,7 @@ makedocs(;
 #   modules=[LSurvival],
 #   authors="Alex Keil <alex.keil@nih.gov>",
 #   repo="https://github.com/alexpkeil1/LSurvival.jl/blob/{commit}{path}#{line}",
-#   sitename="LSurvival.jl",
+   sitename="LSurvival.jl",
 #   format=Documenter.HTML(;
 #       prettyurls=get(ENV, "CI", "false") == "true",
 #       canonical="https://alexpkeil1.github.io/LSurvival.jl",
