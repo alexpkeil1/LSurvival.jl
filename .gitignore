@@ -31,4 +31,4 @@ src/.vscode/settings.json
 pdf
 docs/Manifest.toml
 .github/workflows/tagbot.yml
-settings
+#settings
