@@ -24,5 +24,6 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/alexpkeil1/LSurvival.jl.git",
-    devbranch="main"
+    devbranch="main",
+    versions = nothing # writes directly to alexpkeil1.github.io/LSurvival.jl
 )
