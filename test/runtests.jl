@@ -7,7 +7,7 @@ using Random
 @testset "LSurvival.jl" begin
 
     id, int, outt, data =
-        LSurvival.dgm(MersenneTwister(112), 1000, 100; afun = LSurvival.int_0)
+        LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
     data[:, 1] = round.(data[:, 1], digits = 3)
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
@@ -74,8 +74,10 @@ using Random
     f = @formula(Surv(entertime, exittime, death) ~ x + z1 + z2)
     ft = coxph(f, tab)
     println("formula fit")
+    println(coefnames(ft))
     println(ft)
 
+    println(coxph(@formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
 
     # survival outcome:
     R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only

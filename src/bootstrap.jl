@@ -80,7 +80,7 @@ $DOC_BOOTSTRAP_PHMODEL
 function bootstrap(rng::MersenneTwister, m::PHModel)
     idx, R2 = bootstrap(rng, m.R)
     P2 = bootstrap(idx, m.P)
-    PHModel(R2, P2, m.ties, false, m.bh)
+    PHModel(R2, P2, m.formula, m.ties, false, m.bh)
 end
 bootstrap(m::PHModel) = bootstrap(MersenneTwister(), m)
 

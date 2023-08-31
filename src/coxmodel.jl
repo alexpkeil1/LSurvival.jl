@@ -62,6 +62,7 @@ $DOC_PHMODEL
 mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
     R::Union{Nothing,G}        # Survival response
     P::L        # parameters
+    formula::Union{FormulaTerm,Nothing}
     ties::String
     fit::Bool
     bh::Matrix{Float64}
@@ -73,6 +74,7 @@ $DOC_PHMODEL
 function PHModel(
     R::Union{Nothing,G},
     P::L,
+    formula::Union{FormulaTerm,Nothing},
     ties::String,
     fit::Bool,
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
@@ -81,7 +83,19 @@ function PHModel(
         jtl = join(tl, ", ")
         throw("`ties` must be one of: $jtl")
     end
-    return PHModel(R, P, ties, fit, zeros(Float64, length(R.eventtimes), 4))
+    return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 4))
+end
+
+"""
+$DOC_PHMODEL 
+"""
+function PHModel(
+    R::Union{Nothing,G},
+    P::L,
+    formula::Union{FormulaTerm,Nothing},
+    ties::String,
+) where {G<:LSurvResp,L<:AbstractLSurvParms}
+    return PHModel(R, P, formula, ties, false)
 end
 
 """
@@ -92,7 +106,18 @@ function PHModel(
     P::L,
     ties::String,
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
-    return PHModel(R, P, ties, false)
+    return PHModel(R, P, nothing, ties, false)
+end
+
+"""
+$DOC_PHMODEL    
+"""
+function PHModel(
+    R::Union{Nothing,G},
+    P::L,
+    formula::Union{FormulaTerm,Nothing},
+) where {G<:LSurvResp,L<:AbstractLSurvParms}
+    return PHModel(R, P, formula, "efron", false)
 end
 
 """
@@ -334,16 +359,16 @@ function fit(
     f::FormulaTerm,
     data;
     ties = "efron",
-    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(getindex(data,1))],
-    wts::AbstractVector{<:Real} = similar(getindex(data,1), 0),
-    offset::AbstractVector{<:Real} = similar(getindex(data,1), 0),
+    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(getindex(data, 1))],
+    wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
+    offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
     fitargs...,
 ) where {M<:AbstractPH}
     f, (y, X) = modelframe(f, data, contrasts, M)
     R = LSurvResp(y, wts, id)
     P = PHParms(X)
-    res = M(R, P, ties)
+    res = M(R, P, f, ties)
     return fit!(res; fitargs...)
 end
 
@@ -364,6 +389,11 @@ coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 # summary functions for PHModel objects
 #####################################################################################################################
 
+formula(x::M) where {M<:AbstractPH} = x.formula
+
+StatsBase.coefnames(x::M) where {M<:AbstractPH} =
+    x.formula === nothing ? ["b$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)
+
 function StatsBase.coef(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P._B
@@ -380,7 +410,8 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     pval = calcp.(z)
     op = hcat(beta, std_err, lci, uci, z, pval)
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
-    rown = ["b$i" for i = 1:size(op)[1]]
+    #rown = ["b$i" for i = 1:size(op)[1]]
+    rown = coefnames(m)
     StatsBase.CoefTable(op, head, rown, 6, 5)
 end
 
