@@ -2,7 +2,7 @@
 CurrentModule = LSurvival=
 ```
 
-# [LSurvival](https://github.com/alexpkeil1/LSurvival.jl).
+# [LSurvival](https://github.com/alexpkeil1/LSurvival.jl)
 
 Survival analysis functions in Julia for time-to-event outcomes that can include:
 - Loss-to-follow-up/right censoring
