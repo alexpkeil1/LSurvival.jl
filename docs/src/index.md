@@ -33,27 +33,13 @@ using Pkg; Pkg.add(url = "https://github.com/alexpkeil1/LSurvival.jl")
 ```
 
 ## Quick examples
+
+### Single event type: Cox model and Kaplan-Meier curve
 ```{julia}
 using Random, LSurvival, Distributions, LinearAlgebra
 
-# generate some data
+# generate some data under a discrete hazards model
 expit(mu) = inv(1.0 + exp(-mu))
-
-function int_nc(v, l, a)
-    expit(-1.0 + 3 * v + 2 * l)
-end
-
-function int_0(v, l, a)
-    0.1
-end
-
-function lprob(v, l, a)
-    expit(-3 + 2 * v + 0 * l + 0 * a)
-end
-
-function yprob(v, l, a)
-    expit(-3 + 2 * v + 0 * l + 2 * a)
-end
 
 function dgm(rng, n, maxT; regimefun = int_0)
     V = rand(rng, n)
@@ -68,9 +54,9 @@ function dgm(rng, n, maxT; regimefun = int_0)
         lkeep = true
         for t = 1:maxT
             currIDX = (i - 1) * maxT + t
-            l = lprob(v, l, a) > rand(rng) ? 1 : 0
-            a = regimefun(v, l, a) > rand(rng) ? 1 : 0
-            y = yprob(v, l, a) > rand(rng) ? 1 : 0
+            l = expit(-3 + 2 * v + 0 * l + 0 * a) > rand(rng) ? 1 : 0
+            a = 0.1 > rand(rng) ? 1 : 0
+            y = expit(-3 + 2 * v + 0 * l + 2 * a) > rand(rng) ? 1 : 0
             LAY[currIDX, :] .= [v, l, a, y]
             keep[currIDX] = lkeep
             lkeep = (!lkeep || (y == 1)) ? false : true
@@ -82,19 +68,40 @@ end
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
-wt = rand(length(d))
+wt = rand(length(d)) # random weights just to demonstrate usage
 
 # Cox model
+# Breslow's partial likelihood
 m = fit(PHModel, X, int, outt, d, ties = "breslow", wts = wt)
+
+# Efron's partial likelihood
 m2 = fit(PHModel, X, int, outt, d, ties = "efron", wts = wt)
-#equivalent
+
+#equivalent way to specify 
+# using `coxph` function
 m2b = coxph(X, int, outt, d, ties = "efron", wts = wt)
+
+# using `coxph` function with `Tables.jl` and `StatsAPI.@formula` interface (similar to GLM.jl)
+tab = ( in = int, out = out, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3]) # can also be a DataFrame from DataFrames.jl
+m2b = coxph(@formula(Surv(in, out, d)~x+z1+z2), ties = "efron", wts = wt)
+
+# can also be done if there is no late entry
+m2b = coxph(@formula(Surv(out, d)~x+z1+z2), ties = "efron", wts = wt)
+# can also be done if there is no late entry and no right censoring (i.e. all times are failure times)
+m2b = coxph(@formula(Surv(out)~x+z1+z2), ties = "efron", wts = wt)
+
+
 
 # Kaplan-Meier estimator of the cumulative risk/survival
 res = kaplan_meier(int, outt, d)
+```
 
-# Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
 
+### Competing event analysis: Aalen-Johansen and Cox-model-based estimators of the cumulative risk/survival
+```{julia}
+using Random, LSurvival, Distributions, LinearAlgebra
+
+# simulate some data
 function dgm_comprisk(; n = 100, rng = MersenneTwister())
     z = rand(rng, n) .* 5
     x = rand(rng, n) .* 5
@@ -119,18 +126,34 @@ function dgm_comprisk(; n = 100, rng = MersenneTwister())
     round.(wt, digits = 4)
 end
 
-z, x, t, d, event, wt = dgm_comprisk(; n = 100, rng = MersenneTwister())
+z, x, t, d, event, wt = dgm_comprisk(; n = 100, rng = MersenneTwister(12))
 X = hcat(x,z)
-enter = t .* rand(100)*0.02 # create some fake entry times
+enter = t .* rand(length(d))*0.02 # create some fake entry times
 
-res = aalen_johansen(enter, t, event; wts = wt)
-fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = "breslow", wts = wt)
-fit2 = fit(PHModel, X, enter, t, (event .== 1), ties = "efron", wts = wt)
-risk_from_coxphmodels([fit1, fit2])
+# Aalen-Johansen estimator: marginal cause-specific risks
+res_aj = aalen_johansen(enter, t, event; wts = wt);
+res_aj
+
+# Cox-model estimator: cause-specific risks at given levels of covariates
+fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = "efron",  wts = wt)
+#n2idx = findall(event .!= 1)
+n2idx = findall(event .> -1)
+fit2 = fit(PHModel, X[n2idx,:], enter[n2idx], t[n2idx], (event[n2idx] .== 2), ties = "breslow",  wts = wt[n2idx])
+
+# risk at referent levels of `x` and `z` (can be very extreme if referent levels are unlikely/unobservable)
+res_cph_ref = risk_from_coxphmodels([fit1,fit2])
+
+# risk at average levels of `x` and `z`
+mnx = sum(x)/length(x)
+mnz = sum(z)/length(z)
+res_cph = risk_from_coxphmodels([fit1,fit2], coef_vectors=[coef(ft1), coef(ft2)], pred_profile=mean(X, dims=1))
+# compare to Aalen-Johansen fit
+res_aj
+
 
 # this approach operates on left censored outcomes (which operate in the background in model fitting)
-LSurvResp(enter, t, d)
-LSurvCompResp(enter, t, event)
+LSurvResp(enter, t, d, origintime=0)
+LSurvCompResp(enter, t, event) # automatically infers origin
 
 
 # can use the ID type to refer to units with multiple observations

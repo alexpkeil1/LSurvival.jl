@@ -78,8 +78,16 @@ using Random
     println(ft)
 
     println(coxph(@formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
+    #without late entry
+    println(coxph(@formula(Surv(exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
+    # without censoring
+    println(coxph(@formula(Surv(exittime) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
 
     # survival outcome:
+    LSurvResp([.5, .6], [1,0])
+    LSurvResp([.5, .6], [1,0], origintime=0)
+    LSurvCompResp([.5, .6], [1,0], origintime=0)
+
     R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
     print(R)
     R = LSurvResp(outt, d)         # specification if no late entry

@@ -21,9 +21,12 @@ DOC_ABSTRACTNPSURV = """
 
 DOC_LSURVRESP = """
 
- Outcome type for survival outcome subject to left truncation and right censoring
+ Outcome type for survival outcome subject to left truncation and right censoring. 
 
- ```
+Will not generally be needed by users
+
+
+ ```{julia}
  struct LSurvResp{
  E<:AbstractVector,
  X<:AbstractVector,
@@ -49,23 +52,23 @@ DOC_LSURVRESP = """
 
  ```
 
- ```
- function LSurvResp(
- enter::E,
- exit::X,
- y::Y,
- wts::W,
- id::Vector{I},
- ) where {
- E<:AbstractVector,
- X<:AbstractVector,
- Y<:AbstractVector,
- W<:AbstractVector,
- I<:AbstractLSurvID,
- }
+ ```{julia}
+ LSurvResp(
+    enter::E,
+    exit::X,
+    y::Y,
+    wts::W,
+    id::Vector{I},
+) where {
+    E<:Vector,
+    X<:Vector,
+    Y<:Union{Vector{<:Real},BitVector},
+    W<:Vector,
+    I<:AbstractLSurvID,
+}
  ```
 
- ```
+ ```{julia}
  LSurvResp(
  enter::E,
  exit::X,
@@ -75,34 +78,40 @@ DOC_LSURVRESP = """
 
  ```
 
- ```
+ ```{julia}
  LSurvResp(
- enter::E,
- exit::X,
- y::Y,
- wts::W,
- ) 
-
+  y::Vector{Y},
+  wts::W,
+  id::Vector{I},
+) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvID}
  ```
 
- ```
+ ```{julia}
  LSurvResp(
- enter::E,
- exit::X,
- y::Y,
- )
+  enter::E,
+  exit::X,
+  y::Y,
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
  ```
 
+ ```{julia}
+ LSurvResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
  ```
- LSurvResp(exit::X, y::Y) where {X<:AbstractVector,Y<:AbstractVector}
- ```
+
+# Examples
+```{julia}
+# no late entry
+LSurvResp([.5, .6], [1,0])
+
+```
+
  """
 
 DOC_LSURVCOMPRESP = """
 
  Outcome type for competing risk survival outcomes subject to left truncation and right censoring
 
- ```
+ ```{julia}
  struct LSurvCompResp{
  E<:AbstractVector,
  X<:AbstractVector,
@@ -162,19 +171,27 @@ DOC_LSURVCOMPRESP = """
  )
  ```
 
- ```
+ ```{julia}
  LSurvCompResp(
  enter::E,
  exit::X,
  y::Y,
  )
  ```
+
+ ```{julia}
+ LSurvCompResp(
+  exit::X,
+  y::Y,
+) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
+```
+
  """
 
 DOC_PHMODEL = """
  PHModel: Mutable object type for proportional hazards regression
 
- ```
+ ```{julia}
  mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
  R::G        # Survival response
  P::L        # parameters
@@ -216,7 +233,7 @@ DOC_PHSURV = """
 
  Methods: fit, show
 
- ```
+ ```{julia}
  mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
  fitlist::G        # Survival response
  eventtypes::AbstractVector
@@ -263,7 +280,7 @@ DOC_STRATA = """
 ####### Primary methods
 
 DOC_COXPH = """
- ```
+ ```{julia}
  coxph(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::AbstractVector; <keyword arguments>)
  ```
 
@@ -288,7 +305,7 @@ DOC_FIT_PHSURV = """
 
  Calculate survival curve and cumulative incidence (risk) function, get a set of Cox models (PHModel objects) that are exhaustive for the outcome types
 
- ```
+ ```{julia}
  fit(::Type{M},
  fitlist::AbstractVector{<:T},
  ;
@@ -296,7 +313,7 @@ DOC_FIT_PHSURV = """
  ```
  OR 
 
- ```
+ ```{julia}
  risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
 
  ```
@@ -388,7 +405,7 @@ DOC_FIT_ABSTRACPH = """
             x = dat[:,1],
             z = dat[:,2]
     )
-       
+
     f = @formula(Surv(int, outt,d)~x+z)
     coxph(f, data)
 ```
@@ -416,10 +433,10 @@ DOC_FIT_KMSURV = """
 DOC_VARIANCE_KMSURV = """
  Greenwood's formula for variance and confidence intervals of a Kaplan-Meier survival curve
 
- ```
+ ```{julia}
  StatsBase.stderror(m::KMSurv)
  ```
- ```
+ ```{julia}
  StatsBase.confint(m:KMSurv; level=0.95, method="normal")
  ```
  method:
@@ -477,7 +494,7 @@ DOC_FIT_AJSURV = """
 
 # TODO: UPDATE
 DOC_LGH_BRESLOW = """
- ```
+ ```{julia}
  lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)
  ```
   # for a given risk set
@@ -503,7 +520,7 @@ DOC_LGH_BRESLOW = """
 
 # TODO: UPDATE
 DOC_LGH_EFRON = """
- ```
+ ```{julia}
  lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)
  ```
 
@@ -566,22 +583,44 @@ DOC__UPDATE_PHPARMS = """
  """
 
 DOC_FIT_PHSURV = """
- fit for AJSurv objects
+Survival curve estimation using multiple cox models (sometimes referred to as a multi-state model)
+
+
+## Function signatures
+```{julia}
+risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T<:PHModel}
+```
+
+```{julia}
+fit(::Type{M}, fitlist::Vector{<:T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
+```
+
+## Optional keywords
+- coef_vectors = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]
+- pred_profile = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
 
  ```{julia}
+ 
  using LSurvival
  using Random
+ # event variable is coded 0[referent],1,2
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
  enter = zeros(length(t));
-    # event variable is coded 0[referent],1,2
- m = fit(AJSurv, enter, t, event)
- mw = fit(AJSurv, enter, t, event, wts=wt)
- ```
- or, equivalently:
- ```{julia}
- aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-    ; <keyword arguments>)
- ```
+
+ ft1 = coxph(hcat(x,z), enter, t, (event .== 1))
+ nidx = findall(event .!= 1)
+ ft2 = coxph(hcat(x,z)[nidx,:], enter[nidx], t[nidx], (event[nidx] .== 2))
+
+ # risk at referent levels of `x` and `z`
+ risk_from_coxphmodels([ft1,ft2])
+
+ # risk at average levels of `x` and `z`
+ mnx = sum(x)/length(x)
+ mnz = sum(z)/length(z)
+ risk_from_coxphmodels([ft1,ft2], coef_vectors=[coef(ft1), coef(ft2)], pred_profile=[mnx,mnz])
+
+
+```
  """
 
 

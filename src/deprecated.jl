@@ -10,7 +10,7 @@ function _coxrisk(X, B)
 end
 
 """
-deprecated function
+*Deprecated function*
 """
 function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
@@ -50,7 +50,7 @@ function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, 
 end
 
 """
-Deprecated function
+*Deprecated function*
 """
 function lgh_breslow!(
     _den,
@@ -81,7 +81,7 @@ function lgh_breslow!(
 end
 
 """
-Deprecated function
+*Deprecated function*
 """
 function lgh_efron!(
     _den,
@@ -173,7 +173,7 @@ end #function _stepcox!
 ############################################################################################################d########
 
 """
-Deprecated function
+*Deprecated function*
 
 Estimate parameters of an extended Cox model
 
@@ -364,7 +364,7 @@ end
 
 
 """
-Deprecated function
+*Deprecated function*
   Estimating cumulative incidence from two or more cause-specific Cox models
   
   z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)
@@ -452,7 +452,7 @@ end
 
 
 """
-Deprecated function
+*Deprecated function*
 
 Kaplan Meier for one observation per unit and no late entry
   (simple function)
@@ -483,7 +483,7 @@ function km(t, d; weights = nothing)
 end
 
 """
-Deprecated function
+*Deprecated function*
 
 Kaplan Meier with late entry, possibly multiple observations per unit
 (simple function)
@@ -515,7 +515,7 @@ end
 # tt = orderedtimes[_i]
 
 """
-Deprecated function
+*Deprecated function*
 
 Aalen-Johansen (survival) with late entry, possibly multiple observations per unit
   (simple function)
@@ -550,7 +550,7 @@ end;
 
 
 """
-Deprecated function
+*Deprecated function*
 
 Kaplan Meier with late entry, possibly multiple observations per unit
 
@@ -597,7 +597,7 @@ end
 =#
 
 """
-Deprecated function
+*Deprecated function*
 
 Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit, non-repeatable events
 Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
@@ -654,7 +654,7 @@ end
 =#
 
 """
-Deprecated function
+*Deprecated function*
 
  Non-parametric sub-distribution hazard estimator
   estimating cumulative incidence via the subdistribution hazard function
@@ -727,7 +727,7 @@ end;
 
 
 """
-Deprecated function
+*Deprecated function*
 
 $DOC_E_YEARSOFLIFELOST
 """

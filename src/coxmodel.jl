@@ -710,6 +710,9 @@ function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing) where {M<:P
     hr = ones(Float64, length(m.eventtypes))
     ch::Float64 = 0.0
     lsurv::Float64 = 1.0
+    if(isnothing(coef_vectors))
+        coef_vectors = [coef(fit) for fit in m.fitlist]
+    end
     if (!isnothing(coef_vectors) && !isnothing(pred_profile))
         @inbounds for (j, d) in enumerate(m.eventtypes)
             hr[j] = exp(dot(pred_profile, coef_vectors[j]))

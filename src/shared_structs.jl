@@ -34,18 +34,24 @@ function Base.length(x::I) where {I<:AbstractLSurvID}
 end
 
 
-struct Surv{E<:Real,X<:Real,Y<:Real} <: AbstractSurvTime
+struct Surv{E<:Real,X<:Real,Y<:Real,O<:Real} <: AbstractSurvTime
     enter::E
     exit::X
     y::Y
+    origin::O
 end
 
-function Surv(exit::X, y::Y) where {X<:Real,Y<:Real}
-    return Surv(0.0, exit, y)
+function Surv(enter::E, exit::X, y::Y, origintime=nothing) where {E<:Real,X<:Real,Y<:Real}
+    origin = isnothing(origintime) ? zero(E) : origintime
+    return Surv(enter, exit, y, origin)
 end
 
-function Surv(exit::X) where {X<:Real}
-    return Surv(0.0, exit, true)
+function Surv(exit::X, y::Y;kwargs...) where {X<:Real,Y<:Real}
+    return Surv(zero(X), exit, y;kwargs...)
+end
+
+function Surv(exit::X;kwargs...) where {X<:Real}
+    return Surv(zero(X), exit, 1;kwargs...)
 end
 
 
@@ -81,7 +87,8 @@ function LSurvResp(
     exit::X,
     y::Y,
     wts::W,
-    id::Vector{I},
+    id::Vector{I};
+    origintime = nothing
 ) where {
     E<:Vector,
     X<:Vector,
@@ -104,7 +111,7 @@ function LSurvResp(
         throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
     end
     eventtimes = sort(unique(exit[findall(y .> 0)]))
-    origin = minimum(enter)
+    origin = isnothing(origintime) ? minimum(enter) : origintime
     if lw == 0
         wts = ones(Int, ny)
     end
@@ -115,12 +122,13 @@ end
 function LSurvResp(
     y::Vector{Y},
     wts::W,
-    id::Vector{I},
+    id::Vector{I};
+    kwargs...,
 ) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvID}
     enter = [yi.enter for yi in y]
     exit = [yi.exit for yi in y]
     d = [yi.y for yi in y]
-    return LSurvResp(enter, exit, d, wts, id)
+    return LSurvResp(enter, exit, d, wts, id; kwargs...)
 end
 
 
@@ -128,17 +136,19 @@ function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
-    id::Vector{I},
+    id::Vector{I};
+    kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
     wts = similar(exit, 0)
-    return LSurvResp(enter, exit, y, wts, id)
+    return LSurvResp(enter, exit, y, wts, id; kwargs...)
 end
 
 function LSurvResp(
     enter::E,
     exit::X,
     y::Y,
-    wts::W,
+    wts::W;
+    kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},W<:Vector}
     ne = length(enter)
     nx = length(exit)
@@ -158,22 +168,23 @@ function LSurvResp(
         wts = ones(Int, ny)
     end
     id = [ID(i) for i in eachindex(y)]
-    return LSurvResp(enter, exit, y, wts, id)
+    return LSurvResp(enter, exit, y, wts, id; kwargs...)
 end
 
 
 function LSurvResp(
     enter::E,
     exit::X,
-    y::Y,
+    y::Y;
+    kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     wts = similar(exit, 0)
-    return LSurvResp(enter, exit, y, wts)
+    return LSurvResp(enter, exit, y, wts; kwargs...)
 end
 
-function LSurvResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
+function LSurvResp(exit::X, y::Y; kwargs...) where {X<:Vector,Y<:Vector}
     enter = zeros(eltype(exit), length(exit))
-    return LSurvResp(enter, exit, y)
+    return LSurvResp(enter, exit, y; kwargs...)
 end
 
 """
@@ -213,7 +224,8 @@ function LSurvCompResp(
     exit::X,
     y::Y,
     wts::W,
-    id::Vector{I},
+    id::Vector{I};
+    origintime = nothing
 ) where {
     E<:Vector,
     X<:Vector,
@@ -236,7 +248,7 @@ function LSurvCompResp(
         throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
     end
     eventtimes = sort(unique(exit[findall(y .> 0)]))
-    origin = minimum(enter)
+    origin = isnothing(origintime) ? minimum(enter) : origintime
     if lw == 0
         wts = ones(Int, ny)
     end
@@ -260,30 +272,42 @@ function LSurvCompResp(
     enter::E,
     exit::X,
     y::Y,
-    id::Vector{I},
+    id::Vector{I};
+    kwargs...
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
     wts = ones(Int, length(y))
-    return LSurvCompResp(enter, exit, y, wts, id)
+    return LSurvCompResp(enter, exit, y, wts, id; kwargs...)
 end
 
 function LSurvCompResp(
     enter::E,
     exit::X,
     y::Y,
-    wts::W,
+    wts::W;
+    kwargs...
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},W<:Vector}
     id = [ID(i) for i in eachindex(y)]
-    return LSurvCompResp(enter, exit, y, wts, id)
+    return LSurvCompResp(enter, exit, y, wts, id; kwargs...)
 end
 
 function LSurvCompResp(
     enter::E,
     exit::X,
-    y::Y,
+    y::Y;
+    kwargs...
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     id = [ID(i) for i in eachindex(y)]
-    return LSurvCompResp(enter, exit, y, id)
+    return LSurvCompResp(enter, exit, y, id; kwargs...)
 end
+
+function LSurvCompResp(
+    exit::X,
+    y::Y;
+    kwargs...
+) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
+    return LSurvCompResp(zeros(length(exit)), exit, y; kwargs...)
+end
+
 
 function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
     lefttruncate = [e == x.origin ? "[" : "(" for e in x.enter]
@@ -301,7 +325,7 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
     op = reduce(vcat, pr)
     nr = size(op, 1)
     if nr < maxrows
-        [println(iob, "$(x.id[oo]). $(op1[oo])") for oo in eachindex(op)]
+        [println(iob, "$(x.id[oo]). $(op[oo])") for oo in eachindex(op)]
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
@@ -318,8 +342,8 @@ end
 Base.show(x::T; kwargs...) where {T<:AbstractLSurvResp} = Base.show(stdout, x; kwargs...)
 
 function Base.show(io::IO, x::T) where {T<:AbstractSurvTime}
-    lefttruncate = x.enter == 0 ? "[" : "(" 
-    rightcensor = x.y > 0 ? "]" : ")" 
+    lefttruncate = x.enter == x.origin ? "[" : "("
+    rightcensor = x.y > x.origin ? "]" : ")"
     enter = @sprintf("%.2g", x.enter)
     exeunt = @sprintf("%.2g", x.exit)
     pr = join([lefttruncate, enter, ",", exeunt, rightcensor], "")
@@ -327,3 +351,8 @@ function Base.show(io::IO, x::T) where {T<:AbstractSurvTime}
 end
 
 Base.show(x::T; kwargs...) where {T<:AbstractSurvTime} = Base.show(stdout, x; kwargs...)
+
+
+
+Base.length(x::LSurvCompResp) = length(x.exit)
+Base.length(x::LSurvResp) = length(x.exit)
