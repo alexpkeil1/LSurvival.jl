@@ -1,24 +1,8 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · LSurvival</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>LSurvival</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Quick-examples"><span>Quick examples</span></a></li><li><a class="tocitem" href="#Index-of-functions"><span>Index of functions</span></a></li><li><a class="tocitem" href="#Function-help"><span>Function help</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/alexpkeil1/LSurvival.jl/blob/main/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="[LSurvival](https://github.com/alexpkeil1/LSurvival.jl)."><a class="docs-heading-anchor" href="#[LSurvival](https://github.com/alexpkeil1/LSurvival.jl)."><a href="https://github.com/alexpkeil1/LSurvival.jl">LSurvival</a>.</a><a id="[LSurvival](https://github.com/alexpkeil1/LSurvival.jl).-1"></a><a class="docs-heading-anchor-permalink" href="#[LSurvival](https://github.com/alexpkeil1/LSurvival.jl)." title="Permalink"></a></h1><p>Survival analysis functions in Julia for time-to-event outcomes that can include:</p><ul><li>Loss-to-follow-up/right censoring</li><li>Late entry/left truncation (not available in the Survival.jl package)</li><li>&quot;Person-period&quot; data structures (not available in the Survival.jl package)</li><li>Observation weights (not available in the Survival.jl package)</li><li>Competing risks (not available in the Survival.jl package)</li></ul><p>Capabilities include estimators for</p><ul><li>Kaplan-Meier non-parametric conditional risk functions</li><li>Aalen-Johansen non-parametric cause-specific unconditional risk functions</li><li>Cox proportional hazards model (Efron&#39;s or Breslow&#39;s methods for ties)</li></ul><p>Convenience functions enable:</p><ul><li>Non-parametric bootstrapping, cluster-bootstrapping</li><li>Estimating baseline hazards from a Cox Model</li><li>Estimating cause-specific risk from an exhaustive set of Cox models for competing risk outcomes</li><li>Simple simulation of competing and non-competing survival events</li></ul><p>Plans to include:</p><ul><li>cluster robust variance estimation (without bootstrapping)</li></ul><p>Report issues <a href="https://github.com/alexpkeil1/LSurvival.jl/issues">here</a></p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><pre><code class="language- hljs">using Pkg; Pkg.add(url = &quot;https://github.com/alexpkeil1/LSurvival.jl&quot;)</code></pre><h2 id="Quick-examples"><a class="docs-heading-anchor" href="#Quick-examples">Quick examples</a><a id="Quick-examples-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-examples" title="Permalink"></a></h2><pre><code class="language- hljs">using Random, LSurvival, Distributions, LinearAlgebra
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · LSurvival</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>LSurvival</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Quick-examples"><span>Quick examples</span></a></li><li><a class="tocitem" href="#Index-of-functions"><span>Index of functions</span></a></li><li><a class="tocitem" href="#Function-help"><span>Function help</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/alexpkeil1/LSurvival.jl/blob/main/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="[LSurvival](https://github.com/alexpkeil1/LSurvival.jl)."><a class="docs-heading-anchor" href="#[LSurvival](https://github.com/alexpkeil1/LSurvival.jl)."><a href="https://github.com/alexpkeil1/LSurvival.jl">LSurvival</a>.</a><a id="[LSurvival](https://github.com/alexpkeil1/LSurvival.jl).-1"></a><a class="docs-heading-anchor-permalink" href="#[LSurvival](https://github.com/alexpkeil1/LSurvival.jl)." title="Permalink"></a></h1><p>Survival analysis functions in Julia for time-to-event outcomes that can include:</p><ul><li>Loss-to-follow-up/right censoring</li><li>Late entry/left truncation (not available in the Survival.jl package)</li><li>&quot;Person-period&quot; data structures (not available in the Survival.jl package)</li><li>Observation weights (not available in the Survival.jl package)</li><li>Competing risks (not available in the Survival.jl package)</li></ul><p>Capabilities include estimators for</p><ul><li>Kaplan-Meier non-parametric conditional risk functions</li><li>Aalen-Johansen non-parametric cause-specific unconditional risk functions</li><li>Cox proportional hazards model (Efron&#39;s or Breslow&#39;s methods for ties)</li></ul><p>Convenience functions enable:</p><ul><li>Non-parametric bootstrapping, cluster-bootstrapping</li><li>Estimating baseline hazards from a Cox Model</li><li>Estimating cause-specific risk from an exhaustive set of Cox models for competing risk outcomes</li><li>Simple simulation of competing and non-competing survival events</li></ul><p>Plans to include:</p><ul><li>cluster robust variance estimation (without bootstrapping)</li></ul><p>Report issues <a href="https://github.com/alexpkeil1/LSurvival.jl/issues">here</a></p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><pre><code class="language- hljs">using Pkg; Pkg.add(url = &quot;https://github.com/alexpkeil1/LSurvival.jl&quot;)</code></pre><h2 id="Quick-examples"><a class="docs-heading-anchor" href="#Quick-examples">Quick examples</a><a id="Quick-examples-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-examples" title="Permalink"></a></h2><h3 id="Single-event-type:-Cox-model-and-Kaplan-Meier-curve"><a class="docs-heading-anchor" href="#Single-event-type:-Cox-model-and-Kaplan-Meier-curve">Single event type: Cox model and Kaplan-Meier curve</a><a id="Single-event-type:-Cox-model-and-Kaplan-Meier-curve-1"></a><a class="docs-heading-anchor-permalink" href="#Single-event-type:-Cox-model-and-Kaplan-Meier-curve" title="Permalink"></a></h3><pre><code class="language- hljs">using Random, LSurvival, Distributions, LinearAlgebra
 
-# generate some data
+# generate some data under a discrete hazards model
 expit(mu) = inv(1.0 + exp(-mu))
-
-function int_nc(v, l, a)
-    expit(-1.0 + 3 * v + 2 * l)
-end
-
-function int_0(v, l, a)
-    0.1
-end
-
-function lprob(v, l, a)
-    expit(-3 + 2 * v + 0 * l + 0 * a)
-end
-
-function yprob(v, l, a)
-    expit(-3 + 2 * v + 0 * l + 2 * a)
-end
 
 function dgm(rng, n, maxT; regimefun = int_0)
     V = rand(rng, n)
@@ -33,9 +17,9 @@ function dgm(rng, n, maxT; regimefun = int_0)
         lkeep = true
         for t = 1:maxT
             currIDX = (i - 1) * maxT + t
-            l = lprob(v, l, a) &gt; rand(rng) ? 1 : 0
-            a = regimefun(v, l, a) &gt; rand(rng) ? 1 : 0
-            y = yprob(v, l, a) &gt; rand(rng) ? 1 : 0
+            l = expit(-3 + 2 * v + 0 * l + 0 * a) &gt; rand(rng) ? 1 : 0
+            a = 0.1 &gt; rand(rng) ? 1 : 0
+            y = expit(-3 + 2 * v + 0 * l + 2 * a) &gt; rand(rng) ? 1 : 0
             LAY[currIDX, :] .= [v, l, a, y]
             keep[currIDX] = lkeep
             lkeep = (!lkeep || (y == 1)) ? false : true
@@ -47,19 +31,34 @@ end
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
-wt = rand(length(d))
+wt = rand(length(d)) # random weights just to demonstrate usage
 
 # Cox model
+# Breslow&#39;s partial likelihood
 m = fit(PHModel, X, int, outt, d, ties = &quot;breslow&quot;, wts = wt)
+
+# Efron&#39;s partial likelihood
 m2 = fit(PHModel, X, int, outt, d, ties = &quot;efron&quot;, wts = wt)
-#equivalent
+
+#equivalent way to specify 
+# using `coxph` function
 m2b = coxph(X, int, outt, d, ties = &quot;efron&quot;, wts = wt)
 
+# using `coxph` function with `Tables.jl` and `StatsAPI.@formula` interface (similar to GLM.jl)
+tab = ( in = int, out = out, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3]) # can also be a DataFrame from DataFrames.jl
+m2b = coxph(@formula(Surv(in, out, d)~x+z1+z2), ties = &quot;efron&quot;, wts = wt)
+
+# can also be done if there is no late entry
+m2b = coxph(@formula(Surv(out, d)~x+z1+z2), ties = &quot;efron&quot;, wts = wt)
+# can also be done if there is no late entry and no right censoring (i.e. all times are failure times)
+m2b = coxph(@formula(Surv(out)~x+z1+z2), ties = &quot;efron&quot;, wts = wt)
+
+
+
 # Kaplan-Meier estimator of the cumulative risk/survival
-res = kaplan_meier(int, outt, d)
+res = kaplan_meier(int, outt, d)</code></pre><h3 id="Competing-event-analysis:-Aalen-Johansen-and-Cox-model-based-estimators-of-the-cumulative-risk/survival"><a class="docs-heading-anchor" href="#Competing-event-analysis:-Aalen-Johansen-and-Cox-model-based-estimators-of-the-cumulative-risk/survival">Competing event analysis: Aalen-Johansen and Cox-model-based estimators of the cumulative risk/survival</a><a id="Competing-event-analysis:-Aalen-Johansen-and-Cox-model-based-estimators-of-the-cumulative-risk/survival-1"></a><a class="docs-heading-anchor-permalink" href="#Competing-event-analysis:-Aalen-Johansen-and-Cox-model-based-estimators-of-the-cumulative-risk/survival" title="Permalink"></a></h3><pre><code class="language- hljs">using Random, LSurvival, Distributions, LinearAlgebra
 
-# Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
-
+# simulate some data
 function dgm_comprisk(; n = 100, rng = MersenneTwister())
     z = rand(rng, n) .* 5
     x = rand(rng, n) .* 5
@@ -84,121 +83,181 @@ function dgm_comprisk(; n = 100, rng = MersenneTwister())
     round.(wt, digits = 4)
 end
 
-z, x, t, d, event, wt = dgm_comprisk(; n = 100, rng = MersenneTwister())
+z, x, t, d, event, wt = dgm_comprisk(; n = 100, rng = MersenneTwister(12))
 X = hcat(x,z)
-enter = t .* rand(100)*0.02 # create some fake entry times
+enter = t .* rand(length(d))*0.02 # create some fake entry times
 
-res = aalen_johansen(enter, t, event; wts = wt)
-fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = &quot;breslow&quot;, wts = wt)
-fit2 = fit(PHModel, X, enter, t, (event .== 1), ties = &quot;efron&quot;, wts = wt)
-risk_from_coxphmodels([fit1, fit2])
+# Aalen-Johansen estimator: marginal cause-specific risks
+res_aj = aalen_johansen(enter, t, event; wts = wt);
+res_aj
+
+# Cox-model estimator: cause-specific risks at given levels of covariates
+fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = &quot;efron&quot;,  wts = wt)
+#n2idx = findall(event .!= 1)
+n2idx = findall(event .&gt; -1)
+fit2 = fit(PHModel, X[n2idx,:], enter[n2idx], t[n2idx], (event[n2idx] .== 2), ties = &quot;breslow&quot;,  wts = wt[n2idx])
+
+# risk at referent levels of `x` and `z` (can be very extreme if referent levels are unlikely/unobservable)
+res_cph_ref = risk_from_coxphmodels([fit1,fit2])
+
+# risk at average levels of `x` and `z`
+mnx = sum(x)/length(x)
+mnz = sum(z)/length(z)
+res_cph = risk_from_coxphmodels([fit1,fit2], coef_vectors=[coef(ft1), coef(ft2)], pred_profile=mean(X, dims=1))
+# compare to Aalen-Johansen fit
+res_aj
+
 
 # this approach operates on left censored outcomes (which operate in the background in model fitting)
-LSurvResp(enter, t, d)
-LSurvCompResp(enter, t, event)
+LSurvResp(enter, t, d, origintime=0)
+LSurvCompResp(enter, t, event) # automatically infers origin
 
 
 # can use the ID type to refer to units with multiple observations
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
-LSurvResp(int, outt, data[:,4], ID.(id))</code></pre><h2 id="Index-of-functions"><a class="docs-heading-anchor" href="#Index-of-functions">Index of functions</a><a id="Index-of-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Index-of-functions" title="Permalink"></a></h2><ul><li><a href="#LSurvival.AbstractLSurvParms"><code>LSurvival.AbstractLSurvParms</code></a></li><li><a href="#LSurvival.AbstractLSurvResp"><code>LSurvival.AbstractLSurvResp</code></a></li><li><a href="#LSurvival.AbstractNPSurv"><code>LSurvival.AbstractNPSurv</code></a></li><li><a href="#LSurvival.AbstractPH"><code>LSurvival.AbstractPH</code></a></li><li><a href="#LSurvival.ID"><code>LSurvival.ID</code></a></li><li><a href="#LSurvival.LSurvCompResp"><code>LSurvival.LSurvCompResp</code></a></li><li><a href="#LSurvival.LSurvResp"><code>LSurvival.LSurvResp</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String, Bool}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHSurv-Union{Tuple{T}, Tuple{Array{T}, Any}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a></li><li><a href="#LSurvival.PHSurv"><code>LSurvival.PHSurv</code></a></li><li><a href="#LSurvival.PHSurv-Union{Tuple{Array{T}}, Tuple{T}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a></li><li><a href="#LSurvival.Strata"><code>LSurvival.Strata</code></a></li><li><a href="#LSurvival._update_PHParms!-Union{Tuple{T}, Tuple{I}, Tuple{M}, Tuple{M, I, Array{Vector{T}, 1}, Array{Vector{T}, 1}}} where {M&lt;:AbstractPH, I&lt;:Int64, T&lt;:Int64}"><code>LSurvival._update_PHParms!</code></a></li><li><a href="#LSurvival.aalen_johansen-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.aalen_johansen</code></a></li><li><a href="#LSurvival.aj-Tuple{Any, Any, Any}"><code>LSurvival.aj</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvCompResp"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel}"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvResp"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel, Int64}"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Tuple{Vector{Int64}, PHParms}"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.ci_from_coxmodels-Tuple{Any}"><code>LSurvival.ci_from_coxmodels</code></a></li><li><a href="#LSurvival.coxmodel-Tuple{Vector{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Matrix{&lt;:Real}}"><code>LSurvival.coxmodel</code></a></li><li><a href="#LSurvival.coxph-Tuple{FormulaTerm, Any}"><code>LSurvival.coxph</code></a></li><li><a href="#LSurvival.coxph-Tuple{Any, Any, Any, Any, Vararg{Any}}"><code>LSurvival.coxph</code></a></li><li><a href="#LSurvival.dgm-Tuple{Any, Any, Any}"><code>LSurvival.dgm</code></a></li><li><a href="#LSurvival.dgm_comprisk-Tuple{Any, Any}"><code>LSurvival.dgm_comprisk</code></a></li><li><a href="#LSurvival.e_yearsoflifelost-Tuple{Any, Any}"><code>LSurvival.e_yearsoflifelost</code></a></li><li><a href="#LSurvival.kaplan_meier-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.kaplan_meier</code></a></li><li><a href="#LSurvival.km-Tuple{Any, Any, Any}"><code>LSurvival.km</code></a></li><li><a href="#LSurvival.km-Tuple{Any, Any}"><code>LSurvival.km</code></a></li><li><a href="#LSurvival.lgh!-NTuple{12, Any}"><code>LSurvival.lgh!</code></a></li><li><a href="#LSurvival.lgh_breslow!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_breslow!</code></a></li><li><a href="#LSurvival.lgh_breslow!-NTuple{12, Any}"><code>LSurvival.lgh_breslow!</code></a></li><li><a href="#LSurvival.lgh_efron!-NTuple{13, Any}"><code>LSurvival.lgh_efron!</code></a></li><li><a href="#LSurvival.lgh_efron!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_efron!</code></a></li><li><a href="#LSurvival.risk_from_coxphmodels-Union{Tuple{T}, Tuple{Array{T}, Vararg{Any}}} where T&lt;:PHModel"><code>LSurvival.risk_from_coxphmodels</code></a></li><li><a href="#LSurvival.subdistribution_hazard_cuminc-Tuple{Any, Any, Any}"><code>LSurvival.subdistribution_hazard_cuminc</code></a></li><li><a href="#StatsAPI.confint-Tuple{AJSurv}"><code>StatsAPI.confint</code></a></li><li><a href="#StatsAPI.confint-Tuple{KMSurv}"><code>StatsAPI.confint</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Matrix{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AbstractPH, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:KMSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{T}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:T}}} where {M&lt;:PHSurv, T&lt;:PHModel}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AJSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit!-Tuple{T} where T&lt;:AbstractNPSurv"><code>StatsAPI.fit!</code></a></li><li><a href="#StatsAPI.stderror-Tuple{AJSurv}"><code>StatsAPI.stderror</code></a></li><li><a href="#StatsAPI.stderror-Tuple{KMSurv}"><code>StatsAPI.stderror</code></a></li></ul><h2 id="Function-help"><a class="docs-heading-anchor" href="#Function-help">Function help</a><a id="Function-help-1"></a><a class="docs-heading-anchor-permalink" href="#Function-help" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractLSurvParms" href="#LSurvival.AbstractLSurvParms"><code>LSurvival.AbstractLSurvParms</code></a> — <span class="docstring-category">Type</span></header><section><div><p>AbstractLsurvParms</p><p>Abstract type representing a model predictors and coefficient parameters</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/LSurvival.jl#L98-L102">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractLSurvResp" href="#LSurvival.AbstractLSurvResp"><code>LSurvival.AbstractLSurvResp</code></a> — <span class="docstring-category">Type</span></header><section><div><p>AbstractLsurvResp</p><p>Abstract type representing a model response vector</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/LSurvival.jl#L93-L97">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractNPSurv" href="#LSurvival.AbstractNPSurv"><code>LSurvival.AbstractNPSurv</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Abstract type for non-parametric survival models, including Kaplan-Meier, Aalen Johansen, and Cox-model based estimates of survival using an Aalen-Johansen-like estimator</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/LSurvival.jl#L108-L110">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractPH" href="#LSurvival.AbstractPH"><code>LSurvival.AbstractPH</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Abstract type for proportional hazards models</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/LSurvival.jl#L103-L105">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.ID" href="#LSurvival.ID"><code>LSurvival.ID</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Type for identifying individuals in survival outcomes.</p><p>Accepts any Number or String</p><pre><code class="language- hljs">[ID(i) for i in 1:10]</code></pre><p>Used for the id argument in </p><ul><li>Outcome types: LSurvResp, LSurvCompResp </li><li>Model types: PHModel, KMRisk, AJRisk</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/shared_structs.jl#L8-L22">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.LSurvCompResp" href="#LSurvival.LSurvCompResp"><code>LSurvival.LSurvCompResp</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Outcome type for competing risk survival outcomes subject to left truncation and right censoring</p><pre><code class="nohighlight hljs">struct LSurvCompResp{
-E&lt;:AbstractVector,
-X&lt;:AbstractVector,
-Y&lt;:AbstractVector,
-W&lt;:AbstractVector,
-T&lt;:Real,
-I&lt;:AbstractLSurvID,
-V&lt;:AbstractVector,
-M&lt;:AbstractMatrix,
-} &lt;: AbstractLSurvResp
-enter::E
-&quot;`exit`: Time at observation end&quot;
-exit::X
-&quot;`y`: event type in observation (integer)&quot;
-y::Y
-&quot;`wts`: observation weights&quot;
-wts::W
-&quot;`eventtimes`: unique event times&quot;
-eventtimes::X
-&quot;`origin`: origin on the time scale&quot;
-origin::T
-&quot;`id`: person level identifier (must be wrapped in ID() function)&quot;
-id::Vector{I}
-&quot;`eventtypes`: vector of unique event types&quot;
-eventtypes::V
-&quot;`eventmatrix`: matrix of indicators on the observation level&quot;
-eventmatrix::M
-end
-</code></pre><pre><code class="nohighlight hljs">LSurvCompResp(
-enter::E,
-exit::X,
-y::Y,
-wts::W,
-id::Vector{I}
-)</code></pre><pre><code class="nohighlight hljs">LSurvCompResp(
-enter::E,
-exit::X,
-y::Y,
-id::Vector{I}
-)</code></pre><pre><code class="nohighlight hljs">LSurvCompResp(
-enter::E,
-exit::X,
-y::Y,
-wts::W,
-)</code></pre><pre><code class="nohighlight hljs">LSurvCompResp(
-enter::E,
-exit::X,
-y::Y,
-)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/shared_structs.jl#L179-L250">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.LSurvResp" href="#LSurvival.LSurvResp"><code>LSurvival.LSurvResp</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Outcome type for survival outcome subject to left truncation and right censoring</p><pre><code class="nohighlight hljs">struct LSurvResp{
-E&lt;:AbstractVector,
-X&lt;:AbstractVector,
-Y&lt;:AbstractVector,
-W&lt;:AbstractVector,
-T&lt;:Real,
-I&lt;:AbstractLSurvID,
-} &lt;: AbstractLSurvResp
-enter::E
-&quot;`exit`: Time at observation end&quot;
-exit::X
-&quot;`y`: event occurrence in observation&quot;
-y::Y
-&quot;`wts`: observation weights&quot;
-wts::W
-&quot;`eventtimes`: unique event times&quot;
-eventtimes::E
-&quot;`origin`: origin on the time scale&quot;
-origin::T
-&quot;`id`: person level identifier (must be wrapped in ID() function)&quot;
-id::Vector{I}
-end
-</code></pre><pre><code class="nohighlight hljs">function LSurvResp(
-enter::E,
-exit::X,
-y::Y,
-wts::W,
-id::Vector{I},
+LSurvResp(int, outt, data[:,4], ID.(id))</code></pre><h2 id="Index-of-functions"><a class="docs-heading-anchor" href="#Index-of-functions">Index of functions</a><a id="Index-of-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Index-of-functions" title="Permalink"></a></h2><ul><li><a href="#LSurvival.AbstractLSurvParms"><code>LSurvival.AbstractLSurvParms</code></a></li><li><a href="#LSurvival.AbstractLSurvResp"><code>LSurvival.AbstractLSurvResp</code></a></li><li><a href="#LSurvival.AbstractNPSurv"><code>LSurvival.AbstractNPSurv</code></a></li><li><a href="#LSurvival.AbstractPH"><code>LSurvival.AbstractPH</code></a></li><li><a href="#LSurvival.ID"><code>LSurvival.ID</code></a></li><li><a href="#LSurvival.LSurvCompResp"><code>LSurvival.LSurvCompResp</code></a></li><li><a href="#LSurvival.LSurvResp"><code>LSurvival.LSurvResp</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String, Bool}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a></li><li><a href="#LSurvival.PHSurv"><code>LSurvival.PHSurv</code></a></li><li><a href="#LSurvival.PHSurv-Union{Tuple{Array{T}}, Tuple{T}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a></li><li><a href="#LSurvival.PHSurv-Union{Tuple{T}, Tuple{Array{T}, Any}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a></li><li><a href="#LSurvival.Strata"><code>LSurvival.Strata</code></a></li><li><a href="#LSurvival._update_PHParms!-Union{Tuple{T}, Tuple{I}, Tuple{M}, Tuple{M, I, Array{Vector{T}, 1}, Array{Vector{T}, 1}}} where {M&lt;:AbstractPH, I&lt;:Int64, T&lt;:Int64}"><code>LSurvival._update_PHParms!</code></a></li><li><a href="#LSurvival.aalen_johansen-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.aalen_johansen</code></a></li><li><a href="#LSurvival.aj-Tuple{Any, Any, Any}"><code>LSurvival.aj</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvCompResp"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel}"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Tuple{Vector{Int64}, PHParms}"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel, Int64}"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvResp"><code>LSurvival.bootstrap</code></a></li><li><a href="#LSurvival.ci_from_coxmodels-Tuple{Any}"><code>LSurvival.ci_from_coxmodels</code></a></li><li><a href="#LSurvival.coxmodel-Tuple{Vector{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Matrix{&lt;:Real}}"><code>LSurvival.coxmodel</code></a></li><li><a href="#LSurvival.coxph-Tuple{Any, Any, Any, Any, Vararg{Any}}"><code>LSurvival.coxph</code></a></li><li><a href="#LSurvival.coxph-Tuple{FormulaTerm, Any}"><code>LSurvival.coxph</code></a></li><li><a href="#LSurvival.dgm-Tuple{Any, Any, Any}"><code>LSurvival.dgm</code></a></li><li><a href="#LSurvival.dgm_comprisk-Tuple{Any, Any}"><code>LSurvival.dgm_comprisk</code></a></li><li><a href="#LSurvival.e_yearsoflifelost-Tuple{Any, Any}"><code>LSurvival.e_yearsoflifelost</code></a></li><li><a href="#LSurvival.kaplan_meier-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.kaplan_meier</code></a></li><li><a href="#LSurvival.km-Tuple{Any, Any, Any}"><code>LSurvival.km</code></a></li><li><a href="#LSurvival.km-Tuple{Any, Any}"><code>LSurvival.km</code></a></li><li><a href="#LSurvival.lgh!-NTuple{12, Any}"><code>LSurvival.lgh!</code></a></li><li><a href="#LSurvival.lgh_breslow!-NTuple{12, Any}"><code>LSurvival.lgh_breslow!</code></a></li><li><a href="#LSurvival.lgh_breslow!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_breslow!</code></a></li><li><a href="#LSurvival.lgh_efron!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_efron!</code></a></li><li><a href="#LSurvival.lgh_efron!-NTuple{13, Any}"><code>LSurvival.lgh_efron!</code></a></li><li><a href="#LSurvival.risk_from_coxphmodels-Union{Tuple{T}, Tuple{Array{T}, Vararg{Any}}} where T&lt;:PHModel"><code>LSurvival.risk_from_coxphmodels</code></a></li><li><a href="#LSurvival.subdistribution_hazard_cuminc-Tuple{Any, Any, Any}"><code>LSurvival.subdistribution_hazard_cuminc</code></a></li><li><a href="#StatsAPI.confint-Tuple{KMSurv}"><code>StatsAPI.confint</code></a></li><li><a href="#StatsAPI.confint-Tuple{AJSurv}"><code>StatsAPI.confint</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:KMSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{T}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:T}}} where {M&lt;:PHSurv, T&lt;:PHModel}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Matrix{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AbstractPH, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AJSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a></li><li><a href="#StatsAPI.fit!-Tuple{T} where T&lt;:AbstractNPSurv"><code>StatsAPI.fit!</code></a></li><li><a href="#StatsAPI.stderror-Tuple{KMSurv}"><code>StatsAPI.stderror</code></a></li><li><a href="#StatsAPI.stderror-Tuple{AJSurv}"><code>StatsAPI.stderror</code></a></li></ul><h2 id="Function-help"><a class="docs-heading-anchor" href="#Function-help">Function help</a><a id="Function-help-1"></a><a class="docs-heading-anchor-permalink" href="#Function-help" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractLSurvParms" href="#LSurvival.AbstractLSurvParms"><code>LSurvival.AbstractLSurvParms</code></a> — <span class="docstring-category">Type</span></header><section><div><p>AbstractLsurvParms</p><p>Abstract type representing a model predictors and coefficient parameters</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/LSurvival.jl#L98-L102">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractLSurvResp" href="#LSurvival.AbstractLSurvResp"><code>LSurvival.AbstractLSurvResp</code></a> — <span class="docstring-category">Type</span></header><section><div><p>AbstractLsurvResp</p><p>Abstract type representing a model response vector</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/LSurvival.jl#L93-L97">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractNPSurv" href="#LSurvival.AbstractNPSurv"><code>LSurvival.AbstractNPSurv</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Abstract type for non-parametric survival models, including Kaplan-Meier, Aalen Johansen, and Cox-model based estimates of survival using an Aalen-Johansen-like estimator</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/LSurvival.jl#L108-L110">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.AbstractPH" href="#LSurvival.AbstractPH"><code>LSurvival.AbstractPH</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Abstract type for proportional hazards models</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/LSurvival.jl#L103-L105">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.ID" href="#LSurvival.ID"><code>LSurvival.ID</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Type for identifying individuals in survival outcomes.</p><p>Accepts any Number or String</p><pre><code class="language- hljs">[ID(i) for i in 1:10]</code></pre><p>Used for the id argument in </p><ul><li>Outcome types: LSurvResp, LSurvCompResp </li><li>Model types: PHModel, KMRisk, AJRisk</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/shared_structs.jl#L8-L22">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.LSurvCompResp" href="#LSurvival.LSurvCompResp"><code>LSurvival.LSurvCompResp</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Outcome type for competing risk survival outcomes subject to left truncation and right censoring</p><pre><code class="language- hljs"> struct LSurvCompResp{
+ E&lt;:AbstractVector,
+ X&lt;:AbstractVector,
+ Y&lt;:AbstractVector,
+ W&lt;:AbstractVector,
+ T&lt;:Real,
+ I&lt;:AbstractLSurvID,
+ V&lt;:AbstractVector,
+ M&lt;:AbstractMatrix,
+ } &lt;: AbstractLSurvResp
+ enter::E
+ &quot;`exit`: Time at observation end&quot;
+ exit::X
+ &quot;`y`: event type in observation (integer)&quot;
+ y::Y
+ &quot;`wts`: observation weights&quot;
+ wts::W
+ &quot;`eventtimes`: unique event times&quot;
+ eventtimes::X
+ &quot;`origin`: origin on the time scale&quot;
+ origin::T
+ &quot;`id`: person level identifier (must be wrapped in ID() function)&quot;
+ id::Vector{I}
+ &quot;`eventtypes`: vector of unique event types&quot;
+ eventtypes::V
+ &quot;`eventmatrix`: matrix of indicators on the observation level&quot;
+ eventmatrix::M
+ end
+
+ ```
+
+ ```
+ LSurvCompResp(
+ enter::E,
+ exit::X,
+ y::Y,
+ wts::W,
+ id::Vector{I}
+ )
+ ```
+
+ ```
+ LSurvCompResp(
+ enter::E,
+ exit::X,
+ y::Y,
+ id::Vector{I}
+ )
+ ```
+
+ ```
+ LSurvCompResp(
+ enter::E,
+ exit::X,
+ y::Y,
+ wts::W,
+ )
+ ```
+
+ ```{julia}
+ LSurvCompResp(
+ enter::E,
+ exit::X,
+ y::Y,
+ )
+ ```
+
+ ```{julia}
+ LSurvCompResp(
+  exit::X,
+  y::Y,
+) where {X&lt;:Vector,Y&lt;:Union{Vector{&lt;:Real},BitVector}}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/shared_structs.jl#L190-L269">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.LSurvResp" href="#LSurvival.LSurvResp"><code>LSurvival.LSurvResp</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Outcome type for survival outcome subject to left truncation and right censoring. </p><p>Will not generally be needed by users</p><pre><code class="language- hljs"> struct LSurvResp{
+ E&lt;:AbstractVector,
+ X&lt;:AbstractVector,
+ Y&lt;:AbstractVector,
+ W&lt;:AbstractVector,
+ T&lt;:Real,
+ I&lt;:AbstractLSurvID,
+ } &lt;: AbstractLSurvResp
+ enter::E
+ &quot;`exit`: Time at observation end&quot;
+ exit::X
+ &quot;`y`: event occurrence in observation&quot;
+ y::Y
+ &quot;`wts`: observation weights&quot;
+ wts::W
+ &quot;`eventtimes`: unique event times&quot;
+ eventtimes::E
+ &quot;`origin`: origin on the time scale&quot;
+ origin::T
+ &quot;`id`: person level identifier (must be wrapped in ID() function)&quot;
+ id::Vector{I}
+ end
+
+ ```
+
+ ```{julia}
+ LSurvResp(
+    enter::E,
+    exit::X,
+    y::Y,
+    wts::W,
+    id::Vector{I},
 ) where {
-E&lt;:AbstractVector,
-X&lt;:AbstractVector,
-Y&lt;:AbstractVector,
-W&lt;:AbstractVector,
-I&lt;:AbstractLSurvID,
-}</code></pre><pre><code class="nohighlight hljs">LSurvResp(
-enter::E,
-exit::X,
-y::Y,
-id::Vector{I},
-) 
-</code></pre><pre><code class="nohighlight hljs">LSurvResp(
-enter::E,
-exit::X,
-y::Y,
-wts::W,
-) 
-</code></pre><pre><code class="nohighlight hljs">LSurvResp(
-enter::E,
-exit::X,
-y::Y,
-)</code></pre><pre><code class="nohighlight hljs">LSurvResp(exit::X, y::Y) where {X&lt;:AbstractVector,Y&lt;:AbstractVector}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/shared_structs.jl#L53-L130">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel" href="#LSurvival.PHModel"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Type</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="nohighlight hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
+    E&lt;:Vector,
+    X&lt;:Vector,
+    Y&lt;:Union{Vector{&lt;:Real},BitVector},
+    W&lt;:Vector,
+    I&lt;:AbstractLSurvID,
+}
+ ```
+
+ ```{julia}
+ LSurvResp(
+ enter::E,
+ exit::X,
+ y::Y,
+ id::Vector{I},
+ ) 
+
+ ```
+
+ ```{julia}
+ LSurvResp(
+  y::Vector{Y},
+  wts::W,
+  id::Vector{I},
+) where {Y&lt;:AbstractSurvTime,W&lt;:Vector,I&lt;:AbstractLSurvID}
+ ```
+
+ ```{julia}
+ LSurvResp(
+  enter::E,
+  exit::X,
+  y::Y,
+) where {E&lt;:Vector,X&lt;:Vector,Y&lt;:Union{Vector{&lt;:Real},BitVector}}
+ ```
+
+ ```{julia}
+ LSurvResp(exit::X, y::Y) where {X&lt;:Vector,Y&lt;:Vector}
+ ```
+
+# Examples</code></pre><p>{julia}</p><p><strong>no late entry</strong></p><p>LSurvResp([.5, .6], [1,0])</p><p>```</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/shared_structs.jl#L59-L145">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel" href="#LSurvival.PHModel"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Type</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="language- hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
 R::G        # Survival response
 P::L        # parameters
 ties::String #&quot;efron&quot; or&quot;breslow&quot;
@@ -223,7 +282,7 @@ X = hcat(x,z);
 R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
- _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L58-L94">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="nohighlight hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
+ _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L58-L94">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="language- hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
 R::G        # Survival response
 P::L        # parameters
 ties::String #&quot;efron&quot; or&quot;breslow&quot;
@@ -248,7 +307,7 @@ X = hcat(x,z);
 R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
- _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L100-L136">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String, Bool}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String, Bool}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="nohighlight hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
+ _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L100-L136">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String, Bool}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String, Bool}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="language- hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
 R::G        # Survival response
 P::L        # parameters
 ties::String #&quot;efron&quot; or&quot;breslow&quot;
@@ -273,7 +332,7 @@ X = hcat(x,z);
 R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
- _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L70-L106">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="nohighlight hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
+ _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L70-L106">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}, String}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="language- hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
 R::G        # Survival response
 P::L        # parameters
 ties::String #&quot;efron&quot; or&quot;breslow&quot;
@@ -298,7 +357,7 @@ X = hcat(x,z);
 R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
- _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L88-L124">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="nohighlight hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
+ _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L88-L124">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L, Union{Nothing, FormulaTerm}}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="language- hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
 R::G        # Survival response
 P::L        # parameters
 ties::String #&quot;efron&quot; or&quot;breslow&quot;
@@ -323,7 +382,7 @@ X = hcat(x,z);
 R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
- _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L111-L147">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="nohighlight hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
+ _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L111-L147">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}" href="#LSurvival.PHModel-Union{Tuple{L}, Tuple{G}, Tuple{Union{Nothing, G}, L}} where {G&lt;:LSurvResp, L&lt;:AbstractLSurvParms}"><code>LSurvival.PHModel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>PHModel: Mutable object type for proportional hazards regression</p><pre><code class="language- hljs">mutable struct PHModel{G&lt;:LSurvResp,L&lt;:AbstractLSurvParms} &lt;: AbstractPH
 R::G        # Survival response
 P::L        # parameters
 ties::String #&quot;efron&quot; or&quot;breslow&quot;
@@ -348,7 +407,7 @@ X = hcat(x,z);
 R = LSurvResp(enter, t, Int.(d), wt)
 P = PHParms(X)
 mf = PHModel(R,P)
- _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L122-L158">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHSurv" href="#LSurvival.PHSurv"><code>LSurvival.PHSurv</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Mutable type for proportional hazards models</p><p>PHSsurv: Object type for proportional hazards regression</p><p>Methods: fit, show</p><pre><code class="nohighlight hljs">mutable struct PHSurv{G&lt;:Array{T} where {T&lt;:PHModel}} &lt;: AbstractNPSurv
+ _fit!(mf)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L122-L158">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHSurv" href="#LSurvival.PHSurv"><code>LSurvival.PHSurv</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Mutable type for proportional hazards models</p><p>PHSsurv: Object type for proportional hazards regression</p><p>Methods: fit, show</p><pre><code class="language- hljs">mutable struct PHSurv{G&lt;:Array{T} where {T&lt;:PHModel}} &lt;: AbstractNPSurv
 fitlist::G        # Survival response
 eventtypes::AbstractVector
 times::AbstractVector
@@ -359,7 +418,7 @@ event::Vector{Float64}
 end
 
 PHSurv(fitlist::Array{T}, eventtypes) where {T&lt;:PHModel}
-PHSurv(fitlist::Array{T}) where {T&lt;:PHModel}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L129-L151">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHSurv-Union{Tuple{Array{T}}, Tuple{T}} where T&lt;:PHModel" href="#LSurvival.PHSurv-Union{Tuple{Array{T}}, Tuple{T}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Mutable type for proportional hazards models</p><p>PHSsurv: Object type for proportional hazards regression</p><p>Methods: fit, show</p><pre><code class="nohighlight hljs">mutable struct PHSurv{G&lt;:Array{T} where {T&lt;:PHModel}} &lt;: AbstractNPSurv
+PHSurv(fitlist::Array{T}) where {T&lt;:PHModel}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L129-L151">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHSurv-Union{Tuple{Array{T}}, Tuple{T}} where T&lt;:PHModel" href="#LSurvival.PHSurv-Union{Tuple{Array{T}}, Tuple{T}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Mutable type for proportional hazards models</p><p>PHSsurv: Object type for proportional hazards regression</p><p>Methods: fit, show</p><pre><code class="language- hljs">mutable struct PHSurv{G&lt;:Array{T} where {T&lt;:PHModel}} &lt;: AbstractNPSurv
 fitlist::G        # Survival response
 eventtypes::AbstractVector
 times::AbstractVector
@@ -370,7 +429,7 @@ event::Vector{Float64}
 end
 
 PHSurv(fitlist::Array{T}, eventtypes) where {T&lt;:PHModel}
-PHSurv(fitlist::Array{T}) where {T&lt;:PHModel}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L159-L181">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHSurv-Union{Tuple{T}, Tuple{Array{T}, Any}} where T&lt;:PHModel" href="#LSurvival.PHSurv-Union{Tuple{T}, Tuple{Array{T}, Any}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Mutable type for proportional hazards models</p><p>PHSsurv: Object type for proportional hazards regression</p><p>Methods: fit, show</p><pre><code class="nohighlight hljs">mutable struct PHSurv{G&lt;:Array{T} where {T&lt;:PHModel}} &lt;: AbstractNPSurv
+PHSurv(fitlist::Array{T}) where {T&lt;:PHModel}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L159-L181">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.PHSurv-Union{Tuple{T}, Tuple{Array{T}, Any}} where T&lt;:PHModel" href="#LSurvival.PHSurv-Union{Tuple{T}, Tuple{Array{T}, Any}} where T&lt;:PHModel"><code>LSurvival.PHSurv</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Mutable type for proportional hazards models</p><p>PHSsurv: Object type for proportional hazards regression</p><p>Methods: fit, show</p><pre><code class="language- hljs">mutable struct PHSurv{G&lt;:Array{T} where {T&lt;:PHModel}} &lt;: AbstractNPSurv
 fitlist::G        # Survival response
 eventtypes::AbstractVector
 times::AbstractVector
@@ -381,7 +440,7 @@ event::Vector{Float64}
 end
 
 PHSurv(fitlist::Array{T}, eventtypes) where {T&lt;:PHModel}
-PHSurv(fitlist::Array{T}) where {T&lt;:PHModel}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L143-L165">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.Strata" href="#LSurvival.Strata"><code>LSurvival.Strata</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Type for identifying individuals in survival outcomes.</p><p>Accepts any Number or String</p><pre><code class="language- hljs">[ID(i) for i in 1:10]</code></pre><p>Used for the id argument in </p><ul><li>Outcome types: LSurvResp, LSurvCompResp </li><li>Model types: PHModel, KMRisk, AJRisk</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/shared_structs.jl#L15-L29">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival._update_PHParms!-Union{Tuple{T}, Tuple{I}, Tuple{M}, Tuple{M, I, Array{Vector{T}, 1}, Array{Vector{T}, 1}}} where {M&lt;:AbstractPH, I&lt;:Int64, T&lt;:Int64}" href="#LSurvival._update_PHParms!-Union{Tuple{T}, Tuple{I}, Tuple{M}, Tuple{M, I, Array{Vector{T}, 1}, Array{Vector{T}, 1}}} where {M&lt;:AbstractPH, I&lt;:Int64, T&lt;:Int64}"><code>LSurvival._update_PHParms!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>calculate log likelihood, gradient, hessian at set value of coefficients</p><pre><code class="language- hljs">function _partial_LL!(
+PHSurv(fitlist::Array{T}) where {T&lt;:PHModel}</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L143-L165">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.Strata" href="#LSurvival.Strata"><code>LSurvival.Strata</code></a> — <span class="docstring-category">Type</span></header><section><div><p>Type for identifying individuals in survival outcomes.</p><p>Accepts any Number or String</p><pre><code class="language- hljs">[ID(i) for i in 1:10]</code></pre><p>Used for the id argument in </p><ul><li>Outcome types: LSurvResp, LSurvCompResp </li><li>Model types: PHModel, KMRisk, AJRisk</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/shared_structs.jl#L15-L29">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival._update_PHParms!-Union{Tuple{T}, Tuple{I}, Tuple{M}, Tuple{M, I, Array{Vector{T}, 1}, Array{Vector{T}, 1}}} where {M&lt;:AbstractPH, I&lt;:Int64, T&lt;:Int64}" href="#LSurvival._update_PHParms!-Union{Tuple{T}, Tuple{I}, Tuple{M}, Tuple{M, I, Array{Vector{T}, 1}, Array{Vector{T}, 1}}} where {M&lt;:AbstractPH, I&lt;:Int64, T&lt;:Int64}"><code>LSurvival._update_PHParms!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>calculate log likelihood, gradient, hessian at set value of coefficients</p><pre><code class="language- hljs">function _partial_LL!(
   m::M,
   # big indexes
   risksetidxs::Vector{Vector{T}},
@@ -395,14 +454,14 @@ _hess = zeros(p,p)
 _den = zeros(1)
 #
 _B = rand(p)
-eventtimes = sort(unique(_out[findall(d.==1)]))</code></pre><p><em>update</em>PHParms!(m, risksetidxs, caseidxs, ne, den)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L635-L660">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.aalen_johansen-Tuple{Any, Any, Any, Vararg{Any}}" href="#LSurvival.aalen_johansen-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.aalen_johansen</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Aalen-Johansen estimator for cumulative risk</p><pre><code class="language- hljs">using LSurvival
+eventtimes = sort(unique(_out[findall(d.==1)]))</code></pre><p><em>update</em>PHParms!(m, risksetidxs, caseidxs, ne, den)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L635-L660">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.aalen_johansen-Tuple{Any, Any, Any, Vararg{Any}}" href="#LSurvival.aalen_johansen-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.aalen_johansen</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Aalen-Johansen estimator for cumulative risk</p><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
    # event variable is coded 0[referent],1,2
 m = fit(AJSurv, enter, t, event)
 mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L158-L175">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.aj-Tuple{Any, Any, Any}" href="#LSurvival.aj-Tuple{Any, Any, Any}"><code>LSurvival.aj</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p><p>Aalen-Johansen (survival) with late entry, possibly multiple observations per unit   (simple function)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L517-L522">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Tuple{MersenneTwister, PHModel, Int64}" href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel, Int64}"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrapping coefficients of a proportional hazards model</p><pre><code class="nohighlight hljs">bootstrap(rng::MersenneTwister, m::PHModel)</code></pre><pre><code class="language- hljs">using LSurvival, Random
+   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L158-L175">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.aj-Tuple{Any, Any, Any}" href="#LSurvival.aj-Tuple{Any, Any, Any}"><code>LSurvival.aj</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p><p>Aalen-Johansen (survival) with late entry, possibly multiple observations per unit   (simple function)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L517-L522">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Tuple{MersenneTwister, PHModel, Int64}" href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel, Int64}"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrapping coefficients of a proportional hazards model</p><pre><code class="nohighlight hljs">bootstrap(rng::MersenneTwister, m::PHModel)</code></pre><pre><code class="language- hljs">using LSurvival, Random
 
 id, int, outt, data =
 LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
@@ -438,7 +497,7 @@ mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 
 mb = bootstrap(mainfit, 1000)
 mainfit
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L89-L147">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Tuple{MersenneTwister, PHModel}" href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel}"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrapping coefficients of a proportional hazards model</p><pre><code class="nohighlight hljs">bootstrap(rng::MersenneTwister, m::PHModel)</code></pre><pre><code class="language- hljs">using LSurvival, Random
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L89-L147">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Tuple{MersenneTwister, PHModel}" href="#LSurvival.bootstrap-Tuple{MersenneTwister, PHModel}"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrapping coefficients of a proportional hazards model</p><pre><code class="nohighlight hljs">bootstrap(rng::MersenneTwister, m::PHModel)</code></pre><pre><code class="language- hljs">using LSurvival, Random
 
 id, int, outt, data =
 LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
@@ -474,7 +533,7 @@ mainfit = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
 
 mb = bootstrap(mainfit, 1000)
 mainfit
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L77-L135">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Tuple{Vector{Int64}, PHParms}" href="#LSurvival.bootstrap-Tuple{Vector{Int64}, PHParms}"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">using LSurvival, Random
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L77-L135">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Tuple{Vector{Int64}, PHParms}" href="#LSurvival.bootstrap-Tuple{Vector{Int64}, PHParms}"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">using LSurvival, Random
 
 id, int, outt, data =
 LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
@@ -490,7 +549,7 @@ P2 = bootstrap(idx, P)
 
 Mod = PHModel(R2, P2)
 LSurvival._fit!(Mod, start=Mod.P._B)
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L50-L71">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:AJSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Aalen-Johansen cumulative risk estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L50-L71">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:AJSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Aalen-Johansen cumulative risk estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
 using Random
 
 z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
@@ -505,7 +564,7 @@ aj1
 
 aj1.R
 aj2.R
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L136-L162">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:KMSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Kaplan-Meier survival curve estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the survival probability at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L136-L162">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:KMSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M, Int64}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Kaplan-Meier survival curve estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the survival probability at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
 using Random
 
 id, int, outt, data =
@@ -521,7 +580,7 @@ km1
 
 km1.R
 km2.R
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L155-L183">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:AJSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Aalen-Johansen cumulative risk estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L155-L183">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:AJSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:AJSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Aalen-Johansen cumulative risk estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
 using Random
 
 z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
@@ -536,7 +595,7 @@ aj1
 
 aj1.R
 aj2.R
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L125-L151">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:KMSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Kaplan-Meier survival curve estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the survival probability at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L125-L151">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:KMSurv" href="#LSurvival.bootstrap-Union{Tuple{M}, Tuple{MersenneTwister, M}} where M&lt;:KMSurv"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Bootstrap methods for Kaplan-Meier survival curve estimator</p><p>Returns:</p><ul><li>If using <code>bootstrap(fit)</code>: a single bootstrap draw</li><li>If using <code>bootstrap(fit, 10)</code> (e.g.): 10 bootstrap draws of the survival probability at the end of follow up</li></ul><pre><code class="language- hljs">using LSurvival
 using Random
 
 id, int, outt, data =
@@ -552,20 +611,20 @@ km1
 
 km1.R
 km2.R
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L111-L139">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvCompResp" href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvCompResp"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">z,x,t,d,event,weights =
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L111-L139">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvCompResp" href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvCompResp"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">z,x,t,d,event,weights =
 LSurvival.dgm_comprisk(MersenneTwister(1212), 300)
 enter = zeros(length(event))
 
 # survival outcome:
 R = LSurvCompResp(enter, t, event, weights, ID.(collect(1:length(t))))    # specification with ID only
-bootstrap(R) # note that entire observations/clusters identified by id are kept</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L27-L37">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvResp" href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvResp"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">id, int, outt, data =
+bootstrap(R) # note that entire observations/clusters identified by id are kept</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L27-L37">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvResp" href="#LSurvival.bootstrap-Union{Tuple{T}, Tuple{MersenneTwister, T}} where T&lt;:LSurvResp"><code>LSurvival.bootstrap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">id, int, outt, data =
 LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
 
 d, X = data[:, 4], data[:, 1:3]
 weights = rand(length(d))
 
 # survival outcome:
-R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/bootstrap.jl#L2-L13">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.ci_from_coxmodels-Tuple{Any}" href="#LSurvival.ci_from_coxmodels-Tuple{Any}"><code>LSurvival.ci_from_coxmodels</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function   Estimating cumulative incidence from two or more cause-specific Cox models</p><p>z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)   X = hcat(z,x)   int = zeros(120)   d1  = d .* Int.(event.== 1)   d2  = d .* Int.(event.== 2)   sum(d)/length(d)</p><p>lnhr1, ll1, g1, h1, bh1 = coxmodel(int, outt, d1, X, method=&quot;efron&quot;);   lnhr2, ll2, g2, h2, bh2 = coxmodel(int, outt, d2, X, method=&quot;efron&quot;);   bhlist = [bh1, bh2]   coeflist = [lnhr1, lnhr2]   covarmat = sum(X, dims=1) ./ size(X,1)   ci, surv = ci<em>from</em>coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)   ci, surv = ci<em>from</em>coxmodels(bhlist;eventtypes=[1,2])</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L366-L385">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.coxmodel-Tuple{Vector{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Matrix{&lt;:Real}}" href="#LSurvival.coxmodel-Tuple{Vector{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Matrix{&lt;:Real}}"><code>LSurvival.coxmodel</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p><p>Estimate parameters of an extended Cox model</p><p>Using: Newton raphson algorithm with modified/adaptive step sizes</p><p>Keyword inputs: method=&quot;efron&quot;,  inits=nothing , # initial parameter values, set to zero if this is nothing tol=10e-9,      #  convergence tolerance based on log likelihod: likrat = abs(lastLL/<em>LL[1]), absdiff = abs(lastLL-</em>LL[1]), reldiff = max(likrat, inv(likrat)) -1.0 maxiter=500    # maximum number of iterations for Newton Raphson algorithm (set to zero to calculate likelihood, gradient, Hessian at the initial parameter values)</p><p>Outputs: beta: coefficients  ll: log partial likelihood history (all iterations), with final value being the (log) maximum partial likelihood (log-MPL) g: gradient vector (first derivative of log partial likelihood) at log-MPL h: hessian matrix (second derivative of log partial likelihood) at log-MPL basehaz: Matrix: baseline hazard at referent level of all covariates, weighted risk set size, weighted # of cases, time</p><p>Examples: </p><pre><code class="language-julia-repl hljs">  using LSurvival
+R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/bootstrap.jl#L2-L13">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.ci_from_coxmodels-Tuple{Any}" href="#LSurvival.ci_from_coxmodels-Tuple{Any}"><code>LSurvival.ci_from_coxmodels</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em>   Estimating cumulative incidence from two or more cause-specific Cox models</p><p>z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)   X = hcat(z,x)   int = zeros(120)   d1  = d .* Int.(event.== 1)   d2  = d .* Int.(event.== 2)   sum(d)/length(d)</p><p>lnhr1, ll1, g1, h1, bh1 = coxmodel(int, outt, d1, X, method=&quot;efron&quot;);   lnhr2, ll2, g2, h2, bh2 = coxmodel(int, outt, d2, X, method=&quot;efron&quot;);   bhlist = [bh1, bh2]   coeflist = [lnhr1, lnhr2]   covarmat = sum(X, dims=1) ./ size(X,1)   ci, surv = ci<em>from</em>coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)   ci, surv = ci<em>from</em>coxmodels(bhlist;eventtypes=[1,2])</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L366-L385">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.coxmodel-Tuple{Vector{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Matrix{&lt;:Real}}" href="#LSurvival.coxmodel-Tuple{Vector{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Matrix{&lt;:Real}}"><code>LSurvival.coxmodel</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p><p>Estimate parameters of an extended Cox model</p><p>Using: Newton raphson algorithm with modified/adaptive step sizes</p><p>Keyword inputs: method=&quot;efron&quot;,  inits=nothing , # initial parameter values, set to zero if this is nothing tol=10e-9,      #  convergence tolerance based on log likelihod: likrat = abs(lastLL/<em>LL[1]), absdiff = abs(lastLL-</em>LL[1]), reldiff = max(likrat, inv(likrat)) -1.0 maxiter=500    # maximum number of iterations for Newton Raphson algorithm (set to zero to calculate likelihood, gradient, Hessian at the initial parameter values)</p><p>Outputs: beta: coefficients  ll: log partial likelihood history (all iterations), with final value being the (log) maximum partial likelihood (log-MPL) g: gradient vector (first derivative of log partial likelihood) at log-MPL h: hessian matrix (second derivative of log partial likelihood) at log-MPL basehaz: Matrix: baseline hazard at referent level of all covariates, weighted risk set size, weighted # of cases, time</p><p>Examples: </p><pre><code class="language-julia-repl hljs">  using LSurvival
   # simulating discrete survival data for 20 individuals at 10 time points
   id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
   
@@ -581,7 +640,7 @@ R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only</code></pre
   args = (int, outt, d, X)
   res = coxmodel(args..., method=&quot;efron&quot;);
   coxsum = cox_summary(res, alpha=0.05, verbose=true);
-    </code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L175-L216">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.coxph-Tuple{Any, Any, Any, Any, Vararg{Any}}" href="#LSurvival.coxph-Tuple{Any, Any, Any, Any, Vararg{Any}}"><code>LSurvival.coxph</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for AbstractPH objects</p><pre><code class="nohighlight hljs"> fit(::Type{M},
+    </code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L175-L216">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.coxph-Tuple{Any, Any, Any, Any, Vararg{Any}}" href="#LSurvival.coxph-Tuple{Any, Any, Any, Any, Vararg{Any}}"><code>LSurvival.coxph</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for AbstractPH objects</p><pre><code class="nohighlight hljs"> fit(::Type{M},
  X::AbstractMatrix,#{&lt;:FP},
  enter::AbstractVector{&lt;:Real},
  exit::AbstractVector{&lt;:Real},
@@ -619,9 +678,9 @@ R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only</code></pre
             x = dat[:,1],
             z = dat[:,2]
     )
-       
+
     f = @formula(Surv(int, outt,d)~x+z)
-    coxph(f, data)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L378-L424">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.coxph-Tuple{FormulaTerm, Any}" href="#LSurvival.coxph-Tuple{FormulaTerm, Any}"><code>LSurvival.coxph</code></a> — <span class="docstring-category">Method</span></header><section><div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L384-L386">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.dgm-Tuple{Any, Any, Any}" href="#LSurvival.dgm-Tuple{Any, Any, Any}"><code>LSurvival.dgm</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Generating discrete survival data without competing risks</p><p>Usage: dgm(rng, n, maxT;afun=int<em>0, yfun=yprob, lfun=lprob) dgm(n, maxT;afun=int</em>0, yfun=yprob, lfun=lprob)</p><p>Where afun, yfun, and lfun are all functions that take arguments v,l,a and output time-specific values of a, y, and l respectively Example:</p><pre><code class="language- hljs">
+    coxph(f, data)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L378-L424">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.coxph-Tuple{FormulaTerm, Any}" href="#LSurvival.coxph-Tuple{FormulaTerm, Any}"><code>LSurvival.coxph</code></a> — <span class="docstring-category">Method</span></header><section><div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L384-L386">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.dgm-Tuple{Any, Any, Any}" href="#LSurvival.dgm-Tuple{Any, Any, Any}"><code>LSurvival.dgm</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Generating discrete survival data without competing risks</p><p>Usage: dgm(rng, n, maxT;afun=int<em>0, yfun=yprob, lfun=lprob) dgm(n, maxT;afun=int</em>0, yfun=yprob, lfun=lprob)</p><p>Where afun, yfun, and lfun are all functions that take arguments v,l,a and output time-specific values of a, y, and l respectively Example:</p><pre><code class="language- hljs">
 expit(mu) =  inv(1.0+exp(-mu))
 
 function aprob(v,l,a)
@@ -636,12 +695,12 @@ function yprob(v,l,a)
 expit(-3 + 2*v + 0*l + 2*a)
 end
   # 10 individuals followed for up to 5 times
-LSurvival.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/data_generators.jl#L20-L47">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.dgm_comprisk-Tuple{Any, Any}" href="#LSurvival.dgm_comprisk-Tuple{Any, Any}"><code>LSurvival.dgm_comprisk</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Generating continuous survival data with competing risks</p><p>Usage: dgm<em>comprisk(rng, n) dgm</em>comprisk(n)</p><pre><code class="nohighlight hljs">    - rng = random number generator    
+LSurvival.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/data_generators.jl#L20-L47">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.dgm_comprisk-Tuple{Any, Any}" href="#LSurvival.dgm_comprisk-Tuple{Any, Any}"><code>LSurvival.dgm_comprisk</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Generating continuous survival data with competing risks</p><p>Usage: dgm<em>comprisk(rng, n) dgm</em>comprisk(n)</p><pre><code class="nohighlight hljs">    - rng = random number generator    
     - n = sample size</code></pre><p>Example:</p><pre><code class="language- hljs">using LSurvival
     # 100 individuals with two competing events
 z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
     
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/data_generators.jl#L49-L66">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.e_yearsoflifelost-Tuple{Any, Any}" href="#LSurvival.e_yearsoflifelost-Tuple{Any, Any}"><code>LSurvival.e_yearsoflifelost</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p><p>Expected number of years of life lost due to cause k</p><pre><code class="language- hljs">using Distributions, Plots, Random
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/data_generators.jl#L49-L66">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.e_yearsoflifelost-Tuple{Any, Any}" href="#LSurvival.e_yearsoflifelost-Tuple{Any, Any}"><code>LSurvival.e_yearsoflifelost</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p><p>Expected number of years of life lost due to cause k</p><pre><code class="language- hljs">using Distributions, Plots, Random
 plotly()
 z,x,t,d, event,weights = dgm_comprisk(n=200, rng=MersenneTwister(1232));
   
@@ -657,13 +716,13 @@ plot!(times_sd, ci_sd, label=&quot;SD&quot;, st=:step)
 plot(time0, eyll0, label=&quot;Overall&quot;, st=:step);
 plot!(time1, eyll1, label=&quot;AJ&quot;, st=:step);
 plot!(time2, eyll2, label=&quot;SD&quot;, st=:step) 
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L729-L733">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.kaplan_meier-Tuple{Any, Any, Any, Vararg{Any}}" href="#LSurvival.kaplan_meier-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.kaplan_meier</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for KMSurv objects</p><pre><code class="language- hljs">using LSurvival
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L729-L733">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.kaplan_meier-Tuple{Any, Any, Any, Vararg{Any}}" href="#LSurvival.kaplan_meier-Tuple{Any, Any, Any, Vararg{Any}}"><code>LSurvival.kaplan_meier</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for KMSurv objects</p><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
 m = fit(KMSurv, enter, t, d)
 mw = fit(KMSurv, enter, t, d, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L152-L169">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.km-Tuple{Any, Any, Any}" href="#LSurvival.km-Tuple{Any, Any, Any}"><code>LSurvival.km</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p><p>Kaplan Meier with late entry, possibly multiple observations per unit (simple function)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L485-L490">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.km-Tuple{Any, Any}" href="#LSurvival.km-Tuple{Any, Any}"><code>LSurvival.km</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p><p>Kaplan Meier for one observation per unit and no late entry   (simple function)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L454-L459">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh!-NTuple{12, Any}" href="#LSurvival.lgh!-NTuple{12, Any}"><code>LSurvival.lgh!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>deprecated function</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L12-L14">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_breslow!-NTuple{12, Any}" href="#LSurvival.lgh_breslow!-NTuple{12, Any}"><code>LSurvival.lgh_breslow!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L52-L54">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_breslow!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH" href="#LSurvival.lgh_breslow!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_breslow!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)</code></pre><p><strong>for a given risk set</strong></p><p>#compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions</p><pre><code class="language- hljs">Xcases=X[caseidx,:]
+   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L152-L169">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.km-Tuple{Any, Any, Any}" href="#LSurvival.km-Tuple{Any, Any, Any}"><code>LSurvival.km</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p><p>Kaplan Meier with late entry, possibly multiple observations per unit (simple function)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L485-L490">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.km-Tuple{Any, Any}" href="#LSurvival.km-Tuple{Any, Any}"><code>LSurvival.km</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p><p>Kaplan Meier for one observation per unit and no late entry   (simple function)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L454-L459">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh!-NTuple{12, Any}" href="#LSurvival.lgh!-NTuple{12, Any}"><code>LSurvival.lgh!</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L12-L14">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_breslow!-NTuple{12, Any}" href="#LSurvival.lgh_breslow!-NTuple{12, Any}"><code>LSurvival.lgh_breslow!</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L52-L54">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_breslow!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH" href="#LSurvival.lgh_breslow!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_breslow!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language- hljs">lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)</code></pre><p><strong>for a given risk set</strong></p><p>#compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions</p><pre><code class="language- hljs">Xcases=X[caseidx,:]
 Xriskset=X[risksetidx,:]
  _rcases = _r[caseidx]
  _rriskset = _r[risksetidx]
@@ -676,7 +735,7 @@ j = 1
  _grad = zeros(p)
  _hess = zeros(p,p)
  _den = zeros(j)
-lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L529-L552">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_efron!-NTuple{13, Any}" href="#LSurvival.lgh_efron!-NTuple{13, Any}"><code>LSurvival.lgh_efron!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L83-L85">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_efron!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH" href="#LSurvival.lgh_efron!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_efron!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)</code></pre><pre><code class="language- hljs"># for a given risk set
+lgh_breslow!(_den, _LL, _grad, _hess, j, p, Xcases, Xriskset, _rcases, _rriskset, _wtcases, _wtriskset)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L529-L552">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_efron!-NTuple{13, Any}" href="#LSurvival.lgh_efron!-NTuple{13, Any}"><code>LSurvival.lgh_efron!</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L83-L85">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.lgh_efron!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH" href="#LSurvival.lgh_efron!-Union{Tuple{M}, Tuple{M, Any, Any, Any}} where M&lt;:AbstractPH"><code>LSurvival.lgh_efron!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language- hljs">lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)</code></pre><pre><code class="language- hljs"># for a given risk set
 #compute log-likelihood, gradient vector and hessian matrix of cox model given individual level contriubtions
 Xcases=X[caseidx,:]
 Xriskset=X[risksetidx,:]
@@ -691,25 +750,37 @@ _LL = [0.0]
 _grad = zeros(p)
 _hess = zeros(p,p)
 _den = zeros(j)
-lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L570-L593">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.risk_from_coxphmodels-Union{Tuple{T}, Tuple{Array{T}, Vararg{Any}}} where T&lt;:PHModel" href="#LSurvival.risk_from_coxphmodels-Union{Tuple{T}, Tuple{Array{T}, Vararg{Any}}} where T&lt;:PHModel"><code>LSurvival.risk_from_coxphmodels</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for AJSurv objects</p><pre><code class="language- hljs">using LSurvival
-using Random
-z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
-enter = zeros(length(t));
-   # event variable is coded 0[referent],1,2
-m = fit(AJSurv, enter, t, event)
-mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L747-L764">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.subdistribution_hazard_cuminc-Tuple{Any, Any, Any}" href="#LSurvival.subdistribution_hazard_cuminc-Tuple{Any, Any, Any}"><code>LSurvival.subdistribution_hazard_cuminc</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Deprecated function</p><p>Non-parametric sub-distribution hazard estimator   estimating cumulative incidence via the subdistribution hazard function</p><p>Usage: subdistribution<em>hazard</em>cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)</p><ul><li>in = time at entry (numeric vector)</li><li>out = time at exit (numeric vector)</li><li>d = event indicator (numeric or boolean vector)</li></ul><p>keywords:</p><ul><li>dvalues = (default = [1.0, 2.0]) a vector of the unique values of &#39;d&#39; that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)</li><li>weights = vector of observation weights, or nothing (default)</li><li>eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors</li></ul><p>Output: tuple with entries</p><ul><li>times: unique event times</li><li>cumhaz: cumulative subdistrution hazard for each event type</li><li>ci: Subdistrution hazard estimators of cumulative incidence for each event type. 1-sum of the CI for all event types is equal to overall survival.</li><li>events: number of events of each type used in calculating survival and cumulative incidence at each event time</li><li>names: vector of symbols [:times, :cumhaz, :ci] used as a mnemonic for the function output</li></ul><p>Note:    For time specific subdistribution hazard given by &#39;sdhaz(t)&#39;, the cumulative incidence for a specific event type calculated over time is </p><p>1.0 .- exp.(.-cumsum(sdhaz(t)))</p><p>Examples: </p><pre><code class="language-julia-repl hljs">  using LSurvival, Random
+lgh_efron!(_den, _LL, _grad, _hess, j, p, Xcases, X, _rcases, _r, _wtcases, _wt, caseidx, risksetidx)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L570-L593">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.risk_from_coxphmodels-Union{Tuple{T}, Tuple{Array{T}, Vararg{Any}}} where T&lt;:PHModel" href="#LSurvival.risk_from_coxphmodels-Union{Tuple{T}, Tuple{Array{T}, Vararg{Any}}} where T&lt;:PHModel"><code>LSurvival.risk_from_coxphmodels</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Survival curve estimation using multiple cox models (sometimes referred to as a multi-state model)</p><p><strong>Function signatures</strong></p><pre><code class="language- hljs">risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T&lt;:PHModel}</code></pre><pre><code class="language- hljs">fit(::Type{M}, fitlist::Vector{&lt;:T}, ; fitargs...) where {M&lt;:PHSurv,T&lt;:PHModel}</code></pre><p><strong>Optional keywords</strong></p><ul><li>coef_vectors = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]</li><li>pred<em>profile = nothing(default) or vector of specific predictor values of the same length as the coef</em>vectors[1]</li></ul><pre><code class="language- hljs"> 
+ using LSurvival
+ using Random
+ # event variable is coded 0[referent],1,2
+ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ enter = zeros(length(t));
+
+ ft1 = coxph(hcat(x,z), enter, t, (event .== 1))
+ nidx = findall(event .!= 1)
+ ft2 = coxph(hcat(x,z)[nidx,:], enter[nidx], t[nidx], (event[nidx] .== 2))
+
+ # risk at referent levels of `x` and `z`
+ risk_from_coxphmodels([ft1,ft2])
+
+ # risk at average levels of `x` and `z`
+ mnx = sum(x)/length(x)
+ mnz = sum(z)/length(z)
+ risk_from_coxphmodels([ft1,ft2], coef_vectors=[coef(ft1), coef(ft2)], pred_profile=[mnx,mnz])
+
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L750-L789">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="LSurvival.subdistribution_hazard_cuminc-Tuple{Any, Any, Any}" href="#LSurvival.subdistribution_hazard_cuminc-Tuple{Any, Any, Any}"><code>LSurvival.subdistribution_hazard_cuminc</code></a> — <span class="docstring-category">Method</span></header><section><div><p><em>Deprecated function</em></p><p>Non-parametric sub-distribution hazard estimator   estimating cumulative incidence via the subdistribution hazard function</p><p>Usage: subdistribution<em>hazard</em>cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)</p><ul><li>in = time at entry (numeric vector)</li><li>out = time at exit (numeric vector)</li><li>d = event indicator (numeric or boolean vector)</li></ul><p>keywords:</p><ul><li>dvalues = (default = [1.0, 2.0]) a vector of the unique values of &#39;d&#39; that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)</li><li>weights = vector of observation weights, or nothing (default)</li><li>eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors</li></ul><p>Output: tuple with entries</p><ul><li>times: unique event times</li><li>cumhaz: cumulative subdistrution hazard for each event type</li><li>ci: Subdistrution hazard estimators of cumulative incidence for each event type. 1-sum of the CI for all event types is equal to overall survival.</li><li>events: number of events of each type used in calculating survival and cumulative incidence at each event time</li><li>names: vector of symbols [:times, :cumhaz, :ci] used as a mnemonic for the function output</li></ul><p>Note:    For time specific subdistribution hazard given by &#39;sdhaz(t)&#39;, the cumulative incidence for a specific event type calculated over time is </p><p>1.0 .- exp.(.-cumsum(sdhaz(t)))</p><p>Examples: </p><pre><code class="language-julia-repl hljs">  using LSurvival, Random
 
   z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
   
   # compare these two approaches, where Aalen-Johansen method requires having cause specific hazards for every event type
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
-  </code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/deprecated.jl#L656-L696">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.confint-Tuple{AJSurv}" href="#StatsAPI.confint-Tuple{AJSurv}"><code>StatsAPI.confint</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Aalen-Johansen risk function</p><pre><code class="language- hljs">res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+  </code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/deprecated.jl#L656-L696">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.confint-Tuple{AJSurv}" href="#StatsAPI.confint-Tuple{AJSurv}"><code>StatsAPI.confint</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Aalen-Johansen risk function</p><pre><code class="language- hljs">res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
 m = fit(AJSurv, int, outt, event)
 stderror(m)
-confint(m, level=0.95)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L252-L262">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.confint-Tuple{KMSurv}" href="#StatsAPI.confint-Tuple{KMSurv}"><code>StatsAPI.confint</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Kaplan-Meier survival curve</p><pre><code class="nohighlight hljs">StatsBase.stderror(m::KMSurv)</code></pre><pre><code class="nohighlight hljs">StatsBase.confint(m:KMSurv; level=0.95, method=&quot;normal&quot;)</code></pre><p>method:</p><ul><li>&quot;normal&quot; normality-based confidence intervals</li><li>&quot;lognlog&quot; log(-log(S(t))) based confidence intervals</li></ul><pre><code class="language- hljs">using LSurvival
+confint(m, level=0.95)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L252-L262">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.confint-Tuple{KMSurv}" href="#StatsAPI.confint-Tuple{KMSurv}"><code>StatsAPI.confint</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Kaplan-Meier survival curve</p><pre><code class="language- hljs">StatsBase.stderror(m::KMSurv)</code></pre><pre><code class="language- hljs">StatsBase.confint(m:KMSurv; level=0.95, method=&quot;normal&quot;)</code></pre><p>method:</p><ul><li>&quot;normal&quot; normality-based confidence intervals</li><li>&quot;lognlog&quot; log(-log(S(t))) based confidence intervals</li></ul><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
@@ -718,7 +789,7 @@ mw = fit(KMSurv, enter, t, d, wts=wt)
 stderror(m)
 confint(m, method=&quot;normal&quot;)
 confint(m, method=&quot;lognlog&quot;) # log-log transformation
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L244-L270">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit!-Tuple{T} where T&lt;:AbstractNPSurv" href="#StatsAPI.fit!-Tuple{T} where T&lt;:AbstractNPSurv"><code>StatsAPI.fit!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for KMSurv objects</p><pre><code class="language- hljs">using LSurvival
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L244-L270">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit!-Tuple{T} where T&lt;:AbstractNPSurv" href="#StatsAPI.fit!-Tuple{T} where T&lt;:AbstractNPSurv"><code>StatsAPI.fit!</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for KMSurv objects</p><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
@@ -731,21 +802,45 @@ enter = zeros(length(t));
    # event variable is coded 0[referent],1,2
 m = fit(AJSurv, enter, t, event)
 mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre><p>fit for AJSurv objects</p><pre><code class="language- hljs">using LSurvival
-using Random
-z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
-enter = zeros(length(t));
-   # event variable is coded 0[referent],1,2
-m = fit(AJSurv, enter, t, event)
-mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L99-L148">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{T}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:T}}} where {M&lt;:PHSurv, T&lt;:PHModel}" href="#StatsAPI.fit-Union{Tuple{T}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:T}}} where {M&lt;:PHSurv, T&lt;:PHModel}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for AJSurv objects</p><pre><code class="language- hljs">using LSurvival
-using Random
-z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
-enter = zeros(length(t));
-   # event variable is coded 0[referent],1,2
-m = fit(AJSurv, enter, t, event)
-mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L737-L754">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Matrix{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AbstractPH, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}" href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Matrix{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AbstractPH, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for AbstractPH objects</p><pre><code class="nohighlight hljs"> fit(::Type{M},
+   ; &lt;keyword arguments&gt;)</code></pre><p>Survival curve estimation using multiple cox models (sometimes referred to as a multi-state model)</p><p><strong>Function signatures</strong></p><pre><code class="language- hljs">risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T&lt;:PHModel}</code></pre><pre><code class="language- hljs">fit(::Type{M}, fitlist::Vector{&lt;:T}, ; fitargs...) where {M&lt;:PHSurv,T&lt;:PHModel}</code></pre><p><strong>Optional keywords</strong></p><ul><li>coef_vectors = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]</li><li>pred<em>profile = nothing(default) or vector of specific predictor values of the same length as the coef</em>vectors[1]</li></ul><pre><code class="language- hljs"> 
+ using LSurvival
+ using Random
+ # event variable is coded 0[referent],1,2
+ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ enter = zeros(length(t));
+
+ ft1 = coxph(hcat(x,z), enter, t, (event .== 1))
+ nidx = findall(event .!= 1)
+ ft2 = coxph(hcat(x,z)[nidx,:], enter[nidx], t[nidx], (event[nidx] .== 2))
+
+ # risk at referent levels of `x` and `z`
+ risk_from_coxphmodels([ft1,ft2])
+
+ # risk at average levels of `x` and `z`
+ mnx = sum(x)/length(x)
+ mnz = sum(z)/length(z)
+ risk_from_coxphmodels([ft1,ft2], coef_vectors=[coef(ft1), coef(ft2)], pred_profile=[mnx,mnz])
+
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L99-L170">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{T}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:T}}} where {M&lt;:PHSurv, T&lt;:PHModel}" href="#StatsAPI.fit-Union{Tuple{T}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:T}}} where {M&lt;:PHSurv, T&lt;:PHModel}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Survival curve estimation using multiple cox models (sometimes referred to as a multi-state model)</p><p><strong>Function signatures</strong></p><pre><code class="language- hljs">risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T&lt;:PHModel}</code></pre><pre><code class="language- hljs">fit(::Type{M}, fitlist::Vector{&lt;:T}, ; fitargs...) where {M&lt;:PHSurv,T&lt;:PHModel}</code></pre><p><strong>Optional keywords</strong></p><ul><li>coef_vectors = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]</li><li>pred<em>profile = nothing(default) or vector of specific predictor values of the same length as the coef</em>vectors[1]</li></ul><pre><code class="language- hljs"> 
+ using LSurvival
+ using Random
+ # event variable is coded 0[referent],1,2
+ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ enter = zeros(length(t));
+
+ ft1 = coxph(hcat(x,z), enter, t, (event .== 1))
+ nidx = findall(event .!= 1)
+ ft2 = coxph(hcat(x,z)[nidx,:], enter[nidx], t[nidx], (event[nidx] .== 2))
+
+ # risk at referent levels of `x` and `z`
+ risk_from_coxphmodels([ft1,ft2])
+
+ # risk at average levels of `x` and `z`
+ mnx = sum(x)/length(x)
+ mnz = sum(z)/length(z)
+ risk_from_coxphmodels([ft1,ft2], coef_vectors=[coef(ft1), coef(ft2)], pred_profile=[mnx,mnz])
+
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L740-L779">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Matrix{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AbstractPH, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}" href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Matrix{&lt;:Real}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AbstractPH, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for AbstractPH objects</p><pre><code class="nohighlight hljs"> fit(::Type{M},
  X::AbstractMatrix,#{&lt;:FP},
  enter::AbstractVector{&lt;:Real},
  exit::AbstractVector{&lt;:Real},
@@ -783,26 +878,26 @@ mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><p
             x = dat[:,1],
             z = dat[:,2]
     )
-       
+
     f = @formula(Surv(int, outt,d)~x+z)
-    coxph(f, data)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/coxmodel.jl#L310-L356">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AJSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}" href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AJSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Aalen-Johansen estimator for cumulative risk</p><pre><code class="language- hljs">using LSurvival
+    coxph(f, data)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/coxmodel.jl#L310-L356">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AJSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}" href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:AJSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Aalen-Johansen estimator for cumulative risk</p><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
    # event variable is coded 0[referent],1,2
 m = fit(AJSurv, enter, t, event)
 mw = fit(AJSurv, enter, t, event, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L132-L149">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:KMSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}" href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:KMSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for KMSurv objects</p><pre><code class="language- hljs">using LSurvival
+   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L132-L149">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:KMSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}" href="#StatsAPI.fit-Union{Tuple{Y}, Tuple{M}, Tuple{Type{M}, Vector{&lt;:Real}, Vector{&lt;:Real}, Y}} where {M&lt;:KMSurv, Y&lt;:Union{BitVector, Vector{&lt;:Real}}}"><code>StatsAPI.fit</code></a> — <span class="docstring-category">Method</span></header><section><div><p>fit for KMSurv objects</p><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
 m = fit(KMSurv, enter, t, d)
 mw = fit(KMSurv, enter, t, d, wts=wt)</code></pre><p>or, equivalently:</p><pre><code class="language- hljs">kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L110-L127">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.stderror-Tuple{AJSurv}" href="#StatsAPI.stderror-Tuple{AJSurv}"><code>StatsAPI.stderror</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Aalen-Johansen risk function</p><pre><code class="language- hljs">res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+   ; &lt;keyword arguments&gt;)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L110-L127">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.stderror-Tuple{AJSurv}" href="#StatsAPI.stderror-Tuple{AJSurv}"><code>StatsAPI.stderror</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Aalen-Johansen risk function</p><pre><code class="language- hljs">res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
 m = fit(AJSurv, int, outt, event)
 stderror(m)
-confint(m, level=0.95)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L203-L213">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.stderror-Tuple{KMSurv}" href="#StatsAPI.stderror-Tuple{KMSurv}"><code>StatsAPI.stderror</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Kaplan-Meier survival curve</p><pre><code class="nohighlight hljs">StatsBase.stderror(m::KMSurv)</code></pre><pre><code class="nohighlight hljs">StatsBase.confint(m:KMSurv; level=0.95, method=&quot;normal&quot;)</code></pre><p>method:</p><ul><li>&quot;normal&quot; normality-based confidence intervals</li><li>&quot;lognlog&quot; log(-log(S(t))) based confidence intervals</li></ul><pre><code class="language- hljs">using LSurvival
+confint(m, level=0.95)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L203-L213">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="StatsAPI.stderror-Tuple{KMSurv}" href="#StatsAPI.stderror-Tuple{KMSurv}"><code>StatsAPI.stderror</code></a> — <span class="docstring-category">Method</span></header><section><div><p>Greenwood&#39;s formula for variance and confidence intervals of a Kaplan-Meier survival curve</p><pre><code class="language- hljs">StatsBase.stderror(m::KMSurv)</code></pre><pre><code class="language- hljs">StatsBase.confint(m:KMSurv; level=0.95, method=&quot;normal&quot;)</code></pre><p>method:</p><ul><li>&quot;normal&quot; normality-based confidence intervals</li><li>&quot;lognlog&quot; log(-log(S(t))) based confidence intervals</li></ul><pre><code class="language- hljs">using LSurvival
 using Random
 z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
 enter = zeros(length(t));
@@ -811,4 +906,4 @@ mw = fit(KMSurv, enter, t, d, wts=wt)
 stderror(m)
 confint(m, method=&quot;normal&quot;)
 confint(m, method=&quot;lognlog&quot;) # log-log transformation
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/2cbfbaeda18d6f571509246d5dc19548dd810003/src/npsurvival.jl#L171-L197">source</a></section></article></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Friday 1 September 2023 16:16">Friday 1 September 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/alexpkeil1/LSurvival.jl/blob/9b5ac7bb1f4351b1c8907b2c05bd0b63a4e70f18/src/npsurvival.jl#L171-L197">source</a></section></article></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Friday 1 September 2023 18:06">Friday 1 September 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
