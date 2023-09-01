@@ -2,6 +2,8 @@ using Documenter, LSurvival, Random, Distributions, LinearAlgebra
 
 #DocMeta.setdocmeta!(LSurvival, :DocTestSetup, :(using LSurvival); recursive = true)
 
+push!(LOAD_PATH,"../src/")
+
 makedocs(;
     format = Documenter.HTML(),
     modules = [LSurvival],
