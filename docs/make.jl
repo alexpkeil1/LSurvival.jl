@@ -7,9 +7,11 @@ makedocs(;
     modules = [LSurvival],
     sitename = "LSurvival",
     pages = ["Home" => "index.md"],
-    debug = false,
+    debug = true,
     doctest = true,
     strict = :doctest,
+    source = "src",
+    build = "build"
 )
 
 deploydocs(;
@@ -18,5 +20,5 @@ deploydocs(;
     target = "build",
     devbranch = "main",
     devurl = "dev",
-    versions = ["stable" => "v^", "v#.#", devurl => devurl],
+    versions = ["stable" => "v^", "v#.#", "devurl" => "dev"],
 )
