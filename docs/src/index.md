@@ -23,7 +23,10 @@ Convenience functions enable:
 - Simple simulation of competing and non-competing survival events
 
 Plans to include:
-- cluster robust variance estimation (without bootstrapping)
+- Cluster robust variance estimation (without bootstrapping)
+- Score and Schoenfeld residuals
+
+The package has been tuned to follow the "survival" package from R in terms of specific estimators/results.
 
 Report issues [here](https://github.com/alexpkeil1/LSurvival.jl/issues)
 
