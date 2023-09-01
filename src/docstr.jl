@@ -292,7 +292,7 @@ DOC_ID ="""
 
 Accepts any Number or String. There is no significance to having this particular struct, but it enables easier use of multiple dispatch.
 
-```{julia}
+```jldoctest
  [ID(i) for i in 1:10]
 ```
 
@@ -304,7 +304,7 @@ DOC_STRATA ="""
 
  Accepts any Number or String. There is no significance to having this particular struct, but it enables easier use of multiple dispatch.
 
-```{julia}
+```jldoctest
  [Strata(i) for i in 1:10]
 ```
 
@@ -346,10 +346,10 @@ Signatures
 
 # Example
 
-```{julia}
+```jldoctest
  using LSurvival
  using Random
- z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 200);
  enter = zeros(length(t));
  X = hcat(x,rand(length(x)));
  m2 = fit(PHModel, X, enter, t, d, ties="breslow")
@@ -381,7 +381,7 @@ DOC_FIT_PHSURV ="""
 
  fit for PHSurv objects
 
-```{julia}
+```jldoctest
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -448,7 +448,7 @@ DOC_FIT_ABSTRACPH ="""
  fitargs...) where {M<:AbstractPH}
 ```
 
-```{julia}
+```jldoctest
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -463,7 +463,7 @@ DOC_FIT_ABSTRACPH ="""
  coeftable(m)
 ```
 
-```{julia}
+```jldoctest
  using Random, LSurvival
     id, int, outt, dat =
         LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
@@ -493,7 +493,7 @@ DOC_FIT_KMSURV ="""
 ```
 
  
-```{julia}
+```jldoctest
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
