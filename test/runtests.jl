@@ -55,7 +55,7 @@ using Random
     )
 
     id, int, outt, data =
-        LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+        LSurvival.dgm(MersenneTwister(1212), 30, 5; afun = LSurvival.int_0)
 
     d, X = data[:, 4], data[:, 1:3]
     weights = rand(length(d))
@@ -133,9 +133,9 @@ using Random
     enter = zeros(length(t))
 
     ajres = aalen_johansen(enter, t, event)
-    bootstrap(ajres)
+    bootstrap(MersenneTwister(123), ajres)
     ajres2 = aalen_johansen(enter, t, event, wts = wt)
-    bootstrap(ajres2)
+    bootstrap(MersenneTwister(123), ajres2)
     kms = kaplan_meier(enter, t, d, wts = wt)
 
     #println(ajres)
@@ -163,8 +163,8 @@ using Random
         keepy = true,
     )
     println(ft1)
-    (bootstrap(ft1))
-    (bootstrap(ft1, 2))
+    (bootstrap(MersenneTwister(123), ft1))
+    (bootstrap(MersenneTwister(123), ft1, 2))
     coxph(X, enter, t, d2, ties = "efron")
 
 
