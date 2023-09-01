@@ -97,6 +97,7 @@ function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
     @inbounds for i = 1:iter
         mb = bootstrap(rng, m)
         LSurvival._fit!(mb; kwargs...)
+        @debug "Log-partial-likelihood $i: $(mb.P._LL[1])"
         res[i, :] = mb.P._B
     end
     res

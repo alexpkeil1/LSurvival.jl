@@ -90,6 +90,7 @@ using Random
 
     # PH model predictors
     P = PHParms(X)
+    @assert all(size(P) .== size(X))
 
     # not-yet-fit PH model object
     M = PHModel(R, P, "breslow")
@@ -108,16 +109,16 @@ using Random
 
     R = LSurvResp(int, outt, d)
     R = LSurvResp(outt, d) # set all to zero
-    print(R)
+    #print(R)
 
 
     print(kaplan_meier(int, outt, d))
     #trivial case of non-competing events with late entry
     print(aalen_johansen(int, outt, d))
 
-    print(bootstrap(MersenneTwister(123), kaplan_meier(int, outt, d)))
+    (bootstrap(MersenneTwister(123), kaplan_meier(int, outt, d)))
     #trivial case of non-competing events with late entry
-    print(bootstrap(MersenneTwister(123), aalen_johansen(int, outt, d)))
+    (bootstrap(MersenneTwister(123), aalen_johansen(int, outt, d)))
 
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
@@ -129,13 +130,13 @@ using Random
     bootstrap(ajres2)
     kms = kaplan_meier(enter, t, d, wts = wt)
 
-    println(ajres)
-    println(stderror(ajres))
-    println(confint(ajres, level = 0.95))
-    println(kms)
-    println(stderror(kms))
-    println(confint(kms, level = 0.95))
-    println(confint(kms, level = 0.95, method = "lognlog"))
+    #println(ajres)
+    #println(stderror(ajres))
+    (confint(ajres, level = 0.95))
+    #println(kms)
+    #println(stderror(kms))
+    (confint(kms, level = 0.95))
+    (confint(kms, level = 0.95, method = "lognlog"))
 
     X = hcat(z, x)
     d1 = d .* Int.(event .== 1)
@@ -154,9 +155,8 @@ using Random
         keepy = true,
     )
     println(ft1)
-    println(bootstrap(ft1))
-    println(bootstrap(ft1, 2))
-    println(ft1)
+    (bootstrap(ft1))
+    (bootstrap(ft1, 2))
     coxph(X, enter, t, d2, ties = "efron")
 
 
@@ -188,6 +188,6 @@ using Random
     )
 
 
-    println(cires2b)
+    (cires2b)
 
 end

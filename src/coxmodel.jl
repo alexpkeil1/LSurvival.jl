@@ -53,6 +53,7 @@ function Base.show(io::IO, x::PHParms)
 end
 Base.show(x::PHParms) = Base.show(stdout, x::PHParms)
 
+Base.size(x::PHParms) = size(x.X)
 
 """
 $DOC_PHMODEL    

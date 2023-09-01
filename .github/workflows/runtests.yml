@@ -1,5 +1,7 @@
 name: Run tests
-
+concurrency:
+  group: ${{ github.head_ref }}.tests
+  cancel-in-progress: true
 on: 
   push:
     branches:

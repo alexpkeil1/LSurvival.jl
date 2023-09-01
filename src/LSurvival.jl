@@ -9,6 +9,7 @@ using Random, Distributions, LinearAlgebra, Tables
 #import DataFrames: DataFrame
 using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
+import Base: length, size
 
 import StatsBase:
     coef,
@@ -74,9 +75,10 @@ export bootstrap,
     isfitted,
     loglikelihood,
     modelmatrix,
+    length,
+    size,
     nullloglikelihood, #nobs, 
     response,
-    risk_from_coxphmodels,
     score,
     stderror,
     #residuals, predict, predict!,
