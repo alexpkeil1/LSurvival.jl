@@ -35,7 +35,7 @@ Parameters
 - `id`: person level identifier (must be wrapped in ID() function)
 
 
-```{julia}
+```julia
  struct LSurvResp{
  E<:AbstractVector,
  X<:AbstractVector,
@@ -55,7 +55,7 @@ Parameters
 
 ```
 
-```{julia}
+```julia
  LSurvResp(
     enter::E,
     exit::X,
@@ -71,7 +71,7 @@ Parameters
 }
 ```
 
-```{julia}
+```julia
  LSurvResp(
  enter::E,
  exit::X,
@@ -81,7 +81,7 @@ Parameters
 
 ```
 
-```{julia}
+```julia
  LSurvResp(
   y::Vector{Y},
   wts::W,
@@ -89,7 +89,7 @@ Parameters
 ) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvID}
 ```
 
-```{julia}
+```julia
  LSurvResp(
   enter::E,
   exit::X,
@@ -97,13 +97,13 @@ Parameters
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
 ```
 
-```{julia}
+```julia
  LSurvResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
 ```
 
 # Examples
 
-```{julia}
+```julia
 # no late entry
 LSurvResp([.5, .6], [1,0])
 
@@ -126,8 +126,9 @@ Parameters
 - `eventtypes`: vector of unique event types
 - `eventmatrix`: matrix of indicators on the observation level
 
-# Signatures: 
-```{julia}
+# Signatures:
+
+```julia
  struct LSurvCompResp{
  E<:AbstractVector,
  X<:AbstractVector,
@@ -150,7 +151,7 @@ Parameters
  end
 ```
 
-```{julia}
+```julia
  LSurvCompResp(
  enter::E,
  exit::X,
@@ -160,7 +161,7 @@ Parameters
  )
 ```
 
-```{julia}
+```julia
  LSurvCompResp(
  enter::E,
  exit::X,
@@ -169,7 +170,7 @@ Parameters
  )
 ```
 
-```{julia}
+```julia
  LSurvCompResp(
  enter::E,
  exit::X,
@@ -178,7 +179,7 @@ Parameters
  )
 ```
 
-```{julia}
+```julia
  LSurvCompResp(
  enter::E,
  exit::X,
@@ -186,7 +187,7 @@ Parameters
  )
 ```
 
-```{julia}
+```julia
  LSurvCompResp(
   exit::X,
   y::Y,
@@ -207,7 +208,7 @@ Parameters
 
 # Signatures
 
-```{julia}
+```julia
  mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
  R::G        # Survival response
  P::L        # parameters
@@ -229,7 +230,7 @@ Parameters
 
  # Example
 
-```{julia}
+```julia
  using LSurvival
  using Random
  import LSurvival: _stepcox!, dgm_comprisk
@@ -265,7 +266,7 @@ DOC_PHSURV ="""
 
  Methods: fit, show
 
-```{julia}
+```julia
  mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
  fitlist::G        
  eventtypes::AbstractVector
@@ -292,8 +293,20 @@ DOC_ID ="""
 
 Accepts any Number or String. There is no significance to having this particular struct, but it enables easier use of multiple dispatch.
 
-```jldoctest
+```jldoctest; output = true
  [ID(i) for i in 1:10]
+ # output
+ 10-element Vector{ID}:
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+ 10
 ```
 
 """
@@ -304,8 +317,20 @@ DOC_STRATA ="""
 
  Accepts any Number or String. There is no significance to having this particular struct, but it enables easier use of multiple dispatch.
 
-```jldoctest
+```jldoctest; output = true
  [Strata(i) for i in 1:10]
+ # output
+ 10-element Vector{LSurvival.Strata}:
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+ 10
 ```
 
 """
@@ -319,7 +344,7 @@ Alias for`fit(PHModel, ..., <keyword arguments>)`.
 
 Signatures
 
-```{julia}
+```julia
  coxph(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::AbstractVector; <keyword arguments>)
  coxph(X::AbstractMatrix, exit::AbstractVector, y::AbstractVector; <keyword arguments>) # enter assumed to be 0
  coxph(X::AbstractMatrix, exit::AbstractVector; <keyword arguments>) # enter assumed to be 0, y assumed to be 1
@@ -333,7 +358,7 @@ Signatures
  Keyword parameters
  - ties: method for ties ("efron" or "breslow")
  
-```{julia}
+```julia
  coxph(f::Formula, dat; <keyword arguments>)
 ```
  Parameters
@@ -346,7 +371,7 @@ Signatures
 
 # Example
 
-```jldoctest
+```julia
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 200);
@@ -355,6 +380,7 @@ Signatures
  m2 = fit(PHModel, X, enter, t, d, ties="breslow")
  coxph(X, enter, t, d, ties="breslow")
  coeftable(m)
+ # output
 ```
 
 """
@@ -365,7 +391,7 @@ DOC_FIT_PHSURV ="""
 
  Calculate survival curve and cumulative incidence (risk) function, get a set of Cox models (PHModel objects) that are exhaustive for the outcome types
 
-```{julia}
+```julia
  fit(::Type{M},
  fitlist::AbstractVector{<:T},
  ;
@@ -373,7 +399,7 @@ DOC_FIT_PHSURV ="""
 ```
  OR 
 
-```{julia}
+```julia
  risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
 
 ```
@@ -381,26 +407,26 @@ DOC_FIT_PHSURV ="""
 
  fit for PHSurv objects
 
-```jldoctest
- using LSurvival
+```jldoctest; output = true
+julia> using LSurvival
  using Random
- z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
- enter = zeros(length(t));
- X = hcat(x,rand(length(x)));
- #m2 = fit(PHModel, X, enter, t, d, ties="breslow")
- ft1 = coxph(X, enter, t, (event .== 1), ties="breslow");
- nft2 = findall(event .!= 1)
- ft2 = coxph(X[nft2,:], enter[nft2], t[nft2], (event .== 2)[nft2], ties="breslow");
- fitlist = [ft1, ft2]
+ julia> z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ julia> enter = zeros(length(t));
+ julia> X = hcat(x,rand(length(x)));
+ 
+ julia> ft1 = coxph(X, enter, t, (event .== 1), ties="breslow");
+ julia> nft2 = findall(event .!= 1)
+ julia> ft2 = coxph(X[nft2,:], enter[nft2], t[nft2], (event .== 2)[nft2], ties="breslow");
+ julia> fitlist = [ft1, ft2]
 
  # Risk at x=0, z=0 (referent values)
  # these are equivalent
- res = fit(PHSurv, [ft1, ft2])
- res2 = risk_from_coxphmodels([ft1, ft2])
+ julia> res = fit(PHSurv, [ft1, ft2])
+ julia> res2 = risk_from_coxphmodels([ft1, ft2])
 
  # Risk at x=1, z=0.5
- res3 = risk_from_coxphmodels([ft1, ft2], pred_profile=[1.0, 0.5])
-
+ julia> res3 = risk_from_coxphmodels([ft1, ft2], pred_profile=[1.0, 0.5])
+ 
 ```
 """
 
@@ -409,7 +435,7 @@ DOC_E_YEARSOFLIFELOST ="""
 
  Expected number of years of life lost due to cause k
 
-```{julia}
+```julia
  using Distributions, Plots, Random
  plotly()
  z,x,t,d, event,weights = dgm_comprisk(n=200, rng=MersenneTwister(1232));
@@ -435,7 +461,7 @@ DOC_E_YEARSOFLIFELOST ="""
 DOC_FIT_ABSTRACPH ="""
  Fit method for AbstractPH objects
 
-```{julia}
+```julia
  fit(::Type{M},
  X::AbstractMatrix,#{<:FP},
  enter::AbstractVector{<:Real},
@@ -448,22 +474,17 @@ DOC_FIT_ABSTRACPH ="""
  fitargs...) where {M<:AbstractPH}
 ```
 
-```jldoctest
- using LSurvival
- using Random
- z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
- enter = zeros(length(t));
- X = hcat(x,rand(length(x)));
-  #R = LSurvResp(enter, t, Int.(d), wt)
-  #P = PHParms(X,"efron")
-  #mod = PHModel(R,P, true)
-  #_fit!(mod)
- m = fit(PHModel, X, enter, t, d, ties="efron")
- m2 = fit(PHModel, X, enter, t, d, ties="breslow")
- coeftable(m)
+```jldoctest; output = true
+ julia> using LSurvival, Random
+ julia> z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ julia> enter = zeros(length(t));
+ julia> X = hcat(x,rand(length(x)));
+ julia>  m = fit(PHModel, X, enter, t, d, ties="efron")
+ julia> m2 = fit(PHModel, X, enter, t, d, ties="breslow")
+ julia> coeftable(m)
 ```
 
-```jldoctest
+```
  using Random, LSurvival
     id, int, outt, dat =
         LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
@@ -476,7 +497,7 @@ DOC_FIT_ABSTRACPH ="""
     )
 
     f = @formula(Surv(int, outt,d)~x+z)
-    coxph(f, data)
+julia>    coxph(f, data)
 ```
 """
 
@@ -485,7 +506,7 @@ DOC_FIT_KMSURV ="""
 
   Signatures
 
-```{julia}
+```julia
  StatsBase.fit!(m::T; kwargs...) where {T<:AbstractNPSurv}
 
  kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
@@ -493,7 +514,7 @@ DOC_FIT_KMSURV ="""
 ```
 
  
-```jldoctest
+```julia
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -503,7 +524,7 @@ DOC_FIT_KMSURV ="""
 ```
  or, equivalently:
 
-```{julia}
+```julia
  kaplan_meier(enter, t, d, wts=wt)
 ```
 """
@@ -511,11 +532,11 @@ DOC_FIT_KMSURV ="""
 DOC_VARIANCE_KMSURV ="""
  Greenwood's formula for variance and confidence intervals of a Kaplan-Meier survival curve
 
-```{julia}
+```julia
  StatsBase.stderror(m::KMSurv)
 ```
 
-```{julia}
+```julia
  StatsBase.confint(m:KMSurv; level=0.95, method="normal")
 ```
  method:
@@ -523,7 +544,7 @@ DOC_VARIANCE_KMSURV ="""
    - "lognlog" log(-log(S(t))) based confidence intervals
 
 
-```{julia}
+```julia
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -540,7 +561,7 @@ DOC_VARIANCE_KMSURV ="""
 DOC_VARIANCE_AJSURV ="""
  Greenwood's formula for variance and confidence intervals of a Aalen-Johansen risk function
 
-```{julia}
+```julia
  res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
  int = zeros(length(d)) # no late entry
  m = fit(AJSurv, int, outt, event)
@@ -552,7 +573,7 @@ DOC_VARIANCE_AJSURV ="""
 DOC_FIT_AJSURV ="""
  Aalen-Johansen estimator for cumulative risk
 
-```{julia}
+```julia
  using LSurvival
  using Random
  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
@@ -563,7 +584,7 @@ DOC_FIT_AJSURV ="""
 ```
  or, equivalently:
 
-```{julia}
+```julia
  aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
     ; <keyword arguments>)
 ```
@@ -582,7 +603,7 @@ Updates over all observations
 
 Signature
 
-```{julia}
+```julia
  lgh_breslow!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
 ```
  
@@ -597,7 +618,7 @@ Updates over all observations
 
 Signature
 
-```{julia}
+```julia
  lgh_efron!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
 ```
 """
@@ -611,7 +632,7 @@ Updates over all a single observation. This is just a simple wrapper that calls 
 
 Signature
 
-```{julia}
+```julia
  lgh!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
 ```
 """
@@ -624,7 +645,7 @@ Uses Breslow's or Efron's partial likelihood.
 
 Updates over all observations
 
-```{julia}
+```julia
  function _update_PHParms!(
   m::M,
   # big indexes
@@ -641,11 +662,11 @@ Survival curve estimation using multiple cox models (sometimes referred to as a 
 
 ## Function Signatures
 
-```{julia}
+```julia
 risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T<:PHModel}
 ```
 
-```{julia}
+```julia
 fit(::Type{M}, fitlist::Vector{<:T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
 ```
 
@@ -653,7 +674,7 @@ fit(::Type{M}, fitlist::Vector{<:T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
 - coef_vectors = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]
 - pred_profile = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
 
-```{julia}
+```julia
  using LSurvival
  using Random
  # event variable is coded 0[referent],1,2
@@ -685,7 +706,7 @@ DOC_DGM ="""
  Where afun, yfun, and lfun are all functions that take arguments v,l,a and output time-specific values of a, y, and l respectively
  Example:
 
-```{julia}
+```julia
 
  expit(mu) =  inv(1.0+exp(-mu))
 
@@ -717,7 +738,7 @@ DOC_DGM_COMPRISK ="""
 
  Example:
 
-```{julia}
+```julia
  using LSurvival
      # 100 individuals with two competing events
  z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
@@ -746,7 +767,7 @@ DOC_BOOTSTRAP_PHMODEL ="""
 
 
 
-```{julia}
+```julia
  using LSurvival, Random
 
  id, int, outt, data =
@@ -784,7 +805,7 @@ DOC_BOOTSTRAP_PHMODEL ="""
  LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
 ```
 
-```{julia}
+```julia
  using LSurvival, Random
  res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 200)
  int = zeros(length(d)) # no late entry
@@ -830,7 +851,7 @@ DOC_BOOTSTRAP_KMSURV ="""
    
    
 
-```{julia}
+```julia
  using LSurvival
  using Random
 
@@ -870,7 +891,7 @@ DOC_BOOTSTRAP_AJSURV ="""
  - If using `bootstrap(m, 10)` (e.g.): 10 bootstrap draws of the cumulative cause-specific risks at the end of follow up
 
 
-```{julia}
+```julia
  using LSurvival
  using Random
 
