@@ -244,6 +244,7 @@ function _fit!(
             m.P._B .+= inv(-(m.P._hess)) * m.P._grad .* λ # newton raphson step
             oldQ = Q
         else
+            @debug "Log-partial-likelihood history: $_llhistory $(m.P._LL[1])"
             throw("Log-partial-likelihood is not finite: check model inputs")
         end
         lastLL = m.P._LL[1]
@@ -253,6 +254,7 @@ function _fit!(
     end
     if (totiter == maxiter) && (maxiter > 0)
         @warn "Algorithm did not converge after $totiter iterations: check for collinearity of predictors"
+        @debug "recent log-partial-likelihood history: $(_llhistory[end-max(10,maxiter-1):end]) $(m.P._LL[1])"
     end
     if verbose && (maxiter == 0)
         @warn "maxiter = 0, model coefficients set to starting values"
@@ -342,6 +344,7 @@ function modelframe(
     contrasts::AbstractDict,
     ::Type{M},
 ) where {M<:AbstractPH}
+    # closely adapted from GLM.jl
     Tables.istable(data) ||
         throw(ArgumentError("expected data in a Table, got $(typeof(data))"))
     t = Tables.columntable(data)

@@ -14,4 +14,9 @@ makedocs(;
 
 deploydocs(;
     repo = "github.com/alexpkeil1/LSurvival.jl.git",
+    branch = "gh-pages",
+    target = "build",
+    devbranch = "main",
+    devurl = "dev",
+    versions = ["stable" => "v^", "v#.#", devurl => devurl],
 )
