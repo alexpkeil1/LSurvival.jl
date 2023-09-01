@@ -12,6 +12,8 @@ on:
   pull_request:
 jobs:
   Documenter:
+    permissions:
+      contents: write
     name: Documentation
     runs-on: ubuntu-latest
     steps:
