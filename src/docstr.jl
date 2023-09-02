@@ -312,6 +312,7 @@ DOC_STRATA ="""
 """
 ####### Primary methods
 
+
 DOC_COXPH ="""
 Fit a generalized Cox proportional hazards model to data.
 
@@ -901,3 +902,164 @@ DOC_BOOTSTRAP_AJSURV ="""
 
 
 ######## DEPRECATED FUNCTIONS ###############
+
+"""
+*Deprecated function*
+
+Estimate parameters of an extended Cox model
+
+Using: Newton raphson algorithm with modified/adaptive step sizes
+
+Keyword inputs:
+method="efron", 
+inits=nothing , # initial parameter values, set to zero if this is nothing
+tol=10e-9,      #  convergence tolerance based on log likelihod: likrat = abs(lastLL/_LL[1]), absdiff = abs(lastLL-_LL[1]), reldiff = max(likrat, inv(likrat)) -1.0
+maxiter=500    # maximum number of iterations for Newton Raphson algorithm (set to zero to calculate likelihood, gradient, Hessian at the initial parameter values)
+
+Outputs:
+beta: coefficients 
+ll: log partial likelihood history (all iterations), with final value being the (log) maximum partial likelihood (log-MPL)
+g: gradient vector (first derivative of log partial likelihood) at log-MPL
+h: hessian matrix (second derivative of log partial likelihood) at log-MPL
+basehaz: Matrix: baseline hazard at referent level of all covariates, weighted risk set size, weighted # of cases, time
+
+
+Examples: 
+```julia-repl   
+  using LSurvival
+  # simulating discrete survival data for 20 individuals at 10 time points
+  id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
+  
+  d,X = data[:,4], data[:,1:3]
+  
+  # getting raw values of output
+  args = (int, outt, d, X)
+  beta, ll, g, h, basehaz = coxmodel(args..., method="efron")
+  beta2, ll2, g2, h2, basehaz2 = coxmodel(args..., method="breslow")
+
+
+  # nicer summary of results
+  args = (int, outt, d, X)
+  res = coxmodel(args..., method="efron");
+  coxsum = cox_summary(res, alpha=0.05, verbose=true);
+    
+```
+"""
+
+"""
+*Deprecated function*
+  Estimating cumulative incidence from two or more cause-specific Cox models
+  
+  z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)
+  X = hcat(z,x)
+  int = zeros(120)
+  d1  = d .* Int.(event.== 1)
+  d2  = d .* Int.(event.== 2)
+  sum(d)/length(d)
+  
+  
+  lnhr1, ll1, g1, h1, bh1 = coxmodel(int, outt, d1, X, method="efron");
+  lnhr2, ll2, g2, h2, bh2 = coxmodel(int, outt, d2, X, method="efron");
+  bhlist = [bh1, bh2]
+  coeflist = [lnhr1, lnhr2]
+  covarmat = sum(X, dims=1) ./ size(X,1)
+  ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2], coeflist=coeflist, covarmat=covarmat)
+  ci, surv = ci_from_coxmodels(bhlist;eventtypes=[1,2])
+  """
+
+  """
+*Deprecated function*
+
+Kaplan Meier with late entry, possibly multiple observations per unit
+
+Usage: kaplan_meier(in,out,d; weights=nothing, eps = 0.00000001)
+
+  - in = time at entry (numeric vector)
+  - out = time at exit (numeric vector)
+  - d = event indicator (numeric or boolean vector)
+
+  keywords:
+  - weights = vector of observation weights, or nothing (default)
+  - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
+  
+  Output: tuple with entries
+  - times: unique event times
+  - survival: product limit estimator of survival 
+  - riskset: number of uncensored observations used in calculating survival at each event time
+  - names = vector of symbols [:times, :surv_overall, :riskset] used as a mnemonic for the function output
+
+"""
+
+"""
+*Deprecated function*
+
+Aalen-Johansen (cumulative incidence) with late entry, possibly multiple observations per unit, non-repeatable events
+Usage: aalen_johansen(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+
+  - in = time at entry (numeric vector)
+  - out = time at exit (numeric vector)
+  - d = event indicator (numeric or boolean vector)
+
+  keywords:
+  - dvalues = (default = [1.0, 2.0]) a vector of the unique values of 'd' that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)
+  - weights = vector of observation weights, or nothing (default)
+  - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
+  
+  Output: tuple with entries
+    - times: unique event times
+    - survival: product limit estimator of overall survival (e.g. cumulative probability that d is 0.0)
+    - ci: Aalen-Johansen estimators of cumulative incidence for each event type. 1-sum of the CI for all event types is equal to overall survival.
+    - riskset: number of uncensored observations used in calculating survival at each event time
+    - events: number of events of each type used in calculating survival and cumulative incidence at each event time
+    - names: vector of symbols [:times, :surv_km_overall, :ci_aalenjohansen, :riskset, :events] used as a mnemonic for the function output
+
+"""
+
+
+"""
+*Deprecated function*
+
+ Non-parametric sub-distribution hazard estimator
+  estimating cumulative incidence via the subdistribution hazard function
+
+Usage: subdistribution_hazard_cuminc(in,out,d;dvalues=[1.0, 2.0], weights=nothing, eps = 0.00000001)
+
+  - in = time at entry (numeric vector)
+  - out = time at exit (numeric vector)
+  - d = event indicator (numeric or boolean vector)
+  
+  keywords:
+  - dvalues = (default = [1.0, 2.0]) a vector of the unique values of 'd' that indicate event types. By default, d is expected to take on values 0.0,1.0,2.0 for 3 event types (censored, event type 1, event type 2)
+  - weights = vector of observation weights, or nothing (default)
+  - eps = (default = 0.00000001) very small numeric value that helps in case of tied times that become misordered due to floating point errors
+  
+  Output: tuple with entries
+   - times: unique event times
+   - cumhaz: cumulative subdistrution hazard for each event type
+   - ci: Subdistrution hazard estimators of cumulative incidence for each event type. 1-sum of the CI for all event types is equal to overall survival.
+   - events: number of events of each type used in calculating survival and cumulative incidence at each event time
+   - names: vector of symbols [:times, :cumhaz, :ci] used as a mnemonic for the function output
+
+Note: 
+  For time specific subdistribution hazard given by 'sdhaz(t)', the cumulative incidence for a specific event type calculated over time is 
+  
+  1.0 .- exp.(.-cumsum(sdhaz(t)))
+
+Examples: 
+```julia-repl   
+  using LSurvival, Random
+
+  z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
+  
+  # compare these two approaches, where Aalen-Johansen method requires having cause specific hazards for every event type
+  times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
+  times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
+  
+```
+"""
+
+"""
+*Deprecated function*
+
+$DOC_E_YEARSOFLIFELOST
+"""

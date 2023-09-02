@@ -5,6 +5,45 @@
 using LSurvival, Random, Optim, BenchmarkTools
 
 ######################################################################
+# residuals
+######################################################################
+"""
+using LSurvival, Random
+id, int, outt, dat = LSurvival.dgm(MersenneTwister(1212), 1000, 5);
+d = dat[:,4]
+x,z1,z2 = dat[:,1], dat[:,2], dat[:,3]
+enter = zeros(length(t));
+
+ft1 = coxph(@formula(Surv(int, outt, d)~x+z1+z2), (int=int,outt=outt,d=d,x=x,z1=z1,z2=z2), id=ID.(id), keepx=true, keepy=true)
+ft1
+resid = martingale(ft1)
+sum(resid)
+vid = values(ft1.R.id)
+lididx = [findlast(vid .== id.value) for id in unique(ft1.R.id)]
+sum(resid[lididx])
+
+"""
+function martingale(m::M) where {M<:PHModel}
+    N = Float64.(m.R.y .> 0.0)
+    resid = N .- expected(m)
+    resid
+end
+
+function expected(m::M) where {M<:PHModel}
+    B = coef(m)
+    X = m.P.X
+    rr = exp.(X * B)
+    id = values(m.R.id)
+    uid = unique(id)
+    λ0 = m.bh[:,1]
+    bht = m.bh[:,4]          
+    dH = [λ0[findlast(bht .<= t)] for t in m.R.exit]
+    incr = rr .* dH
+    integrands = [cumsum(incr[findall(id .== ui)]) for ui in uid]
+    reduce(vcat, integrands)
+end
+
+######################################################################
 # fitting with optim
 ######################################################################
 

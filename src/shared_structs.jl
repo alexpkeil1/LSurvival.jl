@@ -13,12 +13,15 @@ struct ID <: AbstractLSurvID
 end
 
 """
-$DOC_ID
+$DOC_STRATA
 """
 struct Strata <: AbstractLSurvID
     value::T where {T<:Union{Number,String}}
 end
 
+function Base.values(x::Vector{I}) where {I<:AbstractLSurvID}
+    [xi.value for xi in x]
+end
 
 function Base.show(io::IO, x::I) where {I<:AbstractLSurvID}
     show(io, x.value)
