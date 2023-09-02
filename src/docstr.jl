@@ -504,8 +504,40 @@ DOC_FIT_KMSURV ="""
 ```
 """
 
+DOC_FIT_AJSURV ="""
+ Aalen-Johansen estimator for cumulative risk
+
+ Signatures
+
+ ```julia
+  StatsBase.fit!(m::T; kwargs...) where {T<:AbstractNPSurv}
+ 
+  aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
+    ; <keyword arguments>)
+ ```
+ 
+
+```@example
+ using LSurvival
+ using Random
+ z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+ enter = zeros(length(t));
+    # event variable is coded 0[referent],1,2
+ m = fit(AJSurv, enter, t, event)
+ mw = fit(AJSurv, enter, t, event, wts=wt)
+```
+ or, equivalently:
+
+```julia
+ aalen_johansen(enter, t, event, wts=wt)
+```
+"""
+
 DOC_VARIANCE_KMSURV ="""
  Greenwood's formula for variance and confidence intervals of a Kaplan-Meier survival curve
+
+
+Signatures:
 
 ```julia
  StatsBase.stderror(m::KMSurv)
@@ -544,25 +576,7 @@ DOC_VARIANCE_AJSURV ="""
 ```
 """
 
-DOC_FIT_AJSURV ="""
- Aalen-Johansen estimator for cumulative risk
 
-```julia
- using LSurvival
- using Random
- z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
- enter = zeros(length(t));
-    # event variable is coded 0[referent],1,2
- m = fit(AJSurv, enter, t, event)
- mw = fit(AJSurv, enter, t, event, wts=wt)
-```
- or, equivalently:
-
-```julia
- aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
-    ; <keyword arguments>)
-```
-"""
 
 
 ####### non-user functions
