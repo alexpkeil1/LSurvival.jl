@@ -414,6 +414,7 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
+    rown = length(rown) > 1 ? rown : [rown]
     StatsBase.CoefTable(op, head, rown, 6, 5)
 end
 
@@ -686,11 +687,8 @@ function denj!(den, _r, wts, method, caseidx, risksetidx, nties, j)
     _wtriskset = view(wts, risksetidx)
     deni = sum(_wtriskset .* _rriskset)
     if method == "breslow"
-        den[j] = deni # Breslow estimator
+        den[j] = deni 
     elseif method == "efron"
-        #deni = sum(_wtriskset .* _rriskset)
-        #denc = sum(_wtcases .* _rcases)
-        #dens = [den - denc * ew for ew in effwts]
         effwts = efron_weights(nties)
         sw = sum(_wtcases)
         aw = sw / nties

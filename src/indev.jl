@@ -12,35 +12,102 @@ using LSurvival, Random
 id, int, outt, dat = LSurvival.dgm(MersenneTwister(1212), 1000, 5);
 d = dat[:,4]
 x,z1,z2 = dat[:,1], dat[:,2], dat[:,3]
-enter = zeros(length(t));
 
 ft1 = coxph(@formula(Surv(int, outt, d)~x+z1+z2), (int=int,outt=outt,d=d,x=x,z1=z1,z2=z2), id=ID.(id), keepx=true, keepy=true)
 ft1
 resid = martingale(ft1)
 sum(resid)
+extrema(resid)
 vid = values(ft1.R.id)
 lididx = [findlast(vid .== id.value) for id in unique(ft1.R.id)]
-sum(resid[lididx])
+
+
+sum(resid[lididx ])
+
+m = ft1
+
+using LSurvival, LinearAlgebra, RCall, Random, CSV
+
+id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+#wt ./= (sum(wt) / length(wt))
+wt ./= wt
+xtab = (id=id, int=int, outt=outt, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3], wt=wt)
+CSV.write(expanduser("~/temp/test.csv"), xtab)
+
+
+#m = fit(PHModel, X, int, outt, d, wts = wt, id=ID.(id), ties = "breslow", keepx=true, keepy=true);
+m = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts = xtab.wt, id=ID.(xtab.id), ties = "breslow", keepx=true, keepy=true);
+m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts = xtab.wt, id=ID.(xtab.id), ties = "efron", keepx=true, keepy=true);
+
+    @rput xtab
+    R"""
+library(survival)
+head(xtab)
+#df = data.frame(int=int, outt=outt, d=d, X=X)
+cfit = coxph(
+    Surv(int, outt, d) ~ x + z1 + z2,
+    weights = xtab$wts,
+    id = xtab$id,
+    data = xtab,
+    ties = "breslow",
+)
+cfit2 = coxph(
+    Surv(int, outt, d) ~ x + z1 + z2,
+    weights = xtab$wts,
+    id = xtab$id,
+    data = xtab,
+    ties = "efron",
+)
+coxcoefs_cr = coef(cfit);
+coxcoefs_cr2 = coef(cfit2);
+resids = residuals(cfit, type = "martingale");
+resids2 = residuals(cfit2, type = "martingale");
+"""
+    @rget coxcoefs_cr
+    coef(m)
+    @rget coxcoefs_cr2
+    coef(m2)
+    @rget resids
+    @rget resids2
+    jresids = martingale(m)
+    jresids2 = martingale(m2)
+
+    hcat(id, d, resids, jresids)
+    hcat(id, d, resids2, jresids2)
+    residdiff = (resids .- jresids)
+    residdiff2 = (resids2 .- jresids2)
+    hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(abs.(residdiff).>0.3),:]
+    hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(id .== 14),:]
+    hcat(id, int, outt, d, m.P._r, X, resids2, jresids2)[findall(abs.(residdiff2).>0.5),:]
+
 
 """
-function martingale(m::M) where {M<:PHModel}
-    N = Float64.(m.R.y .> 0.0)
-    resid = N .- expected(m)
+function resid_martingale(m::M) where {M<:PHModel}
+    # not giving expected answers
+    Nw = Float64.(m.R.y .> 0.0) .* m.R.wts
+    resid = Nw .- expected(m)
     resid
 end
 
+function resid_score(m:M) where {M<:PHModel} end
+
+#breslow expected
+# current issue: how to do this in a way that works for person-period and person level data
 function expected(m::M) where {M<:PHModel}
     B = coef(m)
     X = m.P.X
-    rr = exp.(X * B)
+    rr = m.P._r #exp.(X * B)
     id = values(m.R.id)
     uid = unique(id)
-    λ0 = m.bh[:,1]
-    bht = m.bh[:,4]          
-    dH = [λ0[findlast(bht .<= t)] for t in m.R.exit]
-    incr = rr .* dH
-    integrands = [cumsum(incr[findall(id .== ui)]) for ui in uid]
-    reduce(vcat, integrands)
+    λ0 = m.bh[:, 1]                                                  # baseline hazard
+    bht = m.bh[:, 4]  # m.R.eventtimes 
+    
+    whichbhindex = [findall((bht .<= m.R.exit[i] ) .&& (bht .> m.R.enter[i]  )) for i in eachindex(m.R.exit)]
+    E = [sum(rr[i] .* λ0[whichbhindex[i]]) for i in eachindex(whichbhindex)]
+    return E
 end
 
 ######################################################################
