@@ -417,3 +417,59 @@ hcat(
     m2.bh[2:end, 1],
 )
 
+
+
+
+####### dataset from the "validate" vignette from the survival package
+
+dat = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+
+res = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="efron", maxiter=0);
+res
+res.P._LL
+res.P._grad
+res.P._hess
+resid_martingale(res2)
+res = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="efron");
+res
+res.P._LL
+res.P._grad
+res.P._hess
+resid_martingale(res2)
+
+
+res2 = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="breslow", maxiter=0);
+res2
+res2.P._LL
+res2.P._grad
+res2.P._hess
+res2.bh
+resid_martingale(res2)
+
+
+res2 = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="breslow");
+res2
+res2.P._LL
+res2.P._grad
+res2.P._hess
+resid_martingale(res2)
+
+# compare with hand calculations
+r = exp(res2.P._B[1])
+1/(3r+3), 1/(3r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3) + 1
+res2.bh
+cumsum(res2.bh[:,1])
+
+
+@rput dat
+R"""
+library(survival)
+#df = data.frame(int=int, outt=outt, d=d, X=X)
+cfit = coxph(Surv(time,status) ~ x,data = dat,ties = "efron")
+#basehaz(cfit)
+#residuals(cfit, type="martingale")
+"""
