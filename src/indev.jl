@@ -27,7 +27,7 @@ function resid_score(X,M)
     xcols = [i for i in eachcol(X)]
     Nw = Float64.(m.R.y .> 0.0)
     if m.ties == "breslow"
-        dM = dexpected_NA(m)
+        dt, dM = dexpected_NA(m)
     elseif m.ties == "efron"
         dM = dexpected_FH(m)
     else
@@ -54,7 +54,7 @@ function dexpected_NA(m::M) where {M<:PHModel}
     ]
     dE = [(rr[i] .* dΛ0[whichbhindex[i]]) for i in eachindex(whichbhindex)]
     dt = [(bht[whichbhindex[i]]) for i in eachindex(whichbhindex)]
-    return dE
+    return dE, dt
 end
 
 
