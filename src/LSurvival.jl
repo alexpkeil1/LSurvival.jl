@@ -27,7 +27,8 @@ import StatsBase:
     nobs,
     PValue,
     stderror,
-    #residuals, predict, predict!,
+    residuals, 
+    #predict, predict!,
     response,
     score,
     vcov,
@@ -60,6 +61,7 @@ export kaplan_meier,        # interface for estimating cumulative risk from non-
     aalen_johansen,        # interface for estimating cumulative risk from non-parametric competing risk estimator
     coxph,                 # interface for Cox model
     risk_from_coxphmodels,  # interface for estimating cumulative risk from hazard specific Cox models
+    # deprecated
     coxmodel,            # (deprecated) interface for Cox model
     cox_summary,         # (deprecated) convenience function to summarize Cox model results
     ci_from_coxmodels    # (deprecated) interface for estimating cumulative risk from hazard specific Cox models
@@ -81,7 +83,8 @@ export bootstrap,
     response,
     score,
     stderror,
-    #residuals, predict, predict!,
+    residuals, 
+    #predict, predict!,
     vcov
 
 ####### Documentation #######
@@ -114,6 +117,7 @@ abstract type AbstractNPSurv end
 
 include("shared_structs.jl")
 include("coxmodel.jl")
+include("residuals.jl")
 include("npsurvival.jl")
 include("data_generators.jl")
 include("bootstrap.jl")

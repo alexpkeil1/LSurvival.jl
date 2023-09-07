@@ -198,4 +198,26 @@ using Random
 
     (cires2b)
 
+##### residuals
+dat3 = (
+    time = [1,1,2,2,2,2,3,4,5],
+    status = [1,0,1,1,1,0,0,1,0],
+    x = [2,0,1,1,0,1,0,1,0],
+    wt = [1,2,3,4,3,2,1,2,1]
+)
+
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0)
+res_est = residuals(ft, type="martingale")
+res_true = [1-1/19,0-1/19,1-(1/19+10/48+20/114+10/84),1-(1/19+10/48+20/114+10/84),1-(1/19+10/48+20/114+10/84),0-(1/19+10/48+10/38+10/28),0-(1/19+10/48+10/38+10/28),1-(1/19+10/48+10/38+10/28+2/3),0-(1/19+10/48+10/38+10/28+2/3)]
+
+@assert all(isapprox.(res_est, res_true))
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
+res_est = residuals(ft, type="martingale")
+res_true = [0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,-0.69808]
+
+@assert all(isapprox.(res_est, res_true, atol=0.00001))
+
+
 end

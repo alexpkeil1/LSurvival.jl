@@ -5,110 +5,108 @@
 using LSurvival, Random, Optim, BenchmarkTools
 
 ######################################################################
-# residuals
+# residuals from fitted Cox models
 ######################################################################
+
+
+
 """
-using LSurvival, Random
-id, int, outt, dat = LSurvival.dgm(MersenneTwister(1212), 1000, 5);
-d = dat[:,4]
-x,z1,z2 = dat[:,1], dat[:,2], dat[:,3]
-
-ft1 = coxph(@formula(Surv(int, outt, d)~x+z1+z2), (int=int,outt=outt,d=d,x=x,z1=z1,z2=z2), id=ID.(id), keepx=true, keepy=true)
-ft1
-resid = martingale(ft1)
-sum(resid)
-extrema(resid)
-vid = values(ft1.R.id)
-lididx = [findlast(vid .== id.value) for id in unique(ft1.R.id)]
-
-
-sum(resid[lididx ])
-
-m = ft1
-
-using LSurvival, LinearAlgebra, RCall, Random, CSV
-
-id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
-data[:, 1] = round.(data[:, 1], digits = 3)
-d, X = data[:, 4], data[:, 1:3]
-wt = rand(length(d))
-#wt ./= (sum(wt) / length(wt))
-wt ./= wt
-xtab = (id=id, int=int, outt=outt, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3], wt=wt)
-CSV.write(expanduser("~/temp/test.csv"), xtab)
-
-
-#m = fit(PHModel, X, int, outt, d, wts = wt, id=ID.(id), ties = "breslow", keepx=true, keepy=true);
-m = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts = xtab.wt, id=ID.(xtab.id), ties = "breslow", keepx=true, keepy=true);
-m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts = xtab.wt, id=ID.(xtab.id), ties = "efron", keepx=true, keepy=true);
-
-    @rput xtab
-    R"""
-library(survival)
-head(xtab)
-#df = data.frame(int=int, outt=outt, d=d, X=X)
-cfit = coxph(
-    Surv(int, outt, d) ~ x + z1 + z2,
-    weights = xtab$wts,
-    id = xtab$id,
-    data = xtab,
-    ties = "breslow",
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
 )
-cfit2 = coxph(
-    Surv(int, outt, d) ~ x + z1 + z2,
-    weights = xtab$wts,
-    id = xtab$id,
-    data = xtab,
-    ties = "efron",
-)
-coxcoefs_cr = coef(cfit);
-coxcoefs_cr2 = coef(cfit2);
-resids = residuals(cfit, type = "martingale");
-resids2 = residuals(cfit2, type = "martingale");
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
+
+
+X = ft.P.X
+M = residuals(ft, type="martingale")
 """
-    @rget coxcoefs_cr
-    coef(m)
-    @rget coxcoefs_cr2
-    coef(m2)
-    @rget resids
-    @rget resids2
-    jresids = martingale(m)
-    jresids2 = martingale(m2)
+function resid_score(X,M)
+    throw("not implemented")
+    xcols = [i for i in eachcol(X)]
+    Nw = Float64.(m.R.y .> 0.0)
+    if m.ties == "breslow"
+        dM = dexpected_NA(m)
+    elseif m.ties == "efron"
+        dM = dexpected_FH(m)
+    else
+        throw("Ties method not recognized")
+    end
+    dM .*= -1
+    for i in eachindex(dM)
+        dM[i][end] += Nw[i]
+    end
+    dM
 
-    hcat(id, d, resids, jresids)
-    hcat(id, d, resids2, jresids2)
-    residdiff = (resids .- jresids)
-    residdiff2 = (resids2 .- jresids2)
-    hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(abs.(residdiff).>0.3),:]
-    hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(id .== 14),:]
-    hcat(id, int, outt, d, m.P._r, X, resids2, jresids2)[findall(abs.(residdiff2).>0.5),:]
-
-
-"""
-function resid_martingale(m::M) where {M<:PHModel}
-    # not giving expected answers
-    Nw = Float64.(m.R.y .> 0.0) .* m.R.wts
-    resid = Nw .- expected(m)
-    resid
 end
 
-function resid_score(m:M) where {M<:PHModel} end
 
-#breslow expected
-# current issue: how to do this in a way that works for person-period and person level data
-function expected(m::M) where {M<:PHModel}
-    B = coef(m)
-    X = m.P.X
-    rr = m.P._r #exp.(X * B)
-    id = values(m.R.id)
-    uid = unique(id)
-    λ0 = m.bh[:, 1]                                                  # baseline hazard
-    bht = m.bh[:, 4]  # m.R.eventtimes 
-    
-    whichbhindex = [findall((bht .<= m.R.exit[i] ) .&& (bht .> m.R.enter[i]  )) for i in eachindex(m.R.exit)]
-    E = [sum(rr[i] .* λ0[whichbhindex[i]]) for i in eachindex(whichbhindex)]
+function dexpected_NA(m::M) where {M<:PHModel}
+    # Nelson-Aalen-Breslow
+    rr = m.P._r                 
+    dΛ0 = m.bh[:, 1]
+    bht = m.bh[:, 4]
+    whichbhindex = [
+        findall((bht .<= m.R.exit[i]) .&& (bht .> m.R.enter[i])) for
+        i in eachindex(m.R.exit)
+    ]
+    dE = [(rr[i] .* dΛ0[whichbhindex[i]]) for i in eachindex(whichbhindex)]
+    return dE
+end
+
+
+dfunction expected_FH(m::M) where {M<:PHModel}
+    # Fleming-Harrington-Efron (Nonparametric estimation of the survival distribution in censored data, 1984)
+    rr = m.P._r
+    eventtimes = m.R.eventtimes
+    whichbhindex = [
+        findall((eventtimes .<= m.R.exit[i]) .&& (eventtimes .> m.R.enter[i])) for
+        i in eachindex(m.R.exit)
+    ]
+    whichbhcaseindex = [
+        findall(isapprox.(eventtimes, m.R.exit[i]) .&& (m.R.y[i] > 0)) for i in eachindex(m.R.exit)
+    ]
+    E0r, E0c = expected_efronbasehaz(m)
+    dE = [
+        (
+            rr[i] .* vcat(
+                E0r[setdiff(whichbhindex[i], whichbhcaseindex[i])],
+                E0c[whichbhcaseindex[i]],
+            ),
+        ) for i in eachindex(whichbhindex)
+    ]
     return E
 end
+
+function dexpected_efronbasehaz(m::M) where {M<:PHModel}
+    ne = length(m.R.eventtimes)
+    denr, denc, _sumwtriskset, _sumwtcase =
+        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
+    @inbounds @simd for j = 1:ne
+        _outj = m.R.eventtimes[j]
+        risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
+        caseidx =
+            findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
+        nties = length(caseidx)
+        effwts = LSurvival.efron_weights(nties)
+        denj = expected_denj(m.P._r, m.R.wts, caseidx, risksetidx, nties, j)
+        _sumwtriskset[j] = sum(m.R.wts[risksetidx])
+        _sumwtcase[j] = sum(m.R.wts[caseidx])
+        denr[j] = (denj) # correct
+        denc[j] = (denj .* (1.0 .- effwts))
+    end
+    denr, denc
+end
+
+
+
+function resid_schoenfeld(m:M) where {M<:PHModel}
+    throw("not implemented")
+end
+
+
+
 
 ######################################################################
 # fitting with optim

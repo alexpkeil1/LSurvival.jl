@@ -418,58 +418,109 @@ hcat(
 )
 
 
+###################################################################
+# checking residuals against R
+###################################################################
 
 
-####### dataset from the "validate" vignette from the survival package
 
-dat = (
-    time = [1,1,6,6,8,9],
-    status = [1,0,1,1,0,1],
-    x = [1,1,1,0,0,0]
+####### dataset and 3 (weighted) from the "validate" vignette from the survival package
+
+dat3 = (
+    time = [1,1,2,2,2,2,3,4,5],
+    status = [1,0,1,1,1,0,0,1,0],
+    x = [2,0,1,1,0,1,0,1,0],
+    wt = [1,2,3,4,3,2,1,2,1]
 )
 
-res = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="efron", maxiter=0);
-res
-res.P._LL
-res.P._grad
-res.P._hess
-resid_martingale(res2)
-res = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="efron");
-res
-res.P._LL
-res.P._grad
-res.P._hess
-resid_martingale(res2)
 
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
+resid_martingale(ft)
 
-res2 = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="breslow", maxiter=0);
-res2
-res2.P._LL
-res2.P._grad
-res2.P._hess
-res2.bh
-resid_martingale(res2)
-
-
-res2 = coxph(@formula(Surv(time,status)~x),dat, keepx=true, keepy=true, ties="breslow");
-res2
-res2.P._LL
-res2.P._grad
-res2.P._hess
-resid_martingale(res2)
-
-# compare with hand calculations
-r = exp(res2.P._B[1])
-1/(3r+3), 1/(3r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3) + 1
-res2.bh
-cumsum(res2.bh[:,1])
-
-
-@rput dat
+@rput dat3
 R"""
 library(survival)
 #df = data.frame(int=int, outt=outt, d=d, X=X)
-cfit = coxph(Surv(time,status) ~ x,data = dat,ties = "efron")
-#basehaz(cfit)
-#residuals(cfit, type="martingale")
+cfit = coxph(Surv(time,status) ~ x,data = dat3,ties = "efron", iter = 0)
+bh = basehaz(cfit)
+mresid = residuals(cfit, type="martingale")
 """
+ft = coxph(@formula(Surv(time,status)~x),dat3, keepx=true, keepy=true, ties="efron", maxiter=0)
+resid_martingale(ft)
+@rget mresid
+
+using LSurvival, Random
+id, int, outt, dat = LSurvival.dgm(MersenneTwister(1212), 1000, 5);
+d = dat[:,4]
+x,z1,z2 = dat[:,1], dat[:,2], dat[:,3]
+
+ft1 = coxph(@formula(Surv(int, outt, d)~x+z1+z2), (int=int,outt=outt,d=d,x=x,z1=z1,z2=z2), id=ID.(id), keepx=true, keepy=true)
+ft1
+resid = martingale(ft1)
+sum(resid)
+extrema(resid)
+vid = values(ft1.R.id)
+lididx = [findlast(vid .== id.value) for id in unique(ft1.R.id)]
+
+
+sum(resid[lididx ])
+
+m = ft1
+
+using LSurvival, LinearAlgebra, RCall, Random, CSV
+
+id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+#wt ./= (sum(wt) / length(wt))
+wt ./= wt
+xtab = (id=id, int=int, outt=outt, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3], wt=wt)
+CSV.write(expanduser("~/temp/test.csv"), xtab)
+
+
+#m = fit(PHModel, X, int, outt, d, wts = wt, id=ID.(id), ties = "breslow", keepx=true, keepy=true);
+m = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts = xtab.wt, id=ID.(xtab.id), ties = "breslow", keepx=true, keepy=true);
+m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts = xtab.wt, id=ID.(xtab.id), ties = "efron", keepx=true, keepy=true);
+
+@rput xtab
+R"""
+library(survival)
+head(xtab)
+#df = data.frame(int=int, outt=outt, d=d, X=X)
+cfit = coxph(
+    Surv(int, outt, d) ~ x + z1 + z2,
+    weights = xtab$wts,
+    id = xtab$id,
+    data = xtab,
+    ties = "breslow")
+cfit2 = coxph(
+    Surv(int, outt, d) ~ x + z1 + z2,
+    weights = xtab$wts,
+    id = xtab$id,
+    data = xtab,
+    ties = "efron")
+coxcoefs_cr = coef(cfit);
+coxcoefs_cr2 = coef(cfit2);
+resids = residuals(cfit, type = "martingale");
+resids2 = residuals(cfit2, type = "martingale");
+"""
+@rget coxcoefs_cr
+coef(m)
+@rget coxcoefs_cr2
+coef(m2)
+@rget resids
+@rget resids2
+jresids = resid_martingale(m)
+jresids2 = resid_martingale(m2)
+
+hcat(id, d, resids, jresids)
+hcat(id, d, resids2, jresids2)
+residdiff = (resids .- jresids)
+residdiff2 = (resids2 .- jresids2)
+hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(abs.(residdiff).>0.3),:]
+hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(id .== 14),:]
+hcat(id, int, outt, d, m.P._r, X, resids2, jresids2)[findall(abs.(residdiff2).>0.5),:]
+
+    

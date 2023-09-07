@@ -899,7 +899,17 @@ DOC_BOOTSTRAP_AJSURV ="""
 ```
 """
 
+DOC_RESIDUALS = """
+StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
 
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
+residuals(ft, type="martingale")
+"""
 
 ######## DEPRECATED FUNCTIONS ###############
 
