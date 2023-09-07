@@ -230,7 +230,7 @@ Parameters
 
  # Example
 
-```julia
+```@example
  using LSurvival
  using Random
  import LSurvival: _stepcox!, dgm_comprisk
@@ -478,7 +478,7 @@ DOC_FIT_ABSTRACPH ="""
 """
 
 DOC_FIT_KMSURV ="""
- fit for KMSurv objects
+ Fit methods for KMSurv objects
 
   Signatures
 
@@ -515,7 +515,8 @@ DOC_FIT_AJSURV ="""
  
   aalen_johansen(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
     ; <keyword arguments>)
- ```
+ 
+```
  
 
 ```@example
@@ -645,7 +646,7 @@ Updates over all observations
 """
 
 DOC_FIT_PHSURV ="""
-Survival curve estimation using multiple cox models (sometimes referred to as a multi-state model)
+Survival curve estimation using multiple cox models
 
 
 ## Function Signatures
@@ -659,8 +660,8 @@ fit(::Type{M}, fitlist::Vector{<:T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
 ```
 
 ## Optional keywords
-- coef_vectors = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]
-- pred_profile = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
+- `coef_vectors` = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]
+- `pred_profile` = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
 
 ```@example
  using LSurvival
@@ -900,15 +901,37 @@ DOC_BOOTSTRAP_AJSURV ="""
 """
 
 DOC_RESIDUALS = """
+```julia
 StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
+```
+
+```@example
+# example from https://cran.r-project.org/web/packages/survival/vignettes/validate.pdf
+# by Terry Therneau
 
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
     x = [1,1,1,0,0,0]
 )
-ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
+
+# Nelson-Aalen type estimator for Breslow partial likelihood
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
 residuals(ft, type="martingale")
+```
+
+```@example
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+
+# Fleming-Harrington type estimator for Efron partial likelihood
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efron")
+residuals(ft, type="martingale")
+
+```
 """
 
 ######## DEPRECATED FUNCTIONS ###############

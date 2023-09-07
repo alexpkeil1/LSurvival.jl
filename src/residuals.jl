@@ -17,6 +17,7 @@ end
 
 """
 ######################################################################
+```julia
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -88,7 +89,7 @@ resid_martingale(ft)
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
 resid_martingale(ft)
 [0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,-0.69808]
-
+```
 """
 function resid_martingale(m::M) where {M<:PHModel}
     Nw = Float64.(m.R.y .> 0.0)

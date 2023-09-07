@@ -37,7 +37,8 @@ function resid_score(X,M)
     for i in eachindex(dM)
         dM[i][end] += Nw[i]
     end
-    dM
+    for xc in xcols
+    xc dM
 
 end
 
@@ -52,52 +53,10 @@ function dexpected_NA(m::M) where {M<:PHModel}
         i in eachindex(m.R.exit)
     ]
     dE = [(rr[i] .* dΛ0[whichbhindex[i]]) for i in eachindex(whichbhindex)]
+    dt = [(bht[whichbhindex[i]]) for i in eachindex(whichbhindex)]
     return dE
 end
 
-
-dfunction expected_FH(m::M) where {M<:PHModel}
-    # Fleming-Harrington-Efron (Nonparametric estimation of the survival distribution in censored data, 1984)
-    rr = m.P._r
-    eventtimes = m.R.eventtimes
-    whichbhindex = [
-        findall((eventtimes .<= m.R.exit[i]) .&& (eventtimes .> m.R.enter[i])) for
-        i in eachindex(m.R.exit)
-    ]
-    whichbhcaseindex = [
-        findall(isapprox.(eventtimes, m.R.exit[i]) .&& (m.R.y[i] > 0)) for i in eachindex(m.R.exit)
-    ]
-    E0r, E0c = expected_efronbasehaz(m)
-    dE = [
-        (
-            rr[i] .* vcat(
-                E0r[setdiff(whichbhindex[i], whichbhcaseindex[i])],
-                E0c[whichbhcaseindex[i]],
-            ),
-        ) for i in eachindex(whichbhindex)
-    ]
-    return E
-end
-
-function dexpected_efronbasehaz(m::M) where {M<:PHModel}
-    ne = length(m.R.eventtimes)
-    denr, denc, _sumwtriskset, _sumwtcase =
-        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
-    @inbounds @simd for j = 1:ne
-        _outj = m.R.eventtimes[j]
-        risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
-        caseidx =
-            findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
-        nties = length(caseidx)
-        effwts = LSurvival.efron_weights(nties)
-        denj = expected_denj(m.P._r, m.R.wts, caseidx, risksetidx, nties, j)
-        _sumwtriskset[j] = sum(m.R.wts[risksetidx])
-        _sumwtcase[j] = sum(m.R.wts[caseidx])
-        denr[j] = (denj) # correct
-        denc[j] = (denj .* (1.0 .- effwts))
-    end
-    denr, denc
-end
 
 
 
