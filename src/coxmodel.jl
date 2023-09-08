@@ -65,7 +65,7 @@ mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
     ties::String
     fit::Bool
     bh::Matrix{Float64}
-    RL::Union{Nothing,Matrix{Float64}}        # residual matrix    
+    RL::Union{Nothing,Vector{Matrix{Float64}}}        # residual matrix    
 end
 
 """

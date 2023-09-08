@@ -203,9 +203,12 @@ truthmat
 
 """
 function resid_Lmat(m::M) where {M<:PHModel}
-    if !isnothing(m.RL) return m.RL
-    nxcols = size(m.P.X, 2)
-    nobs = length(m.R.y)
+    if !isnothing(m.RL) 
+        return m.RL
+    end
+    X = m.P.X
+    nxcols = size(X, 2)
+    nobs = size(X, 1)
     ntimes = length(m.R.eventtimes)
     Nw = Float64.(m.R.y .> 0.0)
     maxties = maximum(m.bh[:, 3])
