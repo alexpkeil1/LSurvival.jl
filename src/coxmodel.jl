@@ -65,6 +65,7 @@ mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
     ties::String
     fit::Bool
     bh::Matrix{Float64}
+    RL::Union{Nothing,Matrix{Float64}}        # residual matrix    
 end
 
 """
@@ -76,13 +77,14 @@ function PHModel(
     formula::Union{FormulaTerm,Nothing},
     ties::String,
     fit::Bool,
+    bh::Matrix{Float64}
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     tl = ["efron", "breslow"]
     if !issubset([ties], tl)
         jtl = join(tl, ", ")
         throw("`ties` must be one of: $jtl")
     end
-    return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 4))
+    return PHModel(R, P, formula, ties, fit, bh, nothing)
 end
 
 """
@@ -93,6 +95,19 @@ function PHModel(
     P::L,
     formula::Union{FormulaTerm,Nothing},
     ties::String,
+    fit::Bool
+) where {G<:LSurvResp,L<:AbstractLSurvParms}
+    return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 4))
+end
+
+"""
+$DOC_PHMODEL 
+"""
+function PHModel(
+    R::Union{Nothing,G},
+    P::L,
+    formula::Union{FormulaTerm,Nothing},
+    ties::String
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, formula, ties, false)
 end
@@ -103,7 +118,7 @@ $DOC_PHMODEL
 function PHModel(
     R::Union{Nothing,G},
     P::L,
-    ties::String,
+    ties::String
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, nothing, ties, false)
 end
@@ -114,7 +129,7 @@ $DOC_PHMODEL
 function PHModel(
     R::Union{Nothing,G},
     P::L,
-    formula::Union{FormulaTerm,Nothing},
+    formula::Union{FormulaTerm,Nothing}
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, formula, "efron", false)
 end

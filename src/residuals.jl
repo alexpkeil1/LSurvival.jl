@@ -9,10 +9,15 @@ function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
     whichmethod = findall(valid_methods .== lowercase(type))
     thismethod = valid_methods[whichmethod][1]
     if thismethod == "martingale"
-        return resid_martingale(m)
+        resid = resid_martingale(m)
+    elseif thismethod == "score"
+        resid = resid_score(m)
+    elseif thismethod == "schoenfeld"
+        resid = resid_schoenfeld(m)
     else
         throw("Method $type not supported yet")
     end
+    return resid
 end
 
 """
@@ -105,7 +110,7 @@ end
 
 function expected_NA(m::M) where {M<:PHModel}
     # Nelson-Aalen-Breslow
-    rr = m.P._r                 
+    rr = m.P._r
     dΛ0 = m.bh[:, 1]
     bht = m.bh[:, 4]
     whichbhindex = [
@@ -125,7 +130,8 @@ function expected_FH(m::M) where {M<:PHModel}
         i in eachindex(m.R.exit)
     ]
     whichbhcaseindex = [
-        findall(isapprox.(eventtimes, m.R.exit[i]) .&& (m.R.y[i] > 0)) for i in eachindex(m.R.exit)
+        findall(isapprox.(eventtimes, m.R.exit[i]) .&& (m.R.y[i] > 0)) for
+        i in eachindex(m.R.exit)
     ]
     E0r, E0c = expected_efronbasehaz(m)
     E = [
@@ -150,7 +156,7 @@ function expected_efronbasehaz(m::M) where {M<:PHModel}
         caseidx =
             findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
         nties = length(caseidx)
-        effwts = LSurvival.efron_weights(nties)
+        effwts = efron_weights(nties)
         denj = expected_denj(m.P._r, m.R.wts, caseidx, risksetidx, nties, j)
         _sumwtriskset[j] = sum(m.R.wts[risksetidx])
         _sumwtcase[j] = sum(m.R.wts[caseidx])
@@ -162,7 +168,7 @@ end
 
 
 function expected_denj(_r, wts, caseidx, risksetidx, nties, j)
-    # expected value for residual for all failures at a given time 
+    # expected value denominator for all observations at a given time 
     _rcases = view(_r, caseidx)
     _rriskset = view(_r, risksetidx)
     _wtcases = view(wts, caseidx)
@@ -170,7 +176,7 @@ function expected_denj(_r, wts, caseidx, risksetidx, nties, j)
     #
     risksetrisk = sum(_wtriskset .* _rriskset)
     #
-    effwts = LSurvival.efron_weights(nties)
+    effwts = efron_weights(nties)
     sw = sum(_wtcases)
     aw = sw / nties
     casesrisk = sum(_wtcases .* _rcases)

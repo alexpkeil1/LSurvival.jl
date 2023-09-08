@@ -116,15 +116,15 @@ DOC_LSURVCOMPRESP ="""
 Outcome type for competing risk survival outcomes subject to left truncation and right censoring (not generally needed for users)
 
 Parameters
-- `enter`: Time at observation start
-- `exit`: Time at observation end
-- `y`: event occurrence in observation
-- `wts`: observation weights
-- `eventtimes`: unique event times
-- `origin`: origin on the time scale
-- `id`: person level identifier (must be wrapped in ID() function)
-- `eventtypes`: vector of unique event types
-- `eventmatrix`: matrix of indicators on the observation level
+- `enter` Time at observation start
+- `exit` Time at observation end
+- `y` event occurrence in observation
+- `wts` observation weights
+- `eventtimes` unique event times
+- `origin` origin on the time scale
+- `id` person level identifier (must be wrapped in ID() function)
+- `eventtypes` vector of unique event types
+- `eventmatrix` matrix of indicators on the observation level
 
 # Signatures:
 
@@ -200,11 +200,11 @@ DOC_PHMODEL ="""
  PHModel: Mutable object type for proportional hazards regression (not generally needed for users)
 
 Parameters
-- `R`: Survival response
-- `P`:        # parameters
-- `ties`, String: "efron" or "breslow"
-- `fit`, Bool: logical for whether the model has been fitted
-- `bh`, AbstractMatrix: baseline hazard estimates
+- `R` Survival response
+- `P`        # parameters
+- `ties` String: "efron" or "breslow"
+- `fit` Bool: logical for whether the model has been fitted
+- `bh` AbstractMatrix: baseline hazard estimates
 
 # Signatures
 
@@ -321,6 +321,8 @@ Alias for`fit(PHModel, ..., <keyword arguments>)`.
 
 Signatures
 
+## using matrix/vector interface
+
 ```julia
  coxph(X::AbstractMatrix, enter::AbstractVector, exit::AbstractVector, y::AbstractVector; <keyword arguments>)
  coxph(X::AbstractMatrix, exit::AbstractVector, y::AbstractVector; <keyword arguments>) # enter assumed to be 0
@@ -333,8 +335,12 @@ Signatures
  - `y`: event occurrence in observation
  
  Keyword parameters
- - ties: method for ties ("efron" or "breslow")
+ - `ties` method for ties ("efron" or "breslow")
+ - `wts` vector of observation weights
  
+
+ ## using StatsAPI `@formula` interface
+
 ```julia
  coxph(f::Formula, dat; <keyword arguments>)
 ```
@@ -343,8 +349,9 @@ Signatures
  - `dat`: a Tables.jl compatible table
 
  Keyword parameters
- - contrasts: an optional Dict used to process the columns in `dat` (CF: See the contrasts argument in GLM.glm)
- - ties: method for ties ("efron" or "breslow")
+ - `ties` method for ties ("efron" or "breslow")
+ - `wts` vector of observation weights
+ - `contrasts` an optional Dict used to process the columns in `dat` (CF: See the contrasts argument in GLM.glm)
 
 # Example
 

@@ -1,7 +1,7 @@
 # LSurvival
 
 [![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
-[![Main](https://img.shields.io/badge/docs-main-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/stable/)
+[![Main](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/dev/)
 
 These are some survival analysis functions that I was hoping to find in Julia and never did. Interface with StatsModels is developing. I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
@@ -140,3 +140,9 @@ LSurvCompResp(enter, t, event)
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
 LSurvResp(int, outt, data[:, 4], ID.(id))
 ```
+
+More documentation can be found here: [stable version](https://alexpkeil1.github.io/LSurvival.jl/stable/), [developmental version](https://alexpkeil1.github.io/LSurvival.jl/dev/)
+
+## Note about correctness
+
+Where possible, results from this package have been validated by comparing results with the `survival` package in `R`, by Terry Therneau. Validation, in this case, requires some choices that may result in differences from the `PHREG` procedure in `SAS` or other software packages for Cox models due to differing approaches to, for example, weighting in the case of ties or the calculation of Martingale residuals under Efron's partial likelihood. See the `survival` package [vignette](https://cran.r-project.org/web/packages/survival/vignettes/validate.pdf) for some details that form the basis of module testing against answers that can be confirmed via laborious hand calculations.

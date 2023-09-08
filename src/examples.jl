@@ -524,3 +524,16 @@ hcat(id, int, outt, d, m.P._r, X, resids, jresids)[findall(id .== 14),:]
 hcat(id, int, outt, d, m.P._r, X, resids2, jresids2)[findall(abs.(residdiff2).>0.5),:]
 
     
+
+dat1 = (id=collect(1:6), dat1...)
+
+@rput dat1
+R"""
+library(survival)
+cfit = coxph(
+    Surv(time, status) ~ x + cluster(id),
+    data = dat1,
+    ties = "breslow")
+summary(cfit)
+rv = vcov(cfit)
+"""
