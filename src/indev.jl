@@ -1,12 +1,11 @@
 # to implement
-# - robust standard error estimate for Cox model
-# - using formulas
 
 # currently working here:
-# Breslow: score, schoenfeld residuals
+# Breslow: score, schoenfeld residuals, robust standard error estimate for Cox model
+# Efron: score, schoenfeld residuals, robust standard error estimate for Cox model
 
 # currently NOT working here:
-# Efron: score, schoenfeld residuals
+# Weighted Efron: score, schoenfeld residuals
 
 
 using LSurvival, Random, Optim, BenchmarkTools
@@ -348,7 +347,7 @@ ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=tr
 resid_score(ft)
 
 
-ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0)
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0);
 resid_score(ft)
 resid_Lmat(ft)
 

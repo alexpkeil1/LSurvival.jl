@@ -676,8 +676,9 @@ function basehaz!(m::M) where {M<:PHModel}
     ne = length(m.R.eventtimes)
     risksetidxs, caseidxs =
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
+    #    
     den, _sumwtriskset, _sumwtcase, _sumuwtriskset, _sumuwtcase =
-        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
+        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
         risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
