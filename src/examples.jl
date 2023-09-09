@@ -551,6 +551,6 @@ cfit = coxph(
     Surv(time, status) ~ x,
     data = dat3,
     weights=wt,
-    ties = "breslow")
+    ties = "efron")
 resid(cfit, type="score")
 """

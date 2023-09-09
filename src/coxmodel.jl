@@ -77,7 +77,7 @@ function PHModel(
     formula::Union{FormulaTerm,Nothing},
     ties::String,
     fit::Bool,
-    bh::Matrix{Float64}
+    bh::Matrix{Float64},
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     tl = ["efron", "breslow"]
     if !issubset([ties], tl)
@@ -95,7 +95,7 @@ function PHModel(
     P::L,
     formula::Union{FormulaTerm,Nothing},
     ties::String,
-    fit::Bool
+    fit::Bool,
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 6))
 end
@@ -107,7 +107,7 @@ function PHModel(
     R::Union{Nothing,G},
     P::L,
     formula::Union{FormulaTerm,Nothing},
-    ties::String
+    ties::String,
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, formula, ties, false)
 end
@@ -118,7 +118,7 @@ $DOC_PHMODEL
 function PHModel(
     R::Union{Nothing,G},
     P::L,
-    ties::String
+    ties::String,
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, nothing, ties, false)
 end
@@ -129,7 +129,7 @@ $DOC_PHMODEL
 function PHModel(
     R::Union{Nothing,G},
     P::L,
-    formula::Union{FormulaTerm,Nothing}
+    formula::Union{FormulaTerm,Nothing},
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
     return PHModel(R, P, formula, "efron", false)
 end
@@ -677,8 +677,11 @@ function basehaz!(m::M) where {M<:PHModel}
     risksetidxs, caseidxs =
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
     #    
-    den, _sumwtriskset, _sumwtcase, _sumuwtriskset, _sumuwtcase =
-        zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
+    den, _sumwtriskset, _sumwtcase, _sumuwtriskset, _sumuwtcase = zeros(Float64, ne),
+    zeros(Float64, ne),
+    zeros(Float64, ne),
+    zeros(Float64, ne),
+    zeros(Float64, ne)
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
         risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
@@ -689,12 +692,14 @@ function basehaz!(m::M) where {M<:PHModel}
         _sumwtriskset[j] = sum(m.R.wts[risksetidx])
         _sumwtcase[j] = sum(m.R.wts[caseidx])
         _sumuwtriskset[j] = length(risksetidx)
-        _sumuwtcase[j] = sum(caseidx)
+        _sumuwtcase[j] = length(caseidx)
     end
     if m.ties == "breslow"
-        m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
+        m.bh =
+            [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
     elseif m.ties == "efron"
-        m.bh = [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
+        m.bh =
+            [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
     end
 end
 
@@ -705,7 +710,7 @@ function denj!(den, _r, wts, method, caseidx, risksetidx, nties, j)
     _wtriskset = view(wts, risksetidx)
     deni = sum(_wtriskset .* _rriskset)
     if method == "breslow"
-        den[j] = deni 
+        den[j] = deni
     elseif method == "efron"
         effwts = efron_weights(nties)
         sw = sum(_wtcases)
@@ -726,7 +731,7 @@ function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing) where {M<:P
     hr = ones(Float64, length(m.eventtypes))
     ch::Float64 = 0.0
     lsurv::Float64 = 1.0
-    if(isnothing(coef_vectors))
+    if (isnothing(coef_vectors))
         coef_vectors = [coef(fit) for fit in m.fitlist]
     end
     if (!isnothing(coef_vectors) && !isnothing(pred_profile))

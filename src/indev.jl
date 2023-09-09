@@ -165,8 +165,8 @@ resid_dfbeta(ft)
 function resid_dfbeta(m::M) where {M<:PHModel}
     @warn "Check the sign of these against R"
     L = resid_score(ft)
-    H = ft.P._hess 
-    dfbeta = L*inv(H)
+    H = ft.P._hess
+    dfbeta = L * inv(H)
     return dfbeta
 end
 
@@ -184,7 +184,7 @@ robust_vcov(ft)
 """
 function robust_vcov(m::M) where {M<:PHModel}
     dfbeta = resid_dfbeta(ft)
-    robVar = dfbeta'dfbeta 
+    robVar = dfbeta'dfbeta
     return robVar
 end
 
@@ -347,18 +347,21 @@ ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=tr
 resid_score(ft)
 
 
-ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0);
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0)
 resid_score(ft)
-resid_Lmat(ft)
+L = resid_Lmat(ft)[1]
 
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron")
+resid_score(ft)
+L = resid_Lmat(ft)[1]
 
 
 """
 function resid_Lmat(m::M) where {M<:PHModel}
-    if !isnothing(m.RL) 
+    if !isnothing(m.RL)
         return m.RL
     end
-    maxties = maximum(m.bh[:,3])
+    maxties = maximum(m.bh[:, 3])
     if (m.ties == "breslow") || (maxties <= 1.0) && (m.ties == "efron")
         L = resid_Lmat_breslow(m)
     elseif m.ties == "efron"
@@ -392,7 +395,7 @@ function resid_Lmat_breslow(m::M) where {M<:PHModel}
         end
     end
     m.RL = L
-    L 
+    L
 end
 
 function resid_Lmat_efron(m::M) where {M<:PHModel}
@@ -402,15 +405,18 @@ function resid_Lmat_efron(m::M) where {M<:PHModel}
     exit = m.R.exit
     nxcols = size(X, 2)
     nobs = size(X, 1)
-    ties = m.bh[:, 3]
+    ties = m.bh[:, 6]
     times = m.R.eventtimes
     ntimes = length(times)
     Nw = Float64.(y .> 0.0)
-    tiedis = [ties[findall((m.R.exit[yi] .== times) .&& (Nw[yi] .> 0))] for yi in eachindex(m.R.exit)]
-    tiesi = [length(t)>0 ? t[1] : 1.0 for t in tiedis]
+    tiedis = [
+        ties[findall((m.R.exit[yi] .== times) .&& (Nw[yi] .> 0))] for
+        yi in eachindex(m.R.exit)
+    ]
+    tiesi = [length(t) > 0 ? t[1] : 1.0 for t in tiedis]
     maxties = maximum(ties)
     #
-     
+
     dMt, dt, di = dexpected_FH(m)
     muXt = muX_tE(m, di)
 
@@ -422,22 +428,22 @@ function resid_Lmat_efron(m::M) where {M<:PHModel}
     for j = 1:nxcols
         for i = 1:nobs
             for d in di[i]  # time index of all times
-              if (exit[i] == times[d]) && (y[i] > 0)
-                div = ties[d]
-                ew = LSurvival.efron_weights(div)
-              else
-                div = 1.0
-                ew= 0.0
-              end
-              dmidx = findall(di[i] .== d) # map from individual times to all times
-              pr = (X[i, j] .- muXt[j][d]) .* (reduce(vcat, dMt[i][dmidx]))
-              #pr = (X[i, j] .- sum(muXt[j][d])./ div) .+ sum((X[i, j] .- muXt[j][d]) .* dMt[i][d] .* (1 .- ew))
-              L[j][i, d] = sum(pr)
+                if (exit[i] == times[d]) && (y[i] > 0)
+                    div = ties[d]
+                    ew = LSurvival.efron_weights(div)
+                else
+                    div = 1.0
+                    ew = 0.0
+                end
+                dmidx = findall(di[i] .== d) # map from individual times to all times
+                pr = (X[i, j] .- muXt[j][d]) .* (reduce(vcat, dMt[i][dmidx]))
+                #pr = (X[i, j] .- sum(muXt[j][d])./ div) .+ sum((X[i, j] .- muXt[j][d]) .* dMt[i][d] .* (1 .- ew))
+                L[j][i, d] = sum(pr)
             end
         end
     end
     m.RL = L
-    L 
+    L
 end
 
 # goal: -0.452075
@@ -491,10 +497,10 @@ function muX_tE(m::M, whichbhindex) where {M<:PHModel}
     bht = m.R.eventtimes
     wts = m.R.wts
     r = m.P._r
-    nties = m.bh[:, 3]
+    nties = m.bh[:, 6]
     # which event times is each observation at risk?
     nxcols = size(X, 2)
-    
+
     muXE = fill([zeros(Int(j)) for j in nties], nxcols)
     nX = fill([zeros(Int(j)) for j in nties], nxcols)
     for j = 1:nxcols
@@ -513,11 +519,11 @@ function muX_tE(m::M, whichbhindex) where {M<:PHModel}
                     muXE[j][whichbhindex[i][t]] .+= (1 .- ew) .* X[i, j] * wts[i] * r[i]
                     nX[j][whichbhindex[i][t]] .+= (1 .- ew) .* wts[i] * r[i]
                 else
-                    muXE[j][whichbhindex[i][t]] .+=  X[i, j] * wts[i] * r[i]
-                    nX[j][whichbhindex[i][t]] .+=  wts[i] * r[i]
+                    muXE[j][whichbhindex[i][t]] .+= X[i, j] * wts[i] * r[i]
+                    nX[j][whichbhindex[i][t]] .+= wts[i] * r[i]
                 end
             end
-    end
+        end
     end
     for j = 1:nxcols
         for v in eachindex(muXE[j])
@@ -580,13 +586,13 @@ function dexpected_FH(m::M) where {M<:PHModel}
         i in eachindex(m.R.exit)
     ]
     dER, dE0 = dexpected_efronbasehaz(m)
-    dE = [rr[i] .*  dER[whichbhindex[i]] for i in eachindex(whichbhindex)]
+    dE = [rr[i] .* dER[whichbhindex[i]] for i in eachindex(whichbhindex)]
     #dE = [ dER[whichbhindex[i]] for i in eachindex(whichbhindex)]
     for i in eachindex(whichbhindex)
-        if length(whichbhcaseindex[i])> 0
-        xix = findall(whichbhindex[i] .== whichbhcaseindex[i])
-        dE[i][xix] = rr[i] .*  dE0[whichbhcaseindex[i]]
-        #dE[i][xix] = dE0[whichbhcaseindex[i]]
+        if length(whichbhcaseindex[i]) > 0
+            xix = findall(whichbhindex[i] .== whichbhcaseindex[i])
+            dE[i][xix] = rr[i] .* dE0[whichbhcaseindex[i]]
+            #dE[i][xix] = dE0[whichbhcaseindex[i]]
         end
     end
     dt = [(eventtimes[whichbhindex[i]]) for i in eachindex(whichbhindex)]
@@ -598,9 +604,11 @@ end
 
 function dexpected_efronbasehaz(m::M) where {M<:PHModel}
     ne = length(m.R.eventtimes)
-    nties = m.bh[:,3]
-    denr, denc, _sumwtriskset, _sumwtcase =
-    [zeros(Int(j)) for j in nties], [zeros(Int(j)) for j in nties], zeros(Float64, ne), zeros(Float64, ne)
+    nties = m.bh[:, 6]
+    denr, denc, _sumwtriskset, _sumwtcase = [zeros(Int(j)) for j in nties],
+    [zeros(Int(j)) for j in nties],
+    zeros(Float64, ne),
+    zeros(Float64, ne)
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
         risksetidx = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
@@ -614,7 +622,7 @@ function dexpected_efronbasehaz(m::M) where {M<:PHModel}
         denr[j] .= denj # correct
         denc[j] .= (denj .* (1.0 .- effwts))
     end
-   denr, denc
+    denr, denc
 end
 
 #=
@@ -636,130 +644,136 @@ function expected_denj(_r, wts, caseidx, risksetidx, nties, j)
 end
 =#
 
+if false
+    ######################################################################
+    # fitting with optim (works, but more intensive than defaults)
+    ######################################################################
 
-######################################################################
-# fitting with optim
-######################################################################
-
-function fit!(
-    m::PHModel;
-    verbose::Bool = false,
-    maxiter::Integer = 500,
-    atol::Float64 = 0.0,
-    rtol::Float64 = 0.0,
-    gtol::Float64 = 1e-8,
-    start = nothing,
-    keepx = false,
-    keepy = false,
-    bootstrap_sample = false,
-    bootstrap_rng = MersenneTwister(),
-    kwargs...,
-)
-    m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
-    start = isnothing(start) ? zeros(length(m.P._B)) : start
-    if haskey(kwargs, :ties)
-        m.ties = kwargs[:ties]
-    end
-    ne = length(m.R.eventtimes)
-    risksetidxs, caseidxs =
-        Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
-    _sumwtriskset, _sumwtcase = zeros(Float64, ne), zeros(Float64, ne)
-    @inbounds @simd for j = 1:ne
-        _outj = m.R.eventtimes[j]
-        fr = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
-        fc = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
-        risksetidxs[j] = fr
-        caseidxs[j] = fc
-        _sumwtriskset[j] = sum(m.R.wts[fr])
-        _sumwtcase[j] = sum(m.R.wts[fc])
-    end
-    # cox risk and set to zero were both in step cox - return them?
-    # loop over event times
-    #LSurvival._coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
-    #LSurvival._settozero!(m.P)
-    #LSurvival._partial_LL!(m, risksetidxs, caseidxs, ne, den)
-
-    function coxupdate!(
-        F,
-        G,
-        H,
-        beta,
-        m;
-        ne = ne,
-        caseidxs = caseidxs,
-        risksetidxs = risksetidxs,
+    function fit!(
+        m::PHModel;
+        verbose::Bool = false,
+        maxiter::Integer = 500,
+        atol::Float64 = 0.0,
+        rtol::Float64 = 0.0,
+        gtol::Float64 = 1e-8,
+        start = nothing,
+        keepx = false,
+        keepy = false,
+        bootstrap_sample = false,
+        bootstrap_rng = MersenneTwister(),
+        kwargs...,
     )
-        m.P._LL[1] = isnothing(F) ? m.P._LL[1] : F
-        m.P._grad = isnothing(G) ? m.P._grad : G
-        m.P._hess = isnothing(H) ? m.P._hess : H
-        m.P._B = isnothing(beta) ? m.P._B : beta
-        #
-        LSurvival._update_PHParms!(m, ne, caseidxs, risksetidxs)
-        # turn into a minimization problem
-        F = -m.P._LL[1]
+        m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
+        start = isnothing(start) ? zeros(length(m.P._B)) : start
+        if haskey(kwargs, :ties)
+            m.ties = kwargs[:ties]
+        end
+        ne = length(m.R.eventtimes)
+        risksetidxs, caseidxs =
+            Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
+        _sumwtriskset, _sumwtcase = zeros(Float64, ne), zeros(Float64, ne)
+        @inbounds @simd for j = 1:ne
+            _outj = m.R.eventtimes[j]
+            fr = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
+            fc = findall(
+                (m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj),
+            )
+            risksetidxs[j] = fr
+            caseidxs[j] = fc
+            _sumwtriskset[j] = sum(m.R.wts[fr])
+            _sumwtcase[j] = sum(m.R.wts[fc])
+        end
+        # cox risk and set to zero were both in step cox - return them?
+        # loop over event times
+        #LSurvival._coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
+        #LSurvival._settozero!(m.P)
+        #LSurvival._partial_LL!(m, risksetidxs, caseidxs, ne, den)
+
+        function coxupdate!(
+            F,
+            G,
+            H,
+            beta,
+            m;
+            ne = ne,
+            caseidxs = caseidxs,
+            risksetidxs = risksetidxs,
+        )
+            m.P._LL[1] = isnothing(F) ? m.P._LL[1] : F
+            m.P._grad = isnothing(G) ? m.P._grad : G
+            m.P._hess = isnothing(H) ? m.P._hess : H
+            m.P._B = isnothing(beta) ? m.P._B : beta
+            #
+            LSurvival._update_PHParms!(m, ne, caseidxs, risksetidxs)
+            # turn into a minimization problem
+            F = -m.P._LL[1]
+            m.P._grad .*= -1.0
+            m.P._hess .*= -1.0
+            F
+        end
+
+        fgh! = TwiceDifferentiable(
+            Optim.only_fgh!((F, G, H, beta) -> coxupdate!(F, G, H, beta, m)),
+            start,
+        )
+        opt = NewtonTrustRegion()
+        #opt = IPNewton()
+        #opt = Newton()
+        res = optimize(
+            fgh!,
+            start,
+            opt,
+            Optim.Options(
+                f_abstol = atol,
+                f_reltol = rtol,
+                g_tol = gtol,
+                iterations = maxiter,
+                store_trace = true,
+            ),
+        )
+        verbose && println(res)
+
+        m.fit = true
         m.P._grad .*= -1.0
         m.P._hess .*= -1.0
-        F
+        m.P._LL = [-x.value for x in res.trace]
+        basehaz!(m)
+        m.P.X = keepx ? m.P.X : nothing
+        m.R = keepy ? m.R : nothing
+        m
     end
 
-    fgh! = TwiceDifferentiable(
-        Optim.only_fgh!((F, G, H, beta) -> coxupdate!(F, G, H, beta, m)),
-        start,
-    )
-    opt = NewtonTrustRegion()
-    #opt = IPNewton()
-    #opt = Newton()
-    res = optimize(
-        fgh!,
-        start,
-        opt,
-        Optim.Options(
-            f_abstol = atol,
-            f_reltol = rtol,
-            g_tol = gtol,
-            iterations = maxiter,
-            store_trace = true,
-        ),
-    )
-    verbose && println(res)
+end # if false
 
-    m.fit = true
-    m.P._grad .*= -1.0
-    m.P._hess .*= -1.0
-    m.P._LL = [-x.value for x in res.trace]
-    basehaz!(m)
-    m.P.X = keepx ? m.P.X : nothing
-    m.R = keepy ? m.R : nothing
-    m
+
+if false
+    id, int, outt, data =
+        LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0)
+    data[:, 1] = round.(data[:, 1], digits = 3)
+    d, X = data[:, 4], data[:, 1:3]
+
+
+    # not-yet-fit PH model object
+    #m = PHModel(R, P, "breslow")
+    #LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx=true, keepy=true)
+    #isfitted(m)
+    R = LSurvResp(int, outt, d)
+    P = PHParms(X)
+    m = PHModel(R, P)  #default is "efron" method for ties
+    @btime res = LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx = true, keepy = true)
+
+    R2 = LSurvResp(int, outt, d)
+    P2 = PHParms(X)
+    m2 = PHModel(R2, P2)  #default is "efron" method for ties
+    @btime res2 = fit!(m2, start = [0.0, 0.0, 0.0], keepx = true, keepy = true)
+
+    res
+    res2
+
+    argmax([res.P._LL[end], res2.P._LL[end]])
+
+    res.P._LL[end] - res2.P._LL[end]
+
+    # in progress functions
+    # taken from GLM.jl/src/linpred.jl
 end
-
-
-
-id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0);
-data[:, 1] = round.(data[:, 1], digits = 3);
-d, X = data[:, 4], data[:, 1:3];
-
-
-# not-yet-fit PH model object
-#m = PHModel(R, P, "breslow")
-#LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx=true, keepy=true)
-#isfitted(m)
-R = LSurvResp(int, outt, d)
-P = PHParms(X)
-m = PHModel(R, P);  #default is "efron" method for ties
-@btime res = LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx = true, keepy = true);
-
-R2 = LSurvResp(int, outt, d);
-P2 = PHParms(X);
-m2 = PHModel(R2, P2);  #default is "efron" method for ties
-@btime res2 = fit!(m2, start = [0.0, 0.0, 0.0], keepx = true, keepy = true);
-
-res
-res2
-
-argmax([res.P._LL[end], res2.P._LL[end]])
-
-res.P._LL[end] - res2.P._LL[end]
-
-# in progress functions
-# taken from GLM.jl/src/linpred.jl
