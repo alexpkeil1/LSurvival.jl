@@ -77,6 +77,14 @@ dat3 = (
     wt = [1,2,3,4,3,2,1,2,1]
 )
 
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
+LSurvival.resid_martingale(ft)
+[18/19,−1/19,49/152,49/152,49/152,−103/152,−103/152,−157/456,−613/456]
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
+resid_martingale(ft)
+[0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,-0.69808]
+
 
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0)
 resid_martingale(ft)
@@ -87,13 +95,6 @@ ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=tr
 resid_martingale(ft)
 [18/19,-1/19,473/1064,473/1064,473/1064,-0.881265664,-0.881265664,-0.547932331,-1.547932331]
 
-ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
-resid_martingale(ft)
-[18/19,−1/19,49/152,49/152,49/152,−103/152,−103/152,−157/456,−613/456]
-
-ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
-resid_martingale(ft)
-[0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,-0.69808]
 ```
 """
 function resid_martingale(m::M) where {M<:PHModel}

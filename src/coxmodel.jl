@@ -97,7 +97,7 @@ function PHModel(
     ties::String,
     fit::Bool
 ) where {G<:LSurvResp,L<:AbstractLSurvParms}
-    return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 4))
+    return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 6))
 end
 
 """
@@ -676,7 +676,7 @@ function basehaz!(m::M) where {M<:PHModel}
     ne = length(m.R.eventtimes)
     risksetidxs, caseidxs =
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
-    den, _sumwtriskset, _sumwtcase =
+    den, _sumwtriskset, _sumwtcase, _sumuwtriskset, _sumuwtcase =
         zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
@@ -687,11 +687,13 @@ function basehaz!(m::M) where {M<:PHModel}
         denj!(den, m.P._r, m.R.wts, m.ties, caseidx, risksetidx, nties, j)
         _sumwtriskset[j] = sum(m.R.wts[risksetidx])
         _sumwtcase[j] = sum(m.R.wts[caseidx])
+        _sumuwtriskset[j] = length(risksetidx)
+        _sumuwtcase[j] = sum(caseidx)
     end
     if m.ties == "breslow"
-        m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
+        m.bh = [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
     elseif m.ties == "efron"
-        m.bh = [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes]
+        m.bh = [1.0 ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
     end
 end
 
