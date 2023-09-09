@@ -538,12 +538,36 @@ resid(cfit, type="score")
 """
 
 
+dat2 = (
+    enter = [1,2,5,2,1,7,3,4,8,8],
+    exit = [2,3,6,7,8,9,9,9,14,17],
+    status = [1,1,1,1,1,1,1,0,0,0],
+    x = [1,0,0,1,0,1,1,1,0,0]
+)
+
+@rput dat2
+R"""
+library(survival)
+cfit = coxph(
+    Surv(enter, exit, status) ~ x,
+    data = dat2,
+    ties = "efron", 
+    iter = 0)
+basehaz(cfit)
+resid(cfit, type="score")
+"""
+
+ft = coxph(@formula(Surv(enter, exit,status)~x),dat2, keepx=true, keepy=true, ties="efron", maxiter=0)
+L = resid_score(ft)
+
+
 dat3 = (
     time = [1,1,2,2,2,2,3,4,5],
     status = [1,0,1,1,1,0,0,1,0],
     x = [2,0,1,1,0,1,0,1,0],
     wt = [1,2,3,4,3,2,1,2,1]
 )
+
 @rput dat3
 R"""
 library(survival)
@@ -552,5 +576,8 @@ cfit = coxph(
     data = dat3,
     weights=wt,
     ties = "efron")
-resid(cfit, type="score")
+res = resid(cfit, type="martingale")
 """
+@rget res
+
+hcat(res, resid_score(ft))

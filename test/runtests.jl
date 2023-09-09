@@ -61,7 +61,7 @@ using Random
     weights = rand(length(d))
 
     ft = coxph(X, int, outt, d)
-    ft.RL = ones(3,3)
+    ft.RL = [ones(3,3)]
     println(ft)
 
 
@@ -95,19 +95,19 @@ using Random
     print(R)
     R = LSurvResp(outt, d)         # specification if no late entry
     R = LSurvResp(int, outt, d)    # specification with  late entry
-    @assert all(R.wts .< 1.01)
+    @test all(R.wts .< 1.01)
     R = LSurvResp(int, outt, d, weights)    # specification with  weights and late entry (no specification with weights and no late entry)
-    @assert all(R.wts .== weights)
+    @test all(R.wts .== weights)
 
     # PH model predictors
     P = PHParms(X)
-    @assert all(size(P) .== size(X))
+    @test all(size(P) .== size(X))
 
     # not-yet-fit PH model object
     M = PHModel(R, P, "breslow")
-    @assert M.ties == "breslow"
+    @test M.ties == "breslow"
     M = PHModel(R, P)
-    @assert M.ties == "efron"
+    @test M.ties == "efron"
 
     #data = DataFrame(data, [:x,:z1,:z2,:y])
     # f = @formula(y~z1+z2+x)
@@ -214,13 +214,131 @@ ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=tr
 res_est = residuals(ft, type="martingale")
 res_true = [1-1/19,0-1/19,1-(1/19+10/48+20/114+10/84),1-(1/19+10/48+20/114+10/84),1-(1/19+10/48+20/114+10/84),0-(1/19+10/48+10/38+10/28),0-(1/19+10/48+10/38+10/28),1-(1/19+10/48+10/38+10/28+2/3),0-(1/19+10/48+10/38+10/28+2/3)]
 
-@assert all(isapprox.(res_est, res_true))
+@test all(isapprox.(res_est, res_true))
 
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
 res_est = residuals(ft, type="martingale")
 res_true = [0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,-0.69808]
 
-@assert all(isapprox.(res_est, res_true, atol=0.00001))
+@test all(isapprox.(res_est, res_true, atol=0.00001))
+
+
+dat3 = (
+    time = [1,1,2,2,2,2,3,4,5],
+    status = [1,0,1,1,1,0,0,1,0],
+    x = [2,0,1,1,0,1,0,1,0],
+    wt = [1,2,3,4,3,2,1,2,1]
+)
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
+dM, dt, di = LSurvival.dexpected_NA(ft);
+muX = LSurvival.muX_t(ft, di)
+truemuX = [13/19,11/16,2/3]
+
+@test all(isapprox.(muX, truemuX, atol=0.00001))
+
+
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
+resid = residuals(ft, type="martingale")
+r = exp(ft.P._B[1])
+truth = dat1.status .- [r/(3r+3), r/(3r+3), r/(3r+3) + 2r/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3) + 1]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
+resid = residuals(ft, type="martingale")
+r = exp(ft.P._B[1])
+truth = dat1.status .- [r/(3r+3), r/(3r+3), r/(3r+3) + 2r/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3), 1/(3r+3) + 2/(r+3) + 1]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efron", maxiter=0)
+resid = residuals(ft, type="martingale")
+r = exp(ft.P._B[1])
+truth = dat1.status .- [r/(3r+3), r/(3r+3), r/(3r+3) + r/(r+3) + r/(r+5), 1/(3r+3) + 1/(r+3) + 1/(r+5), 1/(3r+3) + 1/(r+3) + 2/(r+5), 1/(3r+3) + 1/(r+3) + 2/(r+5) + 1]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efron")
+resid = residuals(ft, type="martingale")
+r = exp(ft.P._B[1])
+truth = dat1.status .- [r/(3r+3), r/(3r+3), r/(3r+3) + r/(r+3) + r/(r+5), 1/(3r+3) + 1/(r+3) + 1/(r+5), 1/(3r+3) + 1/(r+3) + 2/(r+5), 1/(3r+3) + 1/(r+3) + 2/(r+5) + 1]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+
+######################################################################
+dat2 = (
+    enter = [1,2,5,2,1,7,3,4,8,8],
+    exit = [2,3,6,7,8,9,9,9,14,17],
+    status = [1,1,1,1,1,1,1,0,0,0],
+    x = [1,0,0,1,0,1,1,1,0,0]
+)
+
+ft = coxph(@formula(Surv(enter, exit,status)~x),dat2, keepx=true, keepy=true, ties="breslow")
+resid = residuals(ft, type="martingale")
+truth = [0.521119,0.657411,0.789777,0.247388,-0.606293,0.369025,-0.068766,-1.068766,-0.420447,-0.420447]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+
+######################################################################
+dat3 = (
+    time = [1,1,2,2,2,2,3,4,5],
+    status = [1,0,1,1,1,0,0,1,0],
+    x = [2,0,1,1,0,1,0,1,0],
+    wt = [1,2,3,4,3,2,1,2,1]
+)
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
+resid = residuals(ft, type="martingale")
+truth = [18/19,−1/19,49/152,49/152,49/152,−103/152,−103/152,−157/456,−613/456]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
+resid = residuals(ft, type="martingale")
+truth = [0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,-0.69808]
+@test all(isapprox.(resid, truth, atol=0.00001))
+
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0)
+resid = residuals(ft, type="martingale")
+truth = [1-1/19,0-1/19,1-(1/19+10/48+20/114+10/84),1-(1/19+10/48+20/114+10/84),1-(1/19+10/48+20/114+10/84),0-(1/19+10/48+10/38+10/28),0-(1/19+10/48+10/38+10/28),1-(1/19+10/48+10/38+10/28+2/3),0-(1/19+10/48+10/38+10/28+2/3)]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron")
+resid = residuals(ft, type="martingale")
+truth = [0.8533453638920624,-0.025607157841240097,0.32265266060919384,0.32265266060919384,0.7169623432058416,-1.0777262895725614,-0.45034077190061034,-0.9049033864364076,-0.795986578172918]
+@test all(isapprox.(resid, truth, atol=0.000001))
+
+
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
+r = exp(ft.P._B[1])
+# nXp matrix used for schoenfeld and score residuals
+# (x(t)-mux(t))*dM(t) 
+truthmat = permutedims(hcat(
+  [(1-r/(r+1)) * (1-r/(3r+3)), 0                         , 0],
+  [(1-r/(r+1)) * (0-r/(3r+3)), 0                         , 0],
+  [(1-r/(r+1)) * (0-r/(3r+3)), (1-r/(r+3)) * (1-2r/(r+3)), 0],
+  [(0-r/(r+1)) * (0-1/(3r+3)), (0-r/(r+3)) * (1-2/(r+3)), 0],
+  [(0-r/(r+1)) * (0-1/(3r+3)), (0-r/(r+3)) * (0-2/(r+3)), 0],
+  [(0-r/(r+1)) * (0-1/(3r+3)), (0-r/(r+3)) * (0-2/(r+3)), (0-0) * (1-1)]
+))
+truth = sum(truthmat, dims=2)[:]
+S = residuals(ft, type="score")[:]
+@test all(isapprox.(S, truth))
+# assertions for testing breslow ties estimates under convergence for dat1
+if length(ft.P._LL)>1
+    @test isapprox(ft.P._B[1], 1.475285, atol=0.000001)
+    @test isapprox(ft.P._LL[[1,end]], [-4.56434819, -3.82474951], atol=0.000001)
+    @test isapprox(-ft.P._hess[1], 0.6341681, atol=0.000001)
+end
 
 
 end
