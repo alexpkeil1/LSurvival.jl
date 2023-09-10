@@ -457,6 +457,13 @@ DOC_FIT_ABSTRACPH = """
   fitargs...) where {M<:AbstractPH}
  ```
 
+ ```
+ coxph(f::FormulaTerm, data; kwargs...)
+```
+```
+coxph(X, enter, exit, y, args...; kwargs...)
+```
+
  ```julia
    using LSurvival, Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);

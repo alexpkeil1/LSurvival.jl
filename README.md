@@ -13,6 +13,8 @@ This module handles:
 - Late entry/left trunctation and right censoring (all estimators)
 - Baseline hazard estimator from a Cox model
 - Cumulative incidence estimation from a set of Cox models
+- Cox model residuals (Martingale, score, Schoenfeld, dfbeta)
+- Robust variance estimation
 
 Add this package via Julia's package manager:
 

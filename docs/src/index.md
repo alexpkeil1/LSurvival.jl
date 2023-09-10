@@ -21,10 +21,14 @@ Convenience functions enable:
 - Estimating baseline hazards from a Cox Model
 - Estimating cause-specific risk from an exhaustive set of Cox models for competing risk outcomes
 - Simple simulation of competing and non-competing survival events
+- Cluster robust variance estimation (without bootstrapping)
+- Martingale, score, Schoenfeld, and dfbeta residuals
+- Cluster robust variance estimation
+
 
 Plans to include:
-- Cluster robust variance estimation (without bootstrapping)
-- Score and Schoenfeld residuals
+- Parametric survival models
+- Stratification in Cox models
 
 The package has been tuned to follow the "survival" package from R in terms of specific estimators/results.
 

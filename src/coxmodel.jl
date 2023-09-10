@@ -396,9 +396,6 @@ $DOC_FIT_ABSTRACPH
 coxph(X, enter, exit, y, args...; kwargs...) =
     fit(PHModel, X, enter, exit, y, args...; kwargs...)
 
-"""
-
-"""
 coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 
 
