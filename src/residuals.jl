@@ -126,10 +126,9 @@ function resid_schoenfeld(m::M) where {M<:PHModel}
 end
 
 function resid_dfbeta(m::M) where {M<:PHModel}
-    @warn "Check the sign of these against R"
     L = resid_score(m)
     H = m.P._hess
-    dfbeta = L * inv(H)
+    dfbeta = .- L * inv(H)
     return dfbeta
 end
 

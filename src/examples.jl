@@ -554,10 +554,12 @@ cfit = coxph(
     ties = "efron", 
     iter = 0)
 basehaz(cfit)
-resid(cfit, type="score")
+resid(cfit, type="dfbeta")
 """
 
 ft = coxph(@formula(Surv(enter, exit, status) ~ x), dat2, keepx=true, keepy=true, ties="efron", maxiter=0)
+residuals(ft, type="dfbeta")[:]
+
 L = resid_score(ft)
 
 
