@@ -457,12 +457,16 @@ x, z1, z2 = dat[:, 1], dat[:, 2], dat[:, 3]
 
 ft1 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), (int=int, outt=outt, d=d, x=x, z1=z1, z2=z2), id=ID.(id), keepx=true, keepy=true)
 ft1
-resid = martingale(ft1)
+resid = residuals(ft1, type="martingale")
 sum(resid)
 extrema(resid)
 vid = values(ft1.R.id)
 lididx = [findlast(vid .== id.value) for id in unique(ft1.R.id)]
 
+resid = residuals(ft1, type="dfbeta")
+se = stderror(ft1)
+r2a =  resid ./ se'
+resid ./ r2a
 
 sum(resid[lididx])
 
@@ -554,13 +558,16 @@ cfit = coxph(
     ties = "efron", 
     iter = 0)
 basehaz(cfit)
-resid(cfit, type="dfbeta")
+rrr = resid(cfit, type="dfbeta")
+rrrs = resid(cfit, type="dfbetas")
 """
-
+@rget rrr
+@rget rrrs
 ft = coxph(@formula(Surv(enter, exit, status) ~ x), dat2, keepx=true, keepy=true, ties="efron", maxiter=0)
-residuals(ft, type="dfbeta")[:]
-
-L = resid_score(ft)
+rr = residuals(ft, type="dfbeta")[:]
+hcat(rr, rrr)
+rr./rrrs
+stderror(ft)
 
 
 dat3 = (

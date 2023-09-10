@@ -511,11 +511,11 @@ end
 $DOC_VCOV
 """
 function StatsBase.vcov(m::M; type::Union{String,Nothing}=nothing) where {M<:AbstractPH}
+    mwarn(m)
     if type == "robust"
         res = robust_vcov(m)
     else
-        mwarn(m)
-        -inv(m.P._hess)
+        res = -inv(m.P._hess)
     end
     res
 end

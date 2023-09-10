@@ -16,6 +16,9 @@ function StatsBase.residuals(m::M; type="martingale") where {M<:PHModel}
         resid = resid_schoenfeld(m)
     elseif thismethod == "dfbeta"
         resid = resid_dfbeta(m)
+    elseif thismethod == "dfbetas"
+        resid = resid_dfbeta(m)
+        resid ./= stderror(m)'
     elseif thismethod == "scaled_schoenfeld"
         resid = resid_schoenfeld(m) * inv(m.P._hess)
     else
@@ -184,7 +187,6 @@ function resid_Lmat_breslow(m::M) where {M<:PHModel}
 end
 
 function resid_Lmat_efron(m::M) where {M<:PHModel}
-    @warn("not yet working")
     X = m.P.X
     y = m.R.y
     exit = m.R.exit
