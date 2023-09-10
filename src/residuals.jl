@@ -128,7 +128,7 @@ end
 function resid_dfbeta(m::M) where {M<:PHModel}
     @warn "Check the sign of these against R"
     L = resid_score(m)
-    H = ft.P._hess
+    H = m.P._hess
     dfbeta = L * inv(H)
     return dfbeta
 end
