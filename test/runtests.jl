@@ -341,4 +341,44 @@ if length(ft.P._LL)>1
 end
 
 
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
+
+
+X = ft.P.X
+M = residuals(ft, type="martingale")
+S = residuals(ft, type="schoenfeld")[:]
+r = exp(ft.P._B[1])
+truthmat = [
+  (1-r/(r+1)) * (1-r/(3r+3))  0                           0;
+  (1-r/(r+1)) * (0-r/(3r+3))  0                           0;
+  (1-r/(r+1)) * (0-r/(3r+3))  (1-r/(r+3)) * (1-2r/(r+3))  0;
+  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (1-2/(r+3))  0;
+  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  0;
+  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  (0-0) * (1-1);
+]
+truth = sum(truthmat, dims=1)[:]
+@test all(isapprox.(S, truth))
+
+ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
+
+X = ft.P.X
+residuals(ft, type="scaled_schoenfeld")[:]
+S = residuals(ft, type="schoenfeld")[:]
+r = exp(ft.P._B[1])
+truthmat = [
+  (1-r/(r+1)) * (1-r/(3r+3))  0                           0;
+  (1-r/(r+1)) * (0-r/(3r+3))  0                           0;
+  (1-r/(r+1)) * (0-r/(3r+3))  (1-r/(r+3)) * (1-2r/(r+3))  0;
+  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (1-2/(r+3))  0;
+  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  0;
+  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  (0-0) * (1-1);
+]
+truth = sum(truthmat, dims=2)[:]
+@test all(isapprox.(S, truth))
+
 end

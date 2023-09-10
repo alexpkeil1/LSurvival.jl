@@ -924,10 +924,25 @@ robust_vcov(ft)
 
 
 DOC_RESIDUALS = """
-```julia
-StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
-```
+####################################################################
+Cox proportional hazards model residuals:
 
+Signature
+```julia
+residuals(m::M; type = "martingale") where {M<:PHModel}
+```
+where type is one of 
+- `martingale`
+- `schoenfeld`
+- `score`
+- `dfbeta`
+- `scaled_schoenfeld`
+
+Residuals from the residuals function are designed to exactly emulate those from the `survival` package in R. Currently, they are validated for single observation data (e.g. one data row per individual).
+
+  ####################################################################
+  ## Martingale residuals: Observed versus expected
+  
 ```@example
 # example from https://cran.r-project.org/web/packages/survival/vignettes/validate.pdf
 # by Terry Therneau
@@ -955,12 +970,11 @@ ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efr
 residuals(ft, type="martingale")
 
 ```
-
-Score residuals: Per observation contribution to score function 
+####################################################################
+## Score residuals: Per observation contribution to score function 
 
 ```julia
 using LSurvival
-####################################################################
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -972,11 +986,10 @@ ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efr
 S = residuals(ft, type="score")[:]
 ```
 
-
-Schoenfeld residuals: Per time contribution to score function 
+####################################################################
+## Schoenfeld residuals: Per time contribution to score function 
 ```julia
 using LSurvival
-####################################################################
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -988,40 +1001,10 @@ ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="bre
 X = ft.P.X
 M = residuals(ft, type="martingale")
 S = residuals(ft, type="schoenfeld")[:]
-r = exp(ft.P._B[1])
-truthmat = [
-  (1-r/(r+1)) * (1-r/(3r+3))  0                           0;
-  (1-r/(r+1)) * (0-r/(3r+3))  0                           0;
-  (1-r/(r+1)) * (0-r/(3r+3))  (1-r/(r+3)) * (1-2r/(r+3))  0;
-  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (1-2/(r+3))  0;
-  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  0;
-  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  (0-0) * (1-1);
-]
-truth = sum(truthmat, dims=1)[:]
-all(isapprox.(S, truth))
-
-ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
-
-X = ft.P.X
-S = residuals(ft, type="schoenfeld")[:]
-r = exp(ft.P._B[1])
-truthmat = [
-  (1-r/(r+1)) * (1-r/(3r+3))  0                           0;
-  (1-r/(r+1)) * (0-r/(3r+3))  0                           0;
-  (1-r/(r+1)) * (0-r/(3r+3))  (1-r/(r+3)) * (1-2r/(r+3))  0;
-  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (1-2/(r+3))  0;
-  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  0;
-  (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  (0-0) * (1-1);
-]
-truth = sum(truthmat, dims=2)[:]
-all(isapprox.(S, truth))
-
-
-ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efron", maxiter=0)
-S = residuals(ft, type="schoenfeld")
+```
 
 ####################################################################
-dfbeta residuals: influence of individual observations on each parameter
+## dfbeta residuals: influence of individual observations on each parameter
 
 ```@example
 using LSurvival
