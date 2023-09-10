@@ -924,6 +924,17 @@ vcov(ft, type="robust")    # robust variance, based on dfbeta residuals
 ```
 """
 
+DOC_VCOV = """
+Covariance matrix for Cox proportional hazards models  
+
+Keyword arguments
+- `type` nothing or "robust": determines whether model based or robust (dfbeta based) variance is returned.
+
+See ?residuals for info on `dfbeta` residuals
+
+$DOC_ROBUST_VCOV
+"""
+
 
 DOC_RESIDUALS = """
 ####################################################################

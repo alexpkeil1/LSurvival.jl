@@ -484,6 +484,9 @@ function StatsBase.stderror(m::M) where {M<:AbstractPH}
     sqrt.(diag(vcov(m)))
 end
 
+"""
+$DOC_VCOV
+"""
 function StatsBase.vcov(m::M; type::Union{String,Nothing}) where {M<:AbstractPH}
     if type == "robust"
         res = robust_vcov(m)
