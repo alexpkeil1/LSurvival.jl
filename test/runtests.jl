@@ -29,8 +29,8 @@ using Random
     function jfun2(int, outt, d, X, wt)
         fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9)
     end
-    println(jfun(int, outt, d, X, wt)[1:2])
-    println(jfun2(int, outt, d, X, wt))
+    (jfun(int, outt, d, X, wt)[1:2])
+    (jfun2(int, outt, d, X, wt))
 
     tj = @time jfun(int, outt, d, X, wt)
     tj2 = @time jfun2(int, outt, d, X, wt)
@@ -62,7 +62,7 @@ using Random
 
     ft = coxph(X, int, outt, d)
     ft.RL = [ones(3,3)]
-    println(ft)
+    (ft)
 
 
     tab = (
@@ -76,15 +76,25 @@ using Random
 
     f = @formula(Surv(entertime, exittime, death) ~ x + z1 + z2)
     ft = coxph(f, tab)
-    println("formula fit")
-    println(coefnames(ft))
-    println(ft)
+    #"formula fit"
+    @test all(coefnames(ft) .== ["x", "z1", "z2"])
+    f2 = @formula(Surv(entertime, exittime, death) ~ x + z1)
+    f3 = @formula(Surv(entertime, exittime, death) ~ x)
+    fnull = @formula(Surv(entertime, exittime, death) ~ x)
+    ft2 = coxph(f2, tab)
+    ft3 = coxph(f3, tab)
+    ftnull = coxph(fnull, tab)
+    println(lrtest(ft, ft3))
 
-    println(coxph(@formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
+
+
+
+
+    (coxph(@formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
     #without late entry
-    println(coxph(@formula(Surv(exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
+    (coxph(@formula(Surv(exittime, death) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
     # without censoring
-    println(coxph(@formula(Surv(exittime) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
+    (coxph(@formula(Surv(exittime) ~ x + z1 + z2 + z1*x), tab, contrasts=Dict(:z1 => CategoricalTerm)))
 
     # survival outcome:
     LSurvResp([.5, .6], [1,0])
@@ -141,11 +151,11 @@ using Random
     bootstrap(MersenneTwister(123), ajres2)
     kms = kaplan_meier(enter, t, d, wts = wt)
 
-    #println(ajres)
-    #println(stderror(ajres))
+    #(ajres)
+    #(stderror(ajres))
     (confint(ajres, level = 0.95))
-    #println(kms)
-    #println(stderror(kms))
+    #(kms)
+    #(stderror(kms))
     (confint(kms, level = 0.95))
     (confint(kms, level = 0.95, method = "lognlog"))
 
@@ -165,7 +175,7 @@ using Random
         keepx = true,
         keepy = true,
     )
-    println(ft1)
+    (ft1)
     (bootstrap(MersenneTwister(123), ft1))
     (bootstrap(MersenneTwister(123), ft1, 2))
     coxph(X, enter, t, d2, ties = "efron")
@@ -378,7 +388,7 @@ truthmat = [
   (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  0;
   (0-r/(r+1)) * (0-1/(3r+3))  (0-r/(r+3)) * (0-2/(r+3))  (0-0) * (1-1);
 ]
-truth = sum(truthmat, dims=2)[:]
+truth = sum(truthmat, dims=1)[:]
 @test all(isapprox.(S, truth))
 
 end

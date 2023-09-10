@@ -451,6 +451,32 @@ function StatsBase.isfitted(m::M) where {M<:AbstractPH}
     m.fit
 end
 
+function StatsBase.deviance(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    -2*loglikelihood(m)
+end
+
+function StatsBase.nulldeviance(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    -2*nullloglikelihood(m)
+end
+
+function StatsBase.dof(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.P.p
+end
+
+function StatsBase.dof_residual(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    nobs(m) - dof(m)
+end
+
+
+function StatsBase.nobs(m::M) where {M<:AbstractPH}
+    mwarn(m)
+    m.P.n
+end
+
 function StatsBase.loglikelihood(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P._LL[end]
