@@ -16,7 +16,7 @@ function StatsBase.residuals(m::M; type="martingale") where {M<:PHModel}
         resid = resid_schoenfeld(m)
     elseif thismethod == "dfbeta"
         resid = resid_dfbeta(m)
-    elseif thismetthod == "scaled_schoenfeld"
+    elseif thismethod == "scaled_schoenfeld"
         resid = resid_schoenfeld(m) * inv(m.P._hess)
     else
         throw("Method $type not supported yet")
