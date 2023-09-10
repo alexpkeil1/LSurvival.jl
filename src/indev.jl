@@ -43,17 +43,17 @@ if false
 
     function fit!(
         m::PHModel;
-        verbose::Bool = false,
-        maxiter::Integer = 500,
-        atol::Float64 = 0.0,
-        rtol::Float64 = 0.0,
-        gtol::Float64 = 1e-8,
-        start = nothing,
-        keepx = false,
-        keepy = false,
-        bootstrap_sample = false,
-        bootstrap_rng = MersenneTwister(),
-        kwargs...,
+        verbose::Bool=false,
+        maxiter::Integer=500,
+        atol::Float64=0.0,
+        rtol::Float64=0.0,
+        gtol::Float64=1e-8,
+        start=nothing,
+        keepx=false,
+        keepy=false,
+        bootstrap_sample=false,
+        bootstrap_rng=MersenneTwister(),
+        kwargs...
     )
         m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
         start = isnothing(start) ? zeros(length(m.P._B)) : start
@@ -87,9 +87,9 @@ if false
             H,
             beta,
             m;
-            ne = ne,
-            caseidxs = caseidxs,
-            risksetidxs = risksetidxs,
+            ne=ne,
+            caseidxs=caseidxs,
+            risksetidxs=risksetidxs
         )
             m.P._LL[1] = isnothing(F) ? m.P._LL[1] : F
             m.P._grad = isnothing(G) ? m.P._grad : G
@@ -116,11 +116,11 @@ if false
             start,
             opt,
             Optim.Options(
-                f_abstol = atol,
-                f_reltol = rtol,
-                g_tol = gtol,
-                iterations = maxiter,
-                store_trace = true,
+                f_abstol=atol,
+                f_reltol=rtol,
+                g_tol=gtol,
+                iterations=maxiter,
+                store_trace=true,
             ),
         )
         verbose && println(res)
@@ -140,8 +140,8 @@ end # if false
 
 if false
     id, int, outt, data =
-        LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0)
-    data[:, 1] = round.(data[:, 1], digits = 3)
+        LSurvival.dgm(MersenneTwister(345), 100, 10; afun=LSurvival.int_0)
+    data[:, 1] = round.(data[:, 1], digits=3)
     d, X = data[:, 4], data[:, 1:3]
 
 
@@ -152,12 +152,12 @@ if false
     R = LSurvResp(int, outt, d)
     P = PHParms(X)
     m = PHModel(R, P)  #default is "efron" method for ties
-    @btime res = LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx = true, keepy = true)
+    @btime res = LSurvival._fit!(m, start=[0.0, 0.0, 0.0], keepx=true, keepy=true)
 
     R2 = LSurvResp(int, outt, d)
     P2 = PHParms(X)
     m2 = PHModel(R2, P2)  #default is "efron" method for ties
-    @btime res2 = fit!(m2, start = [0.0, 0.0, 0.0], keepx = true, keepy = true)
+    @btime res2 = fit!(m2, start=[0.0, 0.0, 0.0], keepx=true, keepy=true)
 
     res
     res2

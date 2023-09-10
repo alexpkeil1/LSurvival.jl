@@ -484,9 +484,14 @@ function StatsBase.stderror(m::M) where {M<:AbstractPH}
     sqrt.(diag(vcov(m)))
 end
 
-function StatsBase.vcov(m::M) where {M<:AbstractPH}
-    mwarn(m)
-    -inv(m.P._hess)
+function StatsBase.vcov(m::M; type::Union{String,Nothing}) where {M<:AbstractPH}
+    if type == "robust"
+        res = robust_vcov(m)
+    else
+        mwarn(m)
+        -inv(m.P._hess)
+    end
+    res
 end
 
 function StatsBase.weights(m::M) where {M<:AbstractPH}
