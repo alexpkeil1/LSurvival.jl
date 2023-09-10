@@ -5,7 +5,7 @@
 $DOC_RESIDUALS
 """
 function StatsBase.residuals(m::M; type="martingale") where {M<:PHModel}
-    valid_methods = ["schoenfeld", "score", "martingale", "dfbeta","dfbetas", "scaled_schoenfeld"]
+    valid_methods = ["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld"]
     whichmethod = findall(valid_methods .== lowercase(type))
     thismethod = valid_methods[whichmethod][1]
     if thismethod == "martingale"
@@ -131,8 +131,8 @@ end
 function resid_dfbeta(m::M) where {M<:PHModel}
     L = resid_score(m)
     H = m.P._hess
-    dfbeta = .- L * inv(H)
-    return dfbeta
+    dfbeta = .-L * inv(H)
+    return dfbeta .* m.R.wts
 end
 
 """
@@ -140,7 +140,8 @@ $DOC_ROBUST_VCOV
 """
 function robust_vcov(m::M) where {M<:PHModel}
     dfbeta = resid_dfbeta(m)
-    robVar = dfbeta'dfbeta
+    D = dfbeta
+    robVar = D'D
     return robVar
 end
 
@@ -173,13 +174,17 @@ function resid_Lmat_breslow(m::M) where {M<:PHModel}
     #
     dM .*= -1
     for i in eachindex(dM)
-        dM[i][end] += Nw[i]
+        if length(dM[i]) > 0
+            dM[i][end] += Nw[i]
+        end
     end
     L = [zeros(nobs, ntimes) for nx = 1:nxcols]
     for j = 1:nxcols
         for i = 1:nobs
-            pr = (X[i, j] .- muX[di[i]]) .* dM[i]
-            L[j][i, di[i]] .= pr
+            if length(dM[i]) > 0
+                pr = (X[i, j] .- muX[di[i]]) .* dM[i]
+                L[j][i, di[i]] .= pr
+            end
         end
     end
     m.RL = L
@@ -210,7 +215,9 @@ function resid_Lmat_efron(m::M) where {M<:PHModel}
 
     dMt .*= -1
     for i in eachindex(dMt)
-        dMt[i][end] .+= Nw[i] ./ tiesi[i]
+        if length(dMt[i]) > 0
+            dMt[i][end] .+= Nw[i] ./ tiesi[i]
+        end
     end
     L = [zeros(nobs, ntimes) for nx = 1:nxcols]
     for j = 1:nxcols

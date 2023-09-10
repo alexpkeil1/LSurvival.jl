@@ -5,6 +5,25 @@ using Random
 #using BenchmarkTools # add during testing
 
 @testset "LSurvival.jl" begin
+    dat1 = (
+        time = [1,1,6,6,8,9],
+        status = [1,0,1,1,0,1],
+        x = [1,1,1,0,0,0]
+    )
+    dat2 = (
+        enter = [1,2,5,2,1,7,3,4,8,8],
+        exit = [2,3,6,7,8,9,9,9,14,17],
+        status = [1,1,1,1,1,1,1,0,0,0],
+        x = [1,0,0,1,0,1,1,1,0,0]
+    )        
+    dat3 = (
+        time = [1,1,2,2,2,2,3,4,5],
+        status = [1,0,1,1,1,0,0,1,0],
+        x = [2,0,1,1,0,1,0,1,0],
+        wt = [1,2,3,4,3,2,1,2,1]
+    )
+    
+
 
     id, int, outt, data =
         LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
@@ -212,14 +231,8 @@ using Random
 
     (cires2b)
 
+    #########################################################################################################
 ##### residuals
-dat3 = (
-    time = [1,1,2,2,2,2,3,4,5],
-    status = [1,0,1,1,1,0,0,1,0],
-    x = [2,0,1,1,0,1,0,1,0],
-    wt = [1,2,3,4,3,2,1,2,1]
-)
-
 
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron", maxiter=0)
 res_est = residuals(ft, type="martingale")
@@ -234,13 +247,6 @@ res_true = [0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,
 @test all(isapprox.(res_est, res_true, atol=0.00001))
 
 
-dat3 = (
-    time = [1,1,2,2,2,2,3,4,5],
-    status = [1,0,1,1,1,0,0,1,0],
-    x = [2,0,1,1,0,1,0,1,0],
-    wt = [1,2,3,4,3,2,1,2,1]
-)
-
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
 dM, dt, di = LSurvival.dexpected_NA(ft);
 muX = LSurvival.muX_t(ft, di)
@@ -249,11 +255,6 @@ truemuX = [13/19,11/16,2/3]
 @test all(isapprox.(muX, truemuX, atol=0.00001))
 
 
-dat1 = (
-    time = [1,1,6,6,8,9],
-    status = [1,0,1,1,0,1],
-    x = [1,1,1,0,0,0]
-)
 ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
 resid = residuals(ft, type="martingale")
 r = exp(ft.P._B[1])
@@ -281,13 +282,7 @@ truth = dat1.status .- [r/(3r+3), r/(3r+3), r/(3r+3) + r/(r+3) + r/(r+5), 1/(3r+
 
 
 ######################################################################
-dat2 = (
-    enter = [1,2,5,2,1,7,3,4,8,8],
-    exit = [2,3,6,7,8,9,9,9,14,17],
-    status = [1,1,1,1,1,1,1,0,0,0],
-    x = [1,0,0,1,0,1,1,1,0,0]
-)
-
+# TESTING DAT 2
 ft = coxph(@formula(Surv(enter, exit,status)~x),dat2, keepx=true, keepy=true, ties="breslow")
 resid = residuals(ft, type="martingale")
 truth = [0.521119,0.657411,0.789777,0.247388,-0.606293,0.369025,-0.068766,-1.068766,-0.420447,-0.420447]
@@ -295,12 +290,7 @@ truth = [0.521119,0.657411,0.789777,0.247388,-0.606293,0.369025,-0.068766,-1.068
 
 
 ######################################################################
-dat3 = (
-    time = [1,1,2,2,2,2,3,4,5],
-    status = [1,0,1,1,1,0,0,1,0],
-    x = [2,0,1,1,0,1,0,1,0],
-    wt = [1,2,3,4,3,2,1,2,1]
-)
+# TESTING DAT 3
 
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
 resid = residuals(ft, type="martingale")
@@ -352,11 +342,6 @@ if length(ft.P._LL)>1
 end
 
 
-dat1 = (
-    time = [1,1,6,6,8,9],
-    status = [1,0,1,1,0,1],
-    x = [1,1,1,0,0,0]
-)
 ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow", maxiter=0)
 
 
@@ -392,6 +377,25 @@ truthmat = [
 truth = sum(truthmat, dims=1)[:]
 @test all(isapprox.(S, truth))
 
+ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="efron")
+rdfbetas = [0.6278889620495443,0.03530427452450842,0.12949839663825446,0.17266452885100594,-1.2767274051259652,-0.23852676492216027,0.2710638949411516,-0.19596100527839921,0.47479511834382615]
+@test isapprox(sqrt(vcov(ft, type="robust")[1]), 1.1190551648004863)
+@test all(isapprox.(residuals(ft, type="dfbetas"), rdfbetas))
 
-println(vcov(ft, type="robust"))
+#### can this recover from an observation that doesn't contribute to the likelihood?
+id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun=LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits=3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+#wt ./= (sum(wt) / length(wt))
+wt ./= wt
+xtab = (id=id, int=int, outt=outt, d=d, x=X[:, 1], z1=X[:, 2], z2=X[:, 3], wt=wt)
+
+m = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.(xtab.id), ties="breslow", keepx=true, keepy=true);
+m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.(xtab.id), ties="efron", keepx=true, keepy=true);
+
+r = residuals(m, type="dfbeta")
+r2 = residuals(m2, type="dfbeta")
+
+
 end

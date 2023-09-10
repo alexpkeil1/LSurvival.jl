@@ -27,7 +27,7 @@ or directly in Julia
 
 
 
-# Cox model
+## Cox model
 
 ```{julia}
 using Random, LSurvival, Distributions, LinearAlgebra
@@ -100,12 +100,12 @@ m2d = fit(PHModel, @formula(Surv(entertime, exittime, death) ~ x + z1 + z2), tab
 
 ```
 
-# Kaplan-Meier estimator of the cumulative risk/survival
+## Kaplan-Meier estimator of the cumulative risk/survival
 ```{julia}
 res = kaplan_meier(int, outt, d)
 ```
 
-# Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
+## Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
 
 ```{julia}
 

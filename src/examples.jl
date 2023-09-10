@@ -293,7 +293,7 @@ beta2, ll2, g2, h2, basehaz2 =
 m = fit(PHModel, X, int, outt, d, wts=wt, ties="breslow");
 m2 = coxph(X, int, outt, d, wts=wt, ties="efron");
 
-
+#=  #This section commented out to avoid confusing code coverage tools
 # benchmark runtimes vs. calling R
 function rfun(int, outt, d, X, wt)
     @rput int outt d X wt
@@ -366,6 +366,7 @@ tr = @btime rfun(int, outt, d, X, wt);
 tj = @btime jfun(int, outt, d, X, wt);
 tj2 = @btime jfun2(int, outt, d, X, wt);
 
+=#
 ###################################################################
 # checking baseline hazard against R
 ###################################################################
@@ -488,6 +489,13 @@ CSV.write(expanduser("~/temp/test.csv"), xtab)
 m = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.(xtab.id), ties="breslow", keepx=true, keepy=true);
 m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.(xtab.id), ties="efron", keepx=true, keepy=true);
 
+
+r2 = residuals(m, type="martingale")
+r2 = residuals(m2, type="martingale")
+r = residuals(m, type="dfbeta")
+r2 = residuals(m2, type="dfbeta")
+
+
 @rput xtab
 R"""
 library(survival)
@@ -509,7 +517,11 @@ coxcoefs_cr = coef(cfit);
 coxcoefs_cr2 = coef(cfit2);
 resids = residuals(cfit, type = "martingale");
 resids2 = residuals(cfit2, type = "martingale");
+dfresids = residuals(cfit, type = "dfbeta");
+dfresids2 = residuals(cfit2, type = "dfbeta");
 """
+@rget dfresids
+@rget dfresids2
 @rget coxcoefs_cr
 coef(m)
 @rget coxcoefs_cr2
@@ -592,3 +604,36 @@ res = resid(cfit, type="martingale")
 @rget res
 
 hcat(res, resid_score(ft))
+
+
+dat3b = (id = collect(1:length(dat3.time)), dat3...)
+
+ 
+@rput dat3b
+R"""
+library(survival)
+cfit = coxph(
+    Surv(time, status) ~ x + cluster(id),
+    data = dat3b,
+    weights=wt,
+    ties = "efron")
+    resid = residuals(cfit, "dfbeta")
+    resid2 = residuals(cfit, "dfbetas")
+res = summary(cfit)$coefficients
+"""
+@rget res
+@rget resid
+@rget resid2
+
+
+ft = coxph(@formula(Surv(time, status)~x), dat3, wts=dat3.wt, keepy=true, keepx=true)
+hcat(resid, residuals(ft, type="dfbeta"))
+hcat(resid2, residuals(ft, type="dfbetas"))
+D = residuals(ft, type="dfbeta") .* ft.R.wts
+LSurvival.robust_vcov(ft)
+
+sqrt.(D'D)
+
+
+rb = vcov(ft, type="robust")
+sqrt(rb[1])
