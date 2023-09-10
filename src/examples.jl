@@ -565,8 +565,10 @@ rrrs = resid(cfit, type="dfbetas")
 @rget rrrs
 ft = coxph(@formula(Surv(enter, exit, status) ~ x), dat2, keepx=true, keepy=true, ties="efron", maxiter=0)
 rr = residuals(ft, type="dfbeta")[:]
+rrs = residuals(ft, type="dfbetas")[:]
 hcat(rr, rrr)
-rr./rrrs
+rrr./rrrs
+rr./rrs
 stderror(ft)
 
 

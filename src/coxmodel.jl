@@ -47,7 +47,7 @@ function PHParms(X::Union{Nothing,D}) where {D<:AbstractMatrix}
 end
 
 function Base.show(io::IO, x::PHParms)
-    Base.println(io, "Slots: X, _B, _grad, _hess, _r, _n, p\n")
+    Base.println(io, "Slots: X, _B, _grad, _hess, _r, n, p\n")
     Base.println(io, "Predictor matrix (X):")
     Base.show(io, "text/plain", x.X)
 end
@@ -167,7 +167,7 @@ function PHSurv(fitlist::Array{T}, eventtypes) where {T<:PHModel}
     ntimes::Int = size(bh, 1)
     risk, surv = zeros(Float64, ntimes, length(eventtypes)), fill(1.0, ntimes)
     times = bh[:, 4]
-    event = bh[:, 5]
+    event = bh[:, end]
     PHSurv(fitlist, eventtypes, times, surv, risk, bh[:, 1], event, false)
 end
 
@@ -194,7 +194,7 @@ function _fit!(
     gtol::Float64 = 1e-8,
     start = nothing,
     keepx = false,
-    keepy = false,
+    keepy = true,
     bootstrap_sample = false,
     bootstrap_rng = MersenneTwister(),
     kwargs...,
