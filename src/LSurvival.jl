@@ -23,7 +23,7 @@ import StatsBase:
     fit,
     isfitted,
     loglikelihood,
-    lrtest,
+    #lrtest,
     modelmatrix,
     model_response,
     nullloglikelihood,

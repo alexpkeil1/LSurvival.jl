@@ -510,7 +510,7 @@ end
 """
 $DOC_VCOV
 """
-function StatsBase.vcov(m::M; type::Union{String,Nothing}) where {M<:AbstractPH}
+function StatsBase.vcov(m::M; type::Union{String,Nothing}=nothing) where {M<:AbstractPH}
     if type == "robust"
         res = robust_vcov(m)
     else

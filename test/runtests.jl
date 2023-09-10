@@ -75,7 +75,8 @@ using Random
     )
 
     f = @formula(Surv(entertime, exittime, death) ~ x + z1 + z2)
-    ft = coxph(f, tab)
+    ft = coxph(f, tab);
+    println(fit)
     #"formula fit"
     @test all(coefnames(ft) .== ["x", "z1", "z2"])
     f2 = @formula(Surv(entertime, exittime, death) ~ x + z1)
@@ -391,4 +392,6 @@ truthmat = [
 truth = sum(truthmat, dims=1)[:]
 @test all(isapprox.(S, truth))
 
+
+println(vcov(ft, type="robust"))
 end

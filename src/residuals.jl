@@ -127,7 +127,7 @@ end
 
 function resid_dfbeta(m::M) where {M<:PHModel}
     @warn "Check the sign of these against R"
-    L = resid_score(ft)
+    L = resid_score(m)
     H = ft.P._hess
     dfbeta = L * inv(H)
     return dfbeta
@@ -137,7 +137,7 @@ end
 $DOC_ROBUST_VCOV
 """
 function robust_vcov(m::M) where {M<:PHModel}
-    dfbeta = resid_dfbeta(ft)
+    dfbeta = resid_dfbeta(m)
     robVar = dfbeta'dfbeta
     return robVar
 end
@@ -163,7 +163,7 @@ function resid_Lmat_breslow(m::M) where {M<:PHModel}
     nxcols = size(X, 2)
     nobs = size(X, 1)
     ntimes = length(m.R.eventtimes)
-    wts = m.R.wts
+    #wts = m.R.wts
     Nw = Float64.(m.R.y .> 0.0)
     #maxties = maximum(m.bh[:, 3])
     dM, dt, di = dexpected_NA(m)
@@ -200,7 +200,7 @@ function resid_Lmat_efron(m::M) where {M<:PHModel}
         yi in eachindex(m.R.exit)
     ]
     tiesi = [length(t) > 0 ? t[1] : 1.0 for t in tiedis]
-    maxties = maximum(ties)
+    #maxties = maximum(ties)
     #
 
     dMt, dt, di = dexpected_FH(m)
