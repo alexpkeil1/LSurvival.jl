@@ -3,6 +3,7 @@
 [![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
 [![Main](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/dev/)
+[![codecov](https://codecov.io/github/alexpkeil1/LSurvival.jl/graph/badge.svg?token=2LFIITQ2LV)](https://codecov.io/github/alexpkeil1/LSurvival.jl)
 
 These are some survival analysis functions that I was hoping to find in Julia and never did. Interface with StatsModels is developing. I needed a module that did these things, and I'm putting it here in case anyone is motivated to adapt this to fit better into the Julia ecosystem.
 
@@ -24,6 +25,9 @@ or directly in Julia
 
 `using Pkg; Pkg.add(url="https://github.com/alexpkeil1/LSurvival.jl")`
 
+
+
+# Cox model
 
 ```{julia}
 using Random, LSurvival, Distributions, LinearAlgebra
@@ -94,11 +98,17 @@ tab = (
 m2c = coxph(@formula(Surv(entertime, exittime, death) ~ x + z1 + z2), tab, wts = wt)
 m2d = fit(PHModel, @formula(Surv(entertime, exittime, death) ~ x + z1 + z2), tab, wts = wt)
 
+```
 
 # Kaplan-Meier estimator of the cumulative risk/survival
+```{julia}
 res = kaplan_meier(int, outt, d)
+```
 
 # Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
+
+```{julia}
+
 
 function dgm_comprisk(; n = 100, rng = MersenneTwister())
     z = rand(rng, n) .* 5
@@ -130,7 +140,7 @@ enter = t .* rand(100) * 0.02 # create some fake entry times
 
 res = aalen_johansen(enter, t, event; wts = wt)
 fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = "breslow", wts = wt)
-fit2 = fit(PHModel, X, enter, t, (event .== 1), ties = "efron", wts = wt)
+fit2 = fit(PHModel, X, enter, t, (event .== 2), ties = "breslow", wts = wt)
 risk_from_coxphmodels([fit1, fit2])
 
 # this approach operates on left censored outcomes (which operate in the background in model fitting)
