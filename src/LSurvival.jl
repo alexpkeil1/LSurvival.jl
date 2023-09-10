@@ -12,11 +12,14 @@ import StatsBase: CoefTable, StatisticalModel, RegressionModel
 import Base: length, size
 
 import StatsBase:
+    aic,
+    aicc,
+    bic,
     coef,
     coeftable,
     coefnames,
     confint,
-    deviance, 
+    deviance,
     nulldeviance, #, dof_residual,
     dof,
     fitted,
@@ -30,7 +33,7 @@ import StatsBase:
     nobs,
     PValue,
     stderror,
-    residuals, 
+    residuals,
     #predict, predict!,
     response,
     score,
@@ -69,29 +72,37 @@ export kaplan_meier,        # interface for estimating cumulative risk from non-
     cox_summary,         # (deprecated) convenience function to summarize Cox model results
     ci_from_coxmodels    # (deprecated) interface for estimating cumulative risk from hazard specific Cox models
 #re-exports
-export bootstrap,
+export aic,
+    aicc,
+    bic,
+    bootstrap,
     basehaz!,
     coef,
     coeftable,
     coefnames,
     confint,
+    nulldeviance,
     deviance,
     dof,
-    fit, #model_response, , 
+    fit, 
+    fit!,
+    model_response,
     modelmatrix, #PValue
     fitted,
     isfitted,
     loglikelihood,
-    lrtest,
+    logpartiallikelihood,
+    lrtest, # re-exported
     modelmatrix,
     length,
     size,
-    nullloglikelihood, 
-    nobs, 
+    nullloglikelihood,
+    nulllogpartiallikelihood,
+    nobs,
     response,
     score,
     stderror,
-    residuals, 
+    residuals,
     #predict, predict!,
     vcov
 

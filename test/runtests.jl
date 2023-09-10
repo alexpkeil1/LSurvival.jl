@@ -122,7 +122,7 @@ using Random
     LSurvCompResp([.5, .6], [1,0], origintime=0)
 
     R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
-    print(R)
+    println(R)
     R = LSurvResp(outt, d)         # specification if no late entry
     R = LSurvResp(int, outt, d)    # specification with  late entry
     @test all(R.wts .< 1.01)
@@ -150,12 +150,12 @@ using Random
 
     R = LSurvResp(int, outt, d)
     R = LSurvResp(outt, d) # set all to zero
-    #print(R)
+    #println(R)
 
 
-    print(kaplan_meier(int, outt, d))
+    println(kaplan_meier(int, outt, d))
     #trivial case of non-competing events with late entry
-    print(aalen_johansen(int, outt, d))
+    println(aalen_johansen(int, outt, d))
 
     (bootstrap(MersenneTwister(123), kaplan_meier(int, outt, d)))
     #trivial case of non-competing events with late entry
@@ -396,6 +396,28 @@ m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.
 
 r = residuals(m, type="dfbeta")
 r2 = residuals(m2, type="dfbeta")
+println(stderror(m))
+println(stderror(m, type="robust"))
 
+mb = LSurvival.fit!(bootstrap(MersenneTwister(123),m), keepx=true, keepy=true)
+mb2 = LSurvival.fit!(bootstrap(MersenneTwister(123),m2), keepx=true, keepy=true)
+
+
+
+@test coef(mb) !== coef(m)
+@test coef(mb2) !== coef(m2)
+@test mb2.ties == m2.ties
+@test mb.ties == m.ties
+
+mb2b = bootstrap(MersenneTwister(123), m2,2)
+truemat = [1.75475  -0.414124  1.77553;1.90895  -0.116094  1.68474]
+@test isapprox(mb2b, truemat, atol  = 0.00001)
+@test isapprox(coef(mb2), mb2b[1,:])
+@test mb2b[1,:] != mb2b[2,:]
+@test confint(mb2) != confint(mb2, type="robust")
+@test confint(mb2, level=0.95) != confint(mb2, level=0.9)
+@test diff(confint(mb2, level=0.95)[1,:]) > diff(confint(mb2, level=0.90)[1,:])
+#println(confint(mb2))
+#println(confint(mb2, type="robust"))
 
 end

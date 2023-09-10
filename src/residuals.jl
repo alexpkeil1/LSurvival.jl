@@ -4,8 +4,9 @@
 """
 $DOC_RESIDUALS
 """
-function StatsBase.residuals(m::M; type="martingale") where {M<:PHModel}
-    valid_methods = ["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld"]
+function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
+    valid_methods =
+        ["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld"]
     whichmethod = findall(valid_methods .== lowercase(type))
     thismethod = valid_methods[whichmethod][1]
     if thismethod == "martingale"
@@ -117,14 +118,14 @@ end
 
 function resid_score(m::M) where {M<:PHModel}
     L = resid_Lmat(m)
-    resids = [sum(Lmat, dims=2)[:] for Lmat in L]
+    resids = [sum(Lmat, dims = 2)[:] for Lmat in L]
     reduce(hcat, resids)
 end
 
 
 function resid_schoenfeld(m::M) where {M<:PHModel}
     L = resid_Lmat(m)
-    resids = [sum(Lmat, dims=1)[:] for Lmat in L]
+    resids = [sum(Lmat, dims = 1)[:] for Lmat in L]
     reduce(hcat, resids)
 end
 

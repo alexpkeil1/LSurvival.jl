@@ -8,11 +8,34 @@ using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
 
 ###################################################################
+# Test data
+###################################################################
+
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+dat2 = (
+    enter = [1,2,5,2,1,7,3,4,8,8],
+    exit = [2,3,6,7,8,9,9,9,14,17],
+    status = [1,1,1,1,1,1,1,0,0,0],
+    x = [1,0,0,1,0,1,1,1,0,0]
+)        
+dat3 = (
+    time = [1,1,2,2,2,2,3,4,5],
+    status = [1,0,1,1,1,0,0,1,0],
+    x = [2,0,1,1,0,1,0,1,0],
+    wt = [1,2,3,4,3,2,1,2,1]
+)
+
+
+###################################################################
 # Fitting a basic Cox model, Kaplan-Meier curve using preferred functions
 ###################################################################
 id, int, outt, data =
-    LSurvival.dgm(MersenneTwister(123123), 100, 100; afun=LSurvival.int_0)
-data[:, 1] = round.(data[:, 1], digits=3)
+    LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
 wt ./= (sum(wt) / length(wt))
@@ -21,15 +44,29 @@ wt ./= (sum(wt) / length(wt))
 fit(PHModel, X, int, outt, d)
 coxph(X, int, outt, d)
 
-tab = (
-    in=int, out=outt, d=d, x=data[:, 1], z1=data[:, 2], z2=data[:, 3]
-)
+tab = (in = int, out = outt, d = d, x = data[:, 1], z1 = data[:, 2], z2 = data[:, 3])
 
-ft = coxph(@formula(Surv(in, out, d) ~ x + x^2 + z1 + z2 + z1 * z2), tab, contrasts=Dict(:z1 => CategoricalTerm))
+ft = coxph(
+    @formula(Surv(in, out, d) ~ x + x^2 + z1 + z2 + z1 * z2),
+    tab,
+    contrasts = Dict(:z1 => CategoricalTerm),
+)
 ft.formula
 
 # using Breslow partial likelihood, adding in weights, and setting higher tolerance
-phfit = fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", rtol=1e-13, atol=1e-8, keepx=true, keepy=true)
+phfit = fit(
+    PHModel,
+    X,
+    int,
+    outt,
+    d,
+    wts = wt,
+    ties = "breslow",
+    rtol = 1e-13,
+    atol = 1e-8,
+    keepx = true,
+    keepy = true,
+)
 basehaz!(phfit)
 
 # extracting various bits from the model
@@ -41,14 +78,14 @@ nullloglikelihood(phfit) # NOTE: this is the log partial likelihood at the initi
 fitted(phfit)
 
 # setting initial values (note that null partial likelihood is likelihood at the starting values)
-phfitinit = fit(PHModel, X, int, outt, d, wts=wt, start=[6.0, -2, 3.0])
+phfitinit = fit(PHModel, X, int, outt, d, wts = wt, start = [6.0, -2, 3.0])
 
 # Kaplan-Meier curve
-fit(KMSurv, int, outt, d, wts=wt)
-kfit = kaplan_meier(int, outt, d, wts=wt)
+fit(KMSurv, int, outt, d, wts = wt)
+kfit = kaplan_meier(int, outt, d, wts = wt)
 
 isfitted(kfit)
-show(stdout, kfit, maxrows=40)
+show(stdout, kfit, maxrows = 40)
 
 ###################################################################
 # Competing risks: cause-specific Cox models, Aalen-Johansen estimator of cumulative incidence (risk)
@@ -67,8 +104,8 @@ ft2_equivalent = fit(PHModel, X, int, outt, (event .== 2))
 
 
 # print likelihood verbosely
-fit(PHModel, X, int, outt, d .* (event .== 2), verbose=true)
-coxph(X, int, outt, d .* (event .== 2), verbose=true)
+fit(PHModel, X, int, outt, d .* (event .== 2), verbose = true)
+coxph(X, int, outt, d .* (event .== 2), verbose = true)
 
 
 # Aalen-Johansen estimator (non-parametric) of marginal cause-specific risk in the sample
@@ -82,30 +119,30 @@ fit(PHSurv, [ft1, ft2])
 risk1_ref = risk_from_coxphmodels([ft1, ft2])
 
 # risk at mean predictor values 
-Xpred = mean(X, dims=1)  # (a "profile" for the average individual)
+Xpred = mean(X, dims = 1)  # (a "profile" for the average individual)
 risk1 = risk_from_coxphmodels(
     [ft1, ft2],
-    coef_vectors=[coef(ft1), coef(ft2)],
-    pred_profile=Xpred,
+    coef_vectors = [coef(ft1), coef(ft2)],
+    pred_profile = Xpred,
 )
 
 # risk at median predictor values 
-Xpred_median = median(X, dims=1)
+Xpred_median = median(X, dims = 1)
 risk1_median = risk_from_coxphmodels(
     [ft1, ft2],
-    coef_vectors=[coef(ft1), coef(ft2)],
-    pred_profile=Xpred_median,
+    coef_vectors = [coef(ft1), coef(ft2)],
+    pred_profile = Xpred_median,
 )
 
 # alternatively, you can give the referent meaningful values (e.g. by centering the predictors)
-Xcen = X .- mean(X, dims=1)
+Xcen = X .- mean(X, dims = 1)
 ft1c = fit(PHModel, Xcen, int, outt, d .* (event .== 1))
 ft2c = fit(PHModel, Xcen, int, outt, d .* (event .== 2))
 risk1c = risk_from_coxphmodels([ft1c, ft2c]) # compare with risk1 object
 
 # You can also "trick" the risk_from_coxphmodels by using null cox models (coefficient is forced to be zero by using fit at initial values)
-ft1d = fit(PHModel, X, int, outt, d .* (event .== 1), maxiter=0, start=[0.0, 0.0])
-ft2d = fit(PHModel, X, int, outt, d .* (event .== 2), maxiter=0, start=[0.0, 0.0])
+ft1d = fit(PHModel, X, int, outt, d .* (event .== 1), maxiter = 0, start = [0.0, 0.0])
+ft2d = fit(PHModel, X, int, outt, d .* (event .== 2), maxiter = 0, start = [0.0, 0.0])
 risk1d = risk_from_coxphmodels([ft1d, ft2d]) # compare with risk2 object
 
 
@@ -125,7 +162,7 @@ P = PHParms(X)
 M = PHModel(R, P, "breslow")
 M = PHModel(R, P)  #default is "efron" method for ties
 isfitted(M)  # confirm this is not yet "fitted"
-LSurvival._fit!(M, start=[0.0, 0.0])
+LSurvival._fit!(M, start = [0.0, 0.0])
 isfitted(M)
 
 #################################################################################################################### 
@@ -135,8 +172,8 @@ res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
-ft1big = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=true, keepy=true)
-ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx=false, keepy=false)
+ft1big = fit(PHModel, X, int, outt, d .* (event .== 1), keepx = true, keepy = true)
+ft1small = fit(PHModel, X, int, outt, d .* (event .== 1), keepx = false, keepy = false)
 
 
 Base.summarysize(ft1big)   # 8447 bytes
@@ -194,12 +231,12 @@ m = fit(
     cgd.tstart,
     cgd.tstop,
     cgd.status,
-    wts=cgd.weight,
-    ties="efron",
-    rtol=1e-12,
-    atol=1e-6,
-    start=coxcoef,
-    maxiter=0,
+    wts = cgd.weight,
+    ties = "efron",
+    rtol = 1e-12,
+    atol = 1e-6,
+    start = coxcoef,
+    maxiter = 0,
 );
 m2 = fit(
     PHModel,
@@ -207,12 +244,12 @@ m2 = fit(
     cgd.tstart,
     cgd.tstop,
     cgd.status,
-    wts=cgd.weight,
-    ties="breslow",
-    rtol=1e-12,
-    atol=1e-6,
-    start=coxcoef2,
-    maxiter=0,
+    wts = cgd.weight,
+    ties = "breslow",
+    rtol = 1e-12,
+    atol = 1e-6,
+    start = coxcoef2,
+    maxiter = 0,
 );
 
 # efron likelihoods, weighted
@@ -236,11 +273,11 @@ m = fit(
     cgd.tstart,
     cgd.tstop,
     cgd.status,
-    wts=cgd.weight,
-    ties="efron",
-    rtol=1e-18,
-    atol=1e-9,
-    start=zeros(2),
+    wts = cgd.weight,
+    ties = "efron",
+    rtol = 1e-18,
+    atol = 1e-9,
+    start = zeros(2),
 );
 m2 = fit(
     PHModel,
@@ -248,11 +285,11 @@ m2 = fit(
     cgd.tstart,
     cgd.tstop,
     cgd.status,
-    wts=cgd.weight,
-    ties="breslow",
-    rtol=1e-18,
-    atol=1e-9,
-    start=zeros(2),
+    wts = cgd.weight,
+    ties = "breslow",
+    rtol = 1e-18,
+    atol = 1e-9,
+    start = zeros(2),
 );
 
 
@@ -279,19 +316,19 @@ vcov(m2)
 using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
 
-id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100; afun=LSurvival.int_0)
-data[:, 1] = round.(data[:, 1], digits=3)
+id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
 wt ./= (sum(wt) / length(wt))
 
 beta, ll, g, h, basehaz =
-    coxmodel(int, outt, d, X, weights=wt, method="breslow", tol=1e-9, inits=nothing);
+    coxmodel(int, outt, d, X, weights = wt, method = "breslow", tol = 1e-9, inits = nothing);
 beta2, ll2, g2, h2, basehaz2 =
-    coxmodel(int, outt, d, X, weights=wt, method="efron", tol=1e-9, inits=nothing);
+    coxmodel(int, outt, d, X, weights = wt, method = "efron", tol = 1e-9, inits = nothing);
 # fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", start=[.9,.9,.9])
-m = fit(PHModel, X, int, outt, d, wts=wt, ties="breslow");
-m2 = coxph(X, int, outt, d, wts=wt, ties="efron");
+m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow");
+m2 = coxph(X, int, outt, d, wts = wt, ties = "efron");
 
 #=  #This section commented out to avoid confusing code coverage tools
 # benchmark runtimes vs. calling R
@@ -372,15 +409,15 @@ tj2 = @btime jfun2(int, outt, d, X, wt);
 ###################################################################
 using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
-id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun=LSurvival.int_0)
-data[:, 1] = round.(data[:, 1], digits=3)
+id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
 wt ./= (sum(wt) / length(wt))
 #wt ./ wt
 
-m = fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", keepx=true, keepy=true)
-m2 = fit(PHModel, X, int, outt, d, wts=wt, ties="efron", keepx=true, keepy=true)
+m = fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", keepx = true, keepy = true)
+m2 = fit(PHModel, X, int, outt, d, wts = wt, ties = "efron", keepx = true, keepy = true)
 
 
 
@@ -409,14 +446,8 @@ cfit2
 @rget bh2;
 
 
-hcat(
-    diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())],
-    m.bh[2:end, 1],
-)
-hcat(
-    diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())],
-    m2.bh[2:end, 1],
-)
+hcat(diff(bh.hazard)[findall(diff(bh.hazard) .> floatmin())], m.bh[2:end, 1])
+hcat(diff(bh2.hazard)[findall(diff(bh2.hazard) .> floatmin())], m2.bh[2:end, 1])
 
 
 ###################################################################
@@ -428,15 +459,30 @@ hcat(
 ####### dataset and 3 (weighted) from the "validate" vignette from the survival package
 
 dat3 = (
-    time=[1, 1, 2, 2, 2, 2, 3, 4, 5],
-    status=[1, 0, 1, 1, 1, 0, 0, 1, 0],
-    x=[2, 0, 1, 1, 0, 1, 0, 1, 0],
-    wt=[1, 2, 3, 4, 3, 2, 1, 2, 1]
+    time = [1, 1, 2, 2, 2, 2, 3, 4, 5],
+    status = [1, 0, 1, 1, 1, 0, 0, 1, 0],
+    x = [2, 0, 1, 1, 0, 1, 0, 1, 0],
+    wt = [1, 2, 3, 4, 3, 2, 1, 2, 1],
 )
 
 
-ft = coxph(@formula(Surv(time, status) ~ x), dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
-ft = coxph(@formula(Surv(time, status) ~ x), dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow")
+ft = coxph(
+    @formula(Surv(time, status) ~ x),
+    dat3,
+    wts = dat3.wt,
+    keepx = true,
+    keepy = true,
+    ties = "breslow",
+    maxiter = 0,
+)
+ft = coxph(
+    @formula(Surv(time, status) ~ x),
+    dat3,
+    wts = dat3.wt,
+    keepx = true,
+    keepy = true,
+    ties = "breslow",
+)
 resid_martingale(ft)
 
 @rput dat3
@@ -447,7 +493,14 @@ cfit = coxph(Surv(time,status) ~ x,data = dat3,ties = "efron", iter = 0)
 bh = basehaz(cfit)
 mresid = residuals(cfit, type="martingale")
 """
-ft = coxph(@formula(Surv(time, status) ~ x), dat3, keepx=true, keepy=true, ties="efron", maxiter=0)
+ft = coxph(
+    @formula(Surv(time, status) ~ x),
+    dat3,
+    keepx = true,
+    keepy = true,
+    ties = "efron",
+    maxiter = 0,
+)
 resid_martingale(ft)
 @rget mresid
 
@@ -456,17 +509,23 @@ id, int, outt, dat = LSurvival.dgm(MersenneTwister(1212), 1000, 5);
 d = dat[:, 4]
 x, z1, z2 = dat[:, 1], dat[:, 2], dat[:, 3]
 
-ft1 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), (int=int, outt=outt, d=d, x=x, z1=z1, z2=z2), id=ID.(id), keepx=true, keepy=true)
+ft1 = coxph(
+    @formula(Surv(int, outt, d) ~ x + z1 + z2),
+    (int = int, outt = outt, d = d, x = x, z1 = z1, z2 = z2),
+    id = ID.(id),
+    keepx = true,
+    keepy = true,
+)
 ft1
-resid = residuals(ft1, type="martingale")
+resid = residuals(ft1, type = "martingale")
 sum(resid)
 extrema(resid)
 vid = values(ft1.R.id)
 lididx = [findlast(vid .== id.value) for id in unique(ft1.R.id)]
 
-resid = residuals(ft1, type="dfbeta")
+resid = residuals(ft1, type = "dfbeta")
 se = stderror(ft1)
-r2a =  resid ./ se'
+r2a = resid ./ se'
 resid ./ r2a
 
 sum(resid[lididx])
@@ -475,25 +534,51 @@ m = ft1
 
 using LSurvival, LinearAlgebra, RCall, Random, CSV
 
-id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun=LSurvival.int_0)
-data[:, 1] = round.(data[:, 1], digits=3)
+id, int, outt, data =
+    LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
 #wt ./= (sum(wt) / length(wt))
 wt ./= wt
-xtab = (id=id, int=int, outt=outt, d=d, x=X[:, 1], z1=X[:, 2], z2=X[:, 3], wt=wt)
+xtab = (
+    id = id,
+    int = int,
+    outt = outt,
+    d = d,
+    x = X[:, 1],
+    z1 = X[:, 2],
+    z2 = X[:, 3],
+    wt = wt,
+)
 CSV.write(expanduser("~/temp/test.csv"), xtab)
 
 
 #m = fit(PHModel, X, int, outt, d, wts = wt, id=ID.(id), ties = "breslow", keepx=true, keepy=true);
-m = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.(xtab.id), ties="breslow", keepx=true, keepy=true);
-m2 = coxph(@formula(Surv(int, outt, d) ~ x + z1 + z2), xtab, wts=xtab.wt, id=ID.(xtab.id), ties="efron", keepx=true, keepy=true);
+m = coxph(
+    @formula(Surv(int, outt, d) ~ x + z1 + z2),
+    xtab,
+    wts = xtab.wt,
+    id = ID.(xtab.id),
+    ties = "breslow",
+    keepx = true,
+    keepy = true,
+);
+m2 = coxph(
+    @formula(Surv(int, outt, d) ~ x + z1 + z2),
+    xtab,
+    wts = xtab.wt,
+    id = ID.(xtab.id),
+    ties = "efron",
+    keepx = true,
+    keepy = true,
+);
 
 
-r2 = residuals(m, type="martingale")
-r2 = residuals(m2, type="martingale")
-r = residuals(m, type="dfbeta")
-r2 = residuals(m2, type="dfbeta")
+r2 = residuals(m, type = "martingale")
+r2 = residuals(m2, type = "martingale")
+r = residuals(m, type = "dfbeta")
+r2 = residuals(m2, type = "dfbeta")
 
 
 @rput xtab
@@ -541,7 +626,7 @@ hcat(id, int, outt, d, m.P._r, X, resids2, jresids2)[findall(abs.(residdiff2) .>
 
 
 
-dat1 = (id=collect(1:6), dat1...)
+dat1 = (id = collect(1:6), dat1...)
 
 @rput dat1
 R"""
@@ -555,10 +640,10 @@ resid(cfit, type="score")
 
 
 dat2 = (
-    enter=[1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
-    exit=[2, 3, 6, 7, 8, 9, 9, 9, 14, 17],
-    status=[1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-    x=[1, 0, 0, 1, 0, 1, 1, 1, 0, 0]
+    enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
+    exit = [2, 3, 6, 7, 8, 9, 9, 9, 14, 17],
+    status = [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+    x = [1, 0, 0, 1, 0, 1, 1, 1, 0, 0],
 )
 
 @rput dat2
@@ -575,20 +660,27 @@ rrrs = resid(cfit, type="dfbetas")
 """
 @rget rrr
 @rget rrrs
-ft = coxph(@formula(Surv(enter, exit, status) ~ x), dat2, keepx=true, keepy=true, ties="efron", maxiter=0)
-rr = residuals(ft, type="dfbeta")[:]
-rrs = residuals(ft, type="dfbetas")[:]
+ft = coxph(
+    @formula(Surv(enter, exit, status) ~ x),
+    dat2,
+    keepx = true,
+    keepy = true,
+    ties = "efron",
+    maxiter = 0,
+)
+rr = residuals(ft, type = "dfbeta")[:]
+rrs = residuals(ft, type = "dfbetas")[:]
 hcat(rr, rrr)
-rrr./rrrs
-rr./rrs
+rrr ./ rrrs
+rr ./ rrs
 stderror(ft)
 
 
 dat3 = (
-    time=[1, 1, 2, 2, 2, 2, 3, 4, 5],
-    status=[1, 0, 1, 1, 1, 0, 0, 1, 0],
-    x=[2, 0, 1, 1, 0, 1, 0, 1, 0],
-    wt=[1, 2, 3, 4, 3, 2, 1, 2, 1]
+    time = [1, 1, 2, 2, 2, 2, 3, 4, 5],
+    status = [1, 0, 1, 1, 1, 0, 0, 1, 0],
+    x = [2, 0, 1, 1, 0, 1, 0, 1, 0],
+    wt = [1, 2, 3, 4, 3, 2, 1, 2, 1],
 )
 
 @rput dat3
@@ -608,7 +700,7 @@ hcat(res, resid_score(ft))
 
 dat3b = (id = collect(1:length(dat3.time)), dat3...)
 
- 
+
 @rput dat3b
 R"""
 library(survival)
@@ -626,14 +718,15 @@ res = summary(cfit)$coefficients
 @rget resid2
 
 
-ft = coxph(@formula(Surv(time, status)~x), dat3, wts=dat3.wt, keepy=true, keepx=true)
-hcat(resid, residuals(ft, type="dfbeta"))
-hcat(resid2, residuals(ft, type="dfbetas"))
-D = residuals(ft, type="dfbeta") .* ft.R.wts
-LSurvival.robust_vcov(ft)
+ft =
+    coxph(@formula(Surv(time, status) ~ x), dat3, wts = dat3.wt, keepy = true, keepx = true)
+hcat(resid, residuals(ft, type = "dfbeta"))
+hcat(resid2, residuals(ft, type = "dfbetas"))
+D = residuals(ft, type = "dfbeta")
+sqrt(LSurvival.robust_vcov(ft)[1])
 
 sqrt.(D'D)
 
 
-rb = vcov(ft, type="robust")
+rb = vcov(ft, type = "robust")
 sqrt(rb[1])

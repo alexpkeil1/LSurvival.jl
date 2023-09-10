@@ -10,7 +10,7 @@ mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
     riskset::Vector{<:Real}
     events::Vector{<:Real}
     fit::Bool
-end 
+end
 
 function KMSurv(R::Union{Nothing,G}) where {G<:LSurvResp}
     times = R.eventtimes
@@ -119,14 +119,14 @@ function fit(
     id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
-) where {M<:KMSurv, Y<:Union{Vector{<:Real},BitVector}}
+) where {M<:KMSurv,Y<:Union{Vector{<:Real},BitVector}}
 
     R = LSurvResp(enter, exit, y, wts, id)
     res = M(R)
 
     return fit!(res; fitargs...)
 end
- 
+
 
 
 """
@@ -141,7 +141,7 @@ function fit(
     id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
     offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
-) where {M<:AJSurv, Y<:Union{Vector{<:Real},BitVector}}
+) where {M<:AJSurv,Y<:Union{Vector{<:Real},BitVector}}
 
     R = LSurvCompResp(enter, exit, y, wts, id)
     res = M(R)

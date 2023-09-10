@@ -193,7 +193,7 @@ function _fit!(
     rtol::Float64 = 1e-8,
     gtol::Float64 = 1e-8,
     start = nothing,
-    keepx = false,
+    keepx = true,
     keepy = true,
     bootstrap_sample = false,
     bootstrap_rng = MersenneTwister(),
@@ -424,16 +424,28 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     pval = calcp.(z)
     op = hcat(beta, std_err, lci, uci, z, pval)
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
+    if !isnothing(m.RL)
+        std_err_rob = stderror(m, type = "robust")
+        lci = beta .+ zcrit[1] * std_err_rob
+        uci = beta .+ zcrit[2] * std_err_rob
+        op = hcat(beta, std_err, std_err_rob, lci, uci, z, pval)
+        head = ["ln(HR)", "StdErr", "RobSE", "LCI", "UCI", "Z", "P(>|Z|)"]
+    end
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
     rown = length(rown) > 1 ? rown : [rown]
     StatsBase.CoefTable(op, head, rown, 6, 5)
 end
 
-function StatsBase.confint(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
+
+
+"""
+$DOC_CONFINT
+"""
+function StatsBase.confint(m::M; level::Float64 = 0.95, kwargs...) where {M<:AbstractPH}
     mwarn(m)
     beta = coef(m)
-    std_err = stderror(m)
+    std_err = stderror(m; kwargs...) # can have type="robust"
     z = beta ./ std_err
     zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
     lci = beta .+ zcrit[1] * std_err
@@ -453,12 +465,26 @@ end
 
 function StatsBase.deviance(m::M) where {M<:AbstractPH}
     mwarn(m)
-    -2*loglikelihood(m)
+    -2 * loglikelihood(m)
 end
+
+function StatsBase.aic(m::M) where {M<:AbstractPH}
+    deviance(m) + 2 * dof(m)
+end
+
+function StatsBase.aicc(m::M) where {M<:AbstractPH}
+    df = dof(m)
+    aic(m) + 2 * df * (df - 1) / (dof_residual(m) - 1)
+end
+
+function StatsBase.bic(m::M) where {M<:AbstractPH}
+    deviance(m) + dof(m) * log(nobs(m))
+end
+
 
 function StatsBase.nulldeviance(m::M) where {M<:AbstractPH}
     mwarn(m)
-    -2*nullloglikelihood(m)
+    -2 * nullloglikelihood(m)
 end
 
 function StatsBase.dof(m::M) where {M<:AbstractPH}
@@ -477,40 +503,54 @@ function StatsBase.nobs(m::M) where {M<:AbstractPH}
     m.P.n
 end
 
+"""
+Maximum log partial likelihood for a fitted `AbstractPH` model
+Efron or Breslow (depending on the `ties`` parameter)
+"""
 function StatsBase.loglikelihood(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P._LL[end]
 end
+logpartiallikelihood(m::M) where {M<:AbstractPH} = loglikelihood(m)
 
 function StatsBase.modelmatrix(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P.X
 end
 
+"""
+Null log-partial likelihood for a fitted `AbstractPH` model
+Efron or Breslow (depending on the `ties`` parameter)
+
+Note: this is just the log partial likelihood at the initial values of the model, which default to 0. If initial values are non-null, then this function no longer validly returns the null log-partial likelihood.
+"""
 function StatsBase.nullloglikelihood(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P._LL[1]
 end
+nulllogpartiallikelihood(m::M) where {M<:AbstractPH} = nullloglikelihood(m)
 
-function StatsBase.response(m::M) where {M<:AbstractPH}
+function StatsBase.model_response(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.R
 end
+
+StatsBase.response(m::M) where {M<:AbstractPH} = StatsBase.model_response(m)
 
 function StatsBase.score(m::M) where {M<:AbstractPH}
     mwarn(m)
     m.P._grad
 end
 
-function StatsBase.stderror(m::M) where {M<:AbstractPH}
+function StatsBase.stderror(m::M; kwargs...) where {M<:AbstractPH}
     mwarn(m)
-    sqrt.(diag(vcov(m)))
+    sqrt.(diag(vcov(m; kwargs...)))
 end
 
 """
 $DOC_VCOV
 """
-function StatsBase.vcov(m::M; type::Union{String,Nothing}=nothing) where {M<:AbstractPH}
+function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:AbstractPH}
     mwarn(m)
     if type == "robust"
         res = robust_vcov(m)

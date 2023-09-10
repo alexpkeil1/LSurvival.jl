@@ -193,6 +193,21 @@ DOC_LSURVCOMPRESP = """
    y::Y,
  ) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
  ```
+ """
+
+DOC_CONFINT = """
+ dat1 = (
+     time = [1,1,6,6,8,9],
+     status = [1,0,1,1,0,1],
+     x = [1,1,1,0,0,0]
+ )
+
+ ft = coxph(@formula(Surv(time, status) ~ x),dat1, keepx=true)
+ # model-based variance
+ confint(ft)
+
+ # robust variance
+ confint(ft, type="robust")
 
  """
 
@@ -280,7 +295,6 @@ DOC_PHSURV = """
   PHSurv(fitlist::Array{T}, eventtypes) where {T<:PHModel}
   PHSurv(fitlist::Array{T}) where {T<:PHModel}
  ```
-
  """
 
 DOC_ID = """
@@ -296,7 +310,6 @@ DOC_ID = """
  ```@example
   [ID(i) for i in 1:10]
  ```
-
  """
 
 DOC_STRATA = """
@@ -308,8 +321,8 @@ DOC_STRATA = """
  ```julia
   [Strata(i) for i in 1:10]
  ```
-
  """
+
 ####### Primary methods
 
 
@@ -337,6 +350,10 @@ DOC_COXPH = """
   Keyword parameters
   - `ties` method for ties ("efron" or "breslow")
   - `wts` vector of observation weights
+  - `keepx` (boolean) keep the design matrix after fitting the model? (default `true`, `false` can be used to save space)
+  - `keepy` (boolean) keep the outcome vector after fitting the model? (default `true`, `false` can be used to save space)
+  
+  See [https://en.wikipedia.org/wiki/Proportional_hazards_model#Likelihood_when_there_exist_tied_times](for the log-partial liklihoods given for Efron's and Breslow's method)
   
 
   ## using StatsAPI `@formula` interface
@@ -351,6 +368,8 @@ DOC_COXPH = """
   Keyword parameters
   - `ties` method for ties ("efron" or "breslow")
   - `wts` vector of observation weights
+  - `keepx` (boolean) keep the design matrix after fitting the model? (default `true`, `false` can be used to save space)
+  - `keepy` (boolean) keep the outcome vector after fitting the model? (default `true`, `false` can be used to save space)
   - `contrasts` an optional Dict used to process the columns in `dat` (CF: See the contrasts argument in GLM.glm)
 
  # Example
@@ -360,12 +379,18 @@ DOC_COXPH = """
   using Random
   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 200);
   enter = zeros(length(t));
-  X = hcat(x,rand(length(x)));
-  m2 = fit(PHModel, X, enter, t, d, ties="breslow")
-  coxph(X, enter, t, d, ties="breslow")
-  coeftable(m)
- ```
+  X = hcat(x,z);
+  tab = (enter=enter, t=t, d=d, x=x[:],z=z[:])
 
+  # three identical ways to fit the model
+  m1 = fit(PHModel, X, enter, t, d, ties="breslow")
+  m2 = coxph(X, enter, t, d, ties="breslow", keepx=false, keepy=false)                      
+  m3 = coxph(@formula(Surv(enter, t, d)~x+z), tab, ties="breslow", keepx=true, keepy=true)
+  coeftable(m)
+  stderror(m3)
+  stderror(m3, type="robust")
+  confint(m3, type="robust")
+ ```
  """
 
 
@@ -384,7 +409,6 @@ DOC_FIT_PHSURV = """
 
  ```julia
   risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where T <: PHModel
-
  ```
 
 
