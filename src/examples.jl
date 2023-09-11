@@ -767,10 +767,10 @@ datpp = (
 R"""
 library(survival)
 cfit = coxph(
-    Surv(enter, exit, d) ~ x1 + x2 + x3,
+    Surv(enter, exit, d) ~ x1 + x2 + x3 + cluster(id),
     data = datpp,
     ties = "efron",
-    weights=wt, iter=0)
+    weights=wt)
     resid = residuals(cfit, "martingale")
     resid2 = residuals(cfit, "dfbeta")
     resid3 = residuals(cfit, "score")
@@ -784,7 +784,7 @@ cfit = coxph(
 @rget resid3
 @rget resid4
 
-jres = coxph(@formula(Surv(enter, exit, d) ~  x1 + x2 + x3), datpp, wts = datpp.wt, maxiter=0)
+jres = coxph(@formula(Surv(enter, exit, d) ~  x1 + x2 + x3), datpp, id = ID.(datpp.id), wts = datpp.wt)
 residj = residuals(jres, type = "martingale")
 resid2j = residuals(jres, type = "dfbeta")
 resid3j = residuals(jres, type = "score")
@@ -795,6 +795,9 @@ hcat(resid2, resid2j)
 hcat(resid3, resid3j)
 #hcat(resid4, resid4j)
 stderror(jres, type = "robust")
+res[:,4]
+
+
 
 sum(resid3, dims=1)
 sum(residuals(jres, type="score"), dims=1)

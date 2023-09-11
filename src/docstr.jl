@@ -196,7 +196,7 @@ DOC_LSURVCOMPRESP = """
  """
 
 DOC_CONFINT = """
- dat1 = (
+ dat1= (
      time = [1,1,6,6,8,9],
      status = [1,0,1,1,0,1],
      x = [1,1,1,0,0,0]
@@ -208,6 +208,24 @@ DOC_CONFINT = """
 
  # robust variance
  confint(ft, type="robust")
+
+ # for cluster robust variance
+ dat1clust= (
+     id = [1,2,3,3,4,4,5,5,6,6],
+     enter = [0,0,0,1,0,1,0,1,0,1],
+     exit = [1,1,1,6,1,6,1,8,1,9],
+     status = [1,0,0,1,0,1,0,0,0,1],
+     x = [1,1,1,1,0,0,0,0,0,0]
+ )
+
+ ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id), keepx=true)
+ # model-based variance
+ confint(ft2)
+
+ # robust variance
+ confint(ft2, type="robust")
+
+
 
  """
 

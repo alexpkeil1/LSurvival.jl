@@ -1,11 +1,5 @@
 # to implement
-
-# currently working here:
-# Breslow: score, schoenfeld residuals, robust standard error estimate for Cox model
-# Efron: score, schoenfeld residuals, robust standard error estimate for Cox model
-
-# currently NOT working here:
-# late entry Efron: score, schoenfeld residuals
+# ID level robust variance estimators
 
 
 using LSurvival, Random, Optim, BenchmarkTools, RCall

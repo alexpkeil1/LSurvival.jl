@@ -140,8 +140,9 @@ end
 $DOC_ROBUST_VCOV
 """
 function robust_vcov(m::M) where {M<:PHModel}
-    dfbeta = resid_dfbeta(m)
-    D = dfbeta
+    dfbeta = residuals(m, type="dfbeta")
+    id = [i.value for i in m.R.id]
+    D = reduce(vcat, [sum(dfbeta[findall(id .== i),:], dims=1) for i in unique(id)])
     robVar = D'D
     return robVar
 end
