@@ -30,7 +30,8 @@ function expected_denj(_r, wts, caseidx, risksetidx, nties, j)
 end
 =#
 
-if false
+#=
+# commenting out to avoid issues with test coverage
     ######################################################################
     # fitting with optim (works, but more intensive than defaults)
     ######################################################################
@@ -162,4 +163,5 @@ if false
 
     # in progress functions
     # taken from GLM.jl/src/linpred.jl
-end
+=#
+
