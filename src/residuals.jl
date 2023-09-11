@@ -183,7 +183,7 @@ function resid_Lmat_breslow(m::M) where {M<:PHModel}
     for j = 1:nxcols
         for i = 1:nobs
             if length(dM[i]) > 0
-                pr = (X[i, j] .- muX[di[i]]) .* dM[i]
+                pr = (X[i, j] .- muX[di[i],j]) .* dM[i]
                 L[j][i, di[i]] .= pr
             end
         end
@@ -282,8 +282,10 @@ function muX_tE(m::M, whichbhindex) where {M<:PHModel}
     nties = m.bh[:, 6]
     nxcols = size(X, 2)
 
-    muXE = fill([zeros(Int(j)) for j in nties], nxcols)
-    nX = fill([zeros(Int(j)) for j in nties], nxcols)
+    #muXE = fill([zeros(Int(j)) for j in nties], nxcols)
+    #nX = fill([zeros(Int(j)) for j in nties], nxcols)
+    muXE = [[zeros(Int(j)) for j in nties] for n in 1:nxcols]
+    nX = [[zeros(Int(j)) for j in nties] for n in 1:nxcols]
     for j = 1:nxcols
         for i in eachindex(whichbhindex)
             ties = nties[whichbhindex[i]]    # number of ties at each time index

@@ -11,22 +11,28 @@ using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 # Test data
 ###################################################################
 
-dat1 = (
-    time = [1,1,6,6,8,9],
-    status = [1,0,1,1,0,1],
-    x = [1,1,1,0,0,0]
-)
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 dat2 = (
-    enter = [1,2,5,2,1,7,3,4,8,8],
-    exit = [2,3,6,7,8,9,9,9,14,17],
-    status = [1,1,1,1,1,1,1,0,0,0],
-    x = [1,0,0,1,0,1,1,1,0,0]
-)        
+    enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
+    exit = [2, 3, 6, 7, 8, 9, 9, 9, 14, 17],
+    status = [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+    x = [1, 0, 0, 1, 0, 1, 1, 1, 0, 0],
+)
 dat3 = (
-    time = [1,1,2,2,2,2,3,4,5],
-    status = [1,0,1,1,1,0,0,1,0],
-    x = [2,0,1,1,0,1,0,1,0],
-    wt = [1,2,3,4,3,2,1,2,1]
+    time = [1, 1, 2, 2, 2, 2, 3, 4, 5],
+    status = [1, 0, 1, 1, 1, 0, 0, 1, 0],
+    x = [2, 0, 1, 1, 0, 1, 0, 1, 0],
+    wt = [1, 2, 3, 4, 3, 2, 1, 2, 1],
+)
+
+dat4 = ( # mine
+    id =    [1, 1, 2, 2, 2, 3, 4, 5, 5, 6],
+    enter = [1, 2, 5, 4, 6, 7, 3, 6, 8, 0],
+    exit =  [2, 5, 6, 7, 8, 9, 6, 8, 14, 9],
+    status =[0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+    x =     [.1, .1, 1.5, 1.5, 1.5, 0, 0, 0, 0, 3],
+    z =     [1, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+    w =     [0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
 )
 
 
@@ -637,7 +643,8 @@ cfit = coxph(
     ties = "efron")
 resid(cfit, type="score")
 """
-
+ft1 = coxph(@formula(Surv(time, status) ~ x), dat1)
+residuals(ft1, type = "score")
 
 dat2 = (
     enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
@@ -695,7 +702,7 @@ res = resid(cfit, type="martingale")
 """
 @rget res
 
-hcat(res, resid_score(ft))
+hcat(res, residuals(ft, type = "score"))
 
 
 dat3b = (id = collect(1:length(dat3.time)), dat3...)
@@ -730,3 +737,115 @@ sqrt.(D'D)
 
 rb = vcov(ft, type = "robust")
 sqrt(rb[1])
+
+###################################################################
+# Checking residuals against R
+###################################################################
+id, int, outt, data =
+    LSurvival.dgm(MersenneTwister(123123), 100, 10; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+wt ./= (sum(wt) / length(wt))
+wt ./= wt
+
+
+
+datpp = (
+    id = id,
+    enter = int,
+    exit = outt,
+    d = d,
+    x1 = X[:, 1],
+    x2 = X[:, 2],
+    x3 = X[:, 3],
+    wt = wt,
+)
+
+
+@rput datpp
+R"""
+library(survival)
+cfit = coxph(
+    Surv(enter, exit, d) ~ x1 + x2 + x3,
+    data = datpp,
+    ties = "efron",
+    weights=wt, iter=0)
+    resid = residuals(cfit, "martingale")
+    resid2 = residuals(cfit, "dfbeta")
+    resid3 = residuals(cfit, "score")
+    resid4 = residuals(cfit, "schoenfeld")
+    res = summary(cfit)$coefficients
+    cfit
+"""
+@rget res
+@rget resid
+@rget resid2
+@rget resid3
+@rget resid4
+
+jres = coxph(@formula(Surv(enter, exit, d) ~  x1 + x2 + x3), datpp, wts = datpp.wt, maxiter=0)
+residj = residuals(jres, type = "martingale")
+resid2j = residuals(jres, type = "dfbeta")
+resid3j = residuals(jres, type = "score")
+resid4j = residuals(jres, type = "schoenfeld")
+
+hcat(resid, residj)
+hcat(resid2, resid2j)
+hcat(resid3, resid3j)
+#hcat(resid4, resid4j)
+stderror(jres, type = "robust")
+
+sum(resid3, dims=1)
+sum(residuals(jres, type="score"), dims=1)
+extrema(resid3, dims=1)
+extrema(residuals(jres, type="score"), dims=1)
+
+# plot(resid3[:,1], residuals(jres, type="score")[:,1], st=:scatter)
+# plot(resid3[:,2], residuals(jres, type="score")[:,2], st=:scatter)
+
+
+#### 
+
+@rput dat4
+R"""
+library(survival)
+cfit = coxph(
+    Surv(enter, exit, status) ~ z + x,
+    data = dat4,
+    ties = "breslow",
+    id=id, 
+    nocenter=c(unique(dat4$z), unique(dat4$x)))
+    resid = residuals(cfit, "martingale")
+    resid2 = residuals(cfit, "dfbeta")
+    resid3 = residuals(cfit, "score")
+    resid4 = residuals(cfit, "schoenfeld")
+    res = summary(cfit)$coefficients
+    cfit
+"""
+@rget res
+@rget resid
+@rget resid2
+@rget resid3
+@rget resid4
+
+jres = coxph(@formula(Surv(enter, exit, status) ~ z + x), dat4, ties="breslow")
+dM, dt, di = LSurvival.dexpected_FH(jres)
+muXt = LSurvival.muX_tE(jres, di)
+
+reduce(hcat, dat4)
+
+hcat(resid, residuals(jres, type="martingale"))
+hcat(resid2, residuals(jres, type="dfbeta"))
+hcat(resid3, residuals(jres, type="score"))
+hcat(resid4, residuals(jres, type="schoenfeld"))
+
+sum(resid2, dims=1)
+sum(residuals(jres, type="dfbeta"), dims=1)
+
+sum(resid3, dims=1)
+sum(residuals(jres, type="score"), dims=1)
+
+
+jres.RL[1]
+jres.RL[2]
