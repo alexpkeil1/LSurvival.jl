@@ -805,5 +805,36 @@ using Random
     #TEST: does robust variance fail to get created correctly in person period data when omitting id argument?
     @test stderror(ft2, type = "robust") != stderror(ft2w, type = "robust")
 
+    # TEST: bootstrapping a survival response
+    op = LSurvivalResp(zeros(100), rand(MersenneTwister(345), 100), ones(100))
+    @test length(op.eventtimes) .> length(bootstrap(op)[2].eventtimes)
+    
+    # TEST: bootstrapping a competing survival response
+    op = LSurvivalCompResp(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100))
+    @test length(op.eventtimes) .> length(bootstrap(op)[2].eventtimes)
+
+    # TEST: bootstrapping a cox model without a seed
+    @test !bootstrap(ft2).fit
+    
+    # TEST: bootstrapping a kaplan meier without a seed
+    # TODO: will this fail with weights?
+    #km = kaplan_meier(zeros(length(dat1.time)), dat1.time, dat1.status)
+    #@test bootstrap(km)
+
+    # TEST: bootstrap errors
+    ftf = coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false)
+    try bootstrap(ftf)
+    catch e
+      @test  typeof(e) == MethodError
+    end
+    ftf = coxph(@formula(Surv(time, status) ~ x), dat1, keepy = false)
+    try bootstrap(ftf, 2)
+    catch e
+        @test  typeof(e) == String  # should this be converted to an error?
+    end
+
+    
+
+
 
 end

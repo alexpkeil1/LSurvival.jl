@@ -152,14 +152,23 @@ end
 """
 $DOC_FIT_KMSURV
 """
-kaplan_meier(enter, exit, y, args...; kwargs...) =
-    fit(KMSurv, enter, exit, y, args...; kwargs...)
+kaplan_meier(enter, exit, y; kwargs...) =
+    fit(KMSurv, enter, exit, y; kwargs...)
+
+kaplan_meier(exit, y; kwargs...) = 
+  kaplan_meier(zeros(length(y)), exit, y; kwargs...)
+
+kaplan_meier(exit; kwargs...) = 
+  kaplan_meier(exit, ones(length(exit)); kwargs...)
 
 """
 $DOC_FIT_AJSURV
 """
-aalen_johansen(enter, exit, y, args...; kwargs...) =
-    fit(AJSurv, enter, exit, y, args...; kwargs...)
+aalen_johansen(enter, exit, y; kwargs...) =
+    fit(AJSurv, enter, exit, y; kwargs...)
+
+aalen_johansen(exit, y; kwargs...) =
+  aalen_johansen(zeros(length(y)), exit, y; kwargs...)
 
 ##################################################################################################################### 
 # Summary functions for non-parametric survival models
