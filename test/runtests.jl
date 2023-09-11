@@ -272,7 +272,7 @@ using Random
     @test !(bootstrap(MersenneTwister(123), ft1)).fit
 
     # TEST: does multi bootstrap return intended length of results
-    @testsize(bootstrap(MersenneTwister(123), ft1, 3)) == (3, length(coef(ft1)))
+    @test size(bootstrap(MersenneTwister(123), ft1, 3)) == (3, length(coef(ft1)))
 
 
     # TEST: do updated methods give the same answer as deprecated methods
