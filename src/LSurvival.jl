@@ -1,4 +1,4 @@
-module LSurv
+module LSurvival
 ####### imports #######
 
 using Reexport
@@ -57,11 +57,11 @@ export ID,
     Surv,
     AbstractPH,
     AbstractNPSurv,
-    AbstractLSurvID,
-    AbstractLSurvParms,
+    AbstractLSurvivalID,
+    AbstractLSurvivalParms,
     AbstractSurvTime
 # Outcome types
-export LSurvResp, LSurvCompResp
+export LSurvivalResp, LSurvivalCompResp
 # functions    
 export kaplan_meier,        # interface for estimating cumulative risk from non-parametric estimator
     aalen_johansen,        # interface for estimating cumulative risk from non-parametric competing risk estimator
@@ -115,12 +115,12 @@ include("docstr.jl")
 """
 $DOC_ABSTRACTLSURVRESP
 """
-abstract type AbstractLSurvResp end
+abstract type AbstractLSurvivalResp end
 
 """
 $DOC_ABSTRACTLSURVPARMS
 """
-abstract type AbstractLSurvParms end
+abstract type AbstractLSurvivalParms end
 
 """
 $DOC_ABSTRACTPH

@@ -1,5 +1,5 @@
 using Test
-using LSurv
+using LSurvival
 using Random
 #using DataFrames
 #using BenchmarkTools # add during testing
@@ -30,7 +30,7 @@ using Random
 
 
 
-    id, int, outt, data = LSurv.dgm(MersenneTwister(112), 100, 10; afun = LSurv.int_0)
+    id, int, outt, data = LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
     data[:, 1] = round.(data[:, 1], digits = 3)
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
@@ -86,7 +86,7 @@ using Random
     @test isapprox(bic(res), bic(res2))
 
 
-    id, int, outt, data = LSurv.dgm(MersenneTwister(1212), 30, 5; afun = LSurv.int_0)
+    id, int, outt, data = LSurvival.dgm(MersenneTwister(1212), 30, 5; afun = LSurvival.int_0)
 
     d, X = data[:, 4], data[:, 1:3]
     w = rand(length(d))
@@ -162,17 +162,17 @@ using Random
     ))
 
     # survival outcome:
-    LSurvResp([0.5, 0.6], [1, 0])
-    LSurvResp([0.5, 0.6], [1, 0], origintime = 0)
-    LSurvCompResp([0.5, 0.6], [1, 0], origintime = 0)
+    LSurvivalResp([0.5, 0.6], [1, 0])
+    LSurvivalResp([0.5, 0.6], [1, 0], origintime = 0)
+    LSurvivalCompResp([0.5, 0.6], [1, 0], origintime = 0)
 
     # TESTs: expected behavior of surv objects
-    R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+    R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
     println(R)
-    R = LSurvResp(outt, d)         # specification if no late entry
-    R = LSurvResp(int, outt, d)    # specification with  late entry
+    R = LSurvivalResp(outt, d)         # specification if no late entry
+    R = LSurvivalResp(int, outt, d)    # specification with  late entry
     @test all(R.wts .< 1.01)
-    R = LSurvResp(int, outt, d, w)    # specification with  weights and late entry (no specification with weights and no late entry)
+    R = LSurvivalResp(int, outt, d, w)    # specification with  weights and late entry (no specification with weights and no late entry)
     @test all(R.wts .== w)
 
     # PH model predictors
@@ -192,10 +192,10 @@ using Random
     # modelframe(f, data, contrasts, M)
 
 
-    LSurv._fit!(M, start = [0.0, 0.0, 0.0])
+    LSurvival._fit!(M, start = [0.0, 0.0, 0.0])
 
-    R = LSurvResp(int, outt, d)
-    R = LSurvResp(outt, d) # set all to zero
+    R = LSurvivalResp(int, outt, d)
+    R = LSurvivalResp(outt, d) # set all to zero
     #println(R)
 
     # TESTs: do print functions work?
@@ -208,7 +208,7 @@ using Random
     (bootstrap(MersenneTwister(123), aalen_johansen(int, outt, d)))
 
 
-    z, x, t, d, event, wt = LSurv.dgm_comprisk(MersenneTwister(1212), 100)
+    z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
 
     enter = zeros(length(t))
 
@@ -222,10 +222,10 @@ using Random
     kms = kaplan_meier(enter, t, d, wts = wt)
 
 
-    _, oldsurv, _ = LSurv.km(enter, t, d, weights = wt)
+    _, oldsurv, _ = LSurvival.km(enter, t, d, weights = wt)
     @test isapprox(kms.surv, oldsurv[1:length(kms.surv)])
 
-    a, oldsurvaj, oldFaj, c = LSurv.aj(enter, t, event, weights = wt)
+    a, oldsurvaj, oldFaj, c = LSurvival.aj(enter, t, event, weights = wt)
     @test all(isapprox.(ajres2.risk, 1.0 .- oldFaj[1:length(ajres2.times), :]))
     @test all(isapprox.(ajres2.surv, oldsurvaj[1:length(ajres2.times), :]))
     @test all(isapprox.(ajres2.surv, kms.surv))
@@ -378,8 +378,8 @@ using Random
         ties = "breslow",
         maxiter = 0,
     )
-    dM, dt, di = LSurv.dexpected_NA(ft)
-    muX = LSurv.muX_t(ft, di)
+    dM, dt, di = LSurvival.dexpected_NA(ft)
+    muX = LSurvival.muX_t(ft, di)
     truemuX = [13 / 19, 11 / 16, 2 / 3]
 
     @test all(isapprox.(muX, truemuX, atol = 0.00001))
@@ -713,7 +713,7 @@ using Random
 
     # TEST: can algorithms recover from an observation that doesn't contribute to the likelihood?
     # NOTE: no formal test here, this will error if incorrect
-    id, int, outt, data = LSurv.dgm(MersenneTwister(1232), 1000, 100; afun = LSurv.int_0)
+    id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
     data[:, 1] = round.(data[:, 1], digits = 3)
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
@@ -760,8 +760,8 @@ using Random
     ser = stderror(m, type = "robust")
     @test se != ser
 
-    mb = LSurv.fit!(bootstrap(MersenneTwister(123), m), keepx = true, keepy = true)
-    mb2 = LSurv.fit!(bootstrap(MersenneTwister(123), m2), keepx = true, keepy = true)
+    mb = LSurvival.fit!(bootstrap(MersenneTwister(123), m), keepx = true, keepy = true)
+    mb2 = LSurvival.fit!(bootstrap(MersenneTwister(123), m2), keepx = true, keepy = true)
 
     #TEST: does bootstrapping preserve model differences??
 

@@ -10,7 +10,7 @@ mutable struct PHParms{
     G<:Union{Nothing,Vector{<:Float64}},
     H<:Union{Nothing,Matrix{<:Float64}},
     I<:Int,
-} <: AbstractLSurvParms
+} <: AbstractLSurvivalParms
     X::Union{Nothing,D}
     _B::B                        # coefficient vector
     _r::R                        # linear predictor/risk
@@ -58,7 +58,7 @@ Base.size(x::PHParms) = size(x.X)
 """
 $DOC_PHMODEL    
 """
-mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
+mutable struct PHModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms} <: AbstractPH
     R::Union{Nothing,G}        # Survival response
     P::L        # parameters
     formula::Union{FormulaTerm,Nothing}
@@ -78,7 +78,7 @@ function PHModel(
     ties::String,
     fit::Bool,
     bh::Matrix{Float64},
-) where {G<:LSurvResp,L<:AbstractLSurvParms}
+) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     tl = ["efron", "breslow"]
     if !issubset([ties], tl)
         jtl = join(tl, ", ")
@@ -96,7 +96,7 @@ function PHModel(
     formula::Union{FormulaTerm,Nothing},
     ties::String,
     fit::Bool,
-) where {G<:LSurvResp,L<:AbstractLSurvParms}
+) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 6))
 end
 
@@ -108,7 +108,7 @@ function PHModel(
     P::L,
     formula::Union{FormulaTerm,Nothing},
     ties::String,
-) where {G<:LSurvResp,L<:AbstractLSurvParms}
+) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, formula, ties, false)
 end
 
@@ -119,7 +119,7 @@ function PHModel(
     R::Union{Nothing,G},
     P::L,
     ties::String,
-) where {G<:LSurvResp,L<:AbstractLSurvParms}
+) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, nothing, ties, false)
 end
 
@@ -130,14 +130,14 @@ function PHModel(
     R::Union{Nothing,G},
     P::L,
     formula::Union{FormulaTerm,Nothing},
-) where {G<:LSurvResp,L<:AbstractLSurvParms}
+) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, formula, "efron", false)
 end
 
 """
 $DOC_PHMODEL    
 """
-function PHModel(R::Union{Nothing,G}, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
+function PHModel(R::Union{Nothing,G}, P::L) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, "efron")
 end
 
@@ -332,7 +332,7 @@ function fit(
     exit::Vector{<:Real},
     y::Y;
     ties = "efron",
-    id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
+    id::Vector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(y)],
     wts::Vector{<:Real} = similar(enter, 0),
     offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
@@ -343,7 +343,7 @@ function fit(
         throw(DimensionMismatch("number of rows in X and y must match"))
     end
 
-    R = LSurvResp(enter, exit, y, wts, id)
+    R = LSurvivalResp(enter, exit, y, wts, id)
     P = PHParms(X)
 
     res = M(R, P, ties)
@@ -376,14 +376,14 @@ function fit(
     f::FormulaTerm,
     data;
     ties = "efron",
-    id::AbstractVector{<:AbstractLSurvID} = [ID(i) for i in eachindex(getindex(data, 1))],
+    id::AbstractVector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(getindex(data, 1))],
     wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
     fitargs...,
 ) where {M<:AbstractPH}
     f, (y, X) = modelframe(f, data, contrasts, M)
-    R = LSurvResp(y, wts, id)
+    R = LSurvivalResp(y, wts, id)
     P = PHParms(X)
     res = M(R, P, f, ties)
     return fit!(res; fitargs...)

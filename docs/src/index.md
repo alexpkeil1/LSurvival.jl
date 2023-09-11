@@ -1,8 +1,8 @@
 ```@meta
-CurrentModule = LSurv=
+CurrentModule = LSurvival=
 ```
 
-# [LSurv](https://github.com/alexpkeil1/LSurvival.jl)
+# [LSurvival](https://github.com/alexpkeil1/LSurvival.jl)
 
 Survival analysis functions in Julia for time-to-event outcomes that can include:
 - Loss-to-follow-up/right censoring
@@ -43,7 +43,7 @@ using Pkg; Pkg.add(url = "https://github.com/alexpkeil1/LSurvival.jl")
 
 ### Single event type: Cox model and Kaplan-Meier curve
 ```{julia}
-using Random, LSurv, Distributions, LinearAlgebra
+using Random, LSurvival, Distributions, LinearAlgebra
 
 # generate some data under a discrete hazards model
 expit(mu) = inv(1.0 + exp(-mu))
@@ -106,7 +106,7 @@ res = kaplan_meier(int, outt, d)
 
 ### Competing event analysis: Aalen-Johansen and Cox-model-based estimators of the cumulative risk/survival
 ```{julia}
-using Random, LSurv, Distributions, LinearAlgebra
+using Random, LSurvival, Distributions, LinearAlgebra
 
 # simulate some data
 function dgm_comprisk(; n = 100, rng = MersenneTwister())
@@ -159,13 +159,13 @@ res_aj
 
 
 # this approach operates on left censored outcomes (which operate in the background in model fitting)
-LSurvResp(enter, t, d, origintime=0)
-LSurvCompResp(enter, t, event) # automatically infers origin
+LSurvivalResp(enter, t, d, origintime=0)
+LSurvivalCompResp(enter, t, event) # automatically infers origin
 
 
 # can use the ID type to refer to units with multiple observations
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
-LSurvResp(int, outt, data[:,4], ID.(id))
+LSurvivalResp(int, outt, data[:,4], ID.(id))
 ```
 
 ## Index of functions
@@ -176,5 +176,5 @@ LSurvResp(int, outt, data[:,4], ID.(id))
 ## Function help 
 
 ```@autodocs
-Modules = [LSurv]
+Modules = [LSurvival]
 ```

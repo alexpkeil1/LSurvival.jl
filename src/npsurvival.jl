@@ -3,7 +3,7 @@
 # structs
 #####################################################################################################################
 
-mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
+mutable struct KMSurv{G<:LSurvivalResp} <: AbstractNPSurv
     R::Union{Nothing,G}        # Survival response
     times::Vector{<:Real}
     surv::Vector{<:Float64}
@@ -12,7 +12,7 @@ mutable struct KMSurv{G<:LSurvResp} <: AbstractNPSurv
     fit::Bool
 end
 
-function KMSurv(R::Union{Nothing,G}) where {G<:LSurvResp}
+function KMSurv(R::Union{Nothing,G}) where {G<:LSurvivalResp}
     times = R.eventtimes
     nt = length(times)
     surv = ones(Float64, nt)
@@ -21,7 +21,7 @@ function KMSurv(R::Union{Nothing,G}) where {G<:LSurvResp}
     KMSurv(R, times, surv, riskset, events, false)
 end
 
-mutable struct AJSurv{G<:LSurvCompResp} <: AbstractNPSurv
+mutable struct AJSurv{G<:LSurvivalCompResp} <: AbstractNPSurv
     R::Union{Nothing,G}        # Survival response
     times::Vector{<:Real}
     surv::Vector{<:Float64}
@@ -31,7 +31,7 @@ mutable struct AJSurv{G<:LSurvCompResp} <: AbstractNPSurv
     fit::Bool
 end
 
-function AJSurv(R::Union{Nothing,G}) where {G<:LSurvCompResp}
+function AJSurv(R::Union{Nothing,G}) where {G<:LSurvivalCompResp}
     times = R.eventtimes
     net = length(R.eventtypes) - 1
     nt = length(times)
@@ -116,12 +116,12 @@ function fit(
     exit::Vector{<:Real},
     y::Y;
     wts::Vector{<:Real} = similar(enter, 0),
-    id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
+    id::Vector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(y)],
     offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
 ) where {M<:KMSurv,Y<:Union{Vector{<:Real},BitVector}}
 
-    R = LSurvResp(enter, exit, y, wts, id)
+    R = LSurvivalResp(enter, exit, y, wts, id)
     res = M(R)
 
     return fit!(res; fitargs...)
@@ -138,12 +138,12 @@ function fit(
     exit::Vector{<:Real},
     y::Y;
     wts::Vector{<:Real} = similar(enter, 0),
-    id::Vector{<:AbstractLSurvID} = [ID(i) for i in eachindex(y)],
+    id::Vector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(y)],
     offset::Vector{<:Real} = similar(enter, 0),
     fitargs...,
 ) where {M<:AJSurv,Y<:Union{Vector{<:Real},BitVector}}
 
-    R = LSurvCompResp(enter, exit, y, wts, id)
+    R = LSurvivalCompResp(enter, exit, y, wts, id)
     res = M(R)
 
     return fit!(res; fitargs...)

@@ -1,4 +1,4 @@
-# LSurv
+# LSurvival
 
 [![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
 [![Main](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/stable/)
@@ -30,7 +30,7 @@ or directly in Julia
 ## Cox model
 
 ```{julia}
-using Random, LSurv, Distributions, LinearAlgebra
+using Random, LSurvival, Distributions, LinearAlgebra
 
 # generate some data
 expit(mu) = inv(1.0 + exp(-mu))
@@ -144,13 +144,13 @@ fit2 = fit(PHModel, X, enter, t, (event .== 2), ties = "breslow", wts = wt)
 risk_from_coxphmodels([fit1, fit2])
 
 # this approach operates on left censored outcomes (which operate in the background in model fitting)
-LSurvResp(enter, t, d)
-LSurvCompResp(enter, t, event)
+LSurvivalResp(enter, t, d)
+LSurvivalCompResp(enter, t, event)
 
 
 # can use the ID type to refer to units with multiple observations
 id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
-LSurvResp(int, outt, data[:, 4], ID.(id))
+LSurvivalResp(int, outt, data[:, 4], ID.(id))
 ```
 
 More documentation can be found here: [stable version](https://alexpkeil1.github.io/LSurvival.jl/stable/), [developmental version](https://alexpkeil1.github.io/LSurvival.jl/dev/)

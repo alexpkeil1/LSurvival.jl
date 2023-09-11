@@ -36,14 +36,14 @@ DOC_LSURVRESP = """
 
 
  ```julia
-  struct LSurvResp{
+  struct LSurvivalResp{
   E<:AbstractVector,
   X<:AbstractVector,
   Y<:AbstractVector,
   W<:AbstractVector,
   T<:Real,
-  I<:AbstractLSurvID,
-  } <: AbstractLSurvResp
+  I<:AbstractLSurvivalID,
+  } <: AbstractLSurvivalResp
   enter::E
   exit::X
   y::Y
@@ -56,7 +56,7 @@ DOC_LSURVRESP = """
  ```
 
  ```julia
-  LSurvResp(
+  LSurvivalResp(
      enter::E,
      exit::X,
      y::Y,
@@ -67,12 +67,12 @@ DOC_LSURVRESP = """
      X<:Vector,
      Y<:Union{Vector{<:Real},BitVector},
      W<:Vector,
-     I<:AbstractLSurvID,
+     I<:AbstractLSurvivalID,
  }
  ```
 
  ```julia
-  LSurvResp(
+  LSurvivalResp(
   enter::E,
   exit::X,
   y::Y,
@@ -82,15 +82,15 @@ DOC_LSURVRESP = """
  ```
 
  ```julia
-  LSurvResp(
+  LSurvivalResp(
    y::Vector{Y},
    wts::W,
    id::Vector{I},
- ) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvID}
+ ) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvivalID}
  ```
 
  ```julia
-  LSurvResp(
+  LSurvivalResp(
    enter::E,
    exit::X,
    y::Y,
@@ -98,14 +98,14 @@ DOC_LSURVRESP = """
  ```
 
  ```julia
-  LSurvResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
+  LSurvivalResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
  ```
 
  # Examples
 
  ```julia
  # no late entry
- LSurvResp([.5, .6], [1,0])
+ LSurvivalResp([.5, .6], [1,0])
 
  ```
 
@@ -129,16 +129,16 @@ DOC_LSURVCOMPRESP = """
  # Signatures:
 
  ```julia
-  struct LSurvCompResp{
+  struct LSurvivalCompResp{
   E<:AbstractVector,
   X<:AbstractVector,
   Y<:AbstractVector,
   W<:AbstractVector,
   T<:Real,
-  I<:AbstractLSurvID,
+  I<:AbstractLSurvivalID,
   V<:AbstractVector,
   M<:AbstractMatrix,
-  } <: AbstractLSurvResp
+  } <: AbstractLSurvivalResp
   enter::E
   exit::X
   y::Y
@@ -152,7 +152,7 @@ DOC_LSURVCOMPRESP = """
  ```
 
  ```julia
-  LSurvCompResp(
+  LSurvivalCompResp(
   enter::E,
   exit::X,
   y::Y,
@@ -162,7 +162,7 @@ DOC_LSURVCOMPRESP = """
  ```
 
  ```julia
-  LSurvCompResp(
+  LSurvivalCompResp(
   enter::E,
   exit::X,
   y::Y,
@@ -171,7 +171,7 @@ DOC_LSURVCOMPRESP = """
  ```
 
  ```julia
-  LSurvCompResp(
+  LSurvivalCompResp(
   enter::E,
   exit::X,
   y::Y,
@@ -180,7 +180,7 @@ DOC_LSURVCOMPRESP = """
  ```
 
  ```julia
-  LSurvCompResp(
+  LSurvivalCompResp(
   enter::E,
   exit::X,
   y::Y,
@@ -188,7 +188,7 @@ DOC_LSURVCOMPRESP = """
  ```
 
  ```julia
-  LSurvCompResp(
+  LSurvivalCompResp(
    exit::X,
    y::Y,
  ) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
@@ -197,7 +197,7 @@ DOC_LSURVCOMPRESP = """
 
 DOC_CONFINT = """
 ```julia
-using LSurv
+using LSurvival
  dat1= (
      time = [1,1,6,6,8,9],
      status = [1,0,1,1,0,1],
@@ -247,7 +247,7 @@ DOC_PHMODEL = """
  # Signatures
 
  ```julia
-  mutable struct PHModel{G<:LSurvResp,L<:AbstractLSurvParms} <: AbstractPH
+  mutable struct PHModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms} <: AbstractPH
   R::G        # Survival response
   P::L        # parameters
   ties::String #"efron" or"breslow"
@@ -260,26 +260,26 @@ DOC_PHMODEL = """
   P::L,
   ties::String,
   fit::Bool,
-  ) where {G<:LSurvResp,L<:AbstractLSurvParms}
-  PHModel(R::G, P::L, ties::String) where {G<:LSurvResp,L<:AbstractLSurvParms}
-  PHModel(R::G, P::L) where {G<:LSurvResp,L<:AbstractLSurvParms}
+  ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
+  PHModel(R::G, P::L, ties::String) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
+  PHModel(R::G, P::L) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
  ```
   Methods: fit, coef, confint, std_err, show
 
   # Example
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
-  import LSurv: _stepcox!, dgm_comprisk
+  import LSurvival: _stepcox!, dgm_comprisk
 
   z,x,t,d, event,wt = dgm_comprisk(MersenneTwister(1212), 100);
   enter = zeros(length(t));
   X = hcat(x,z);
-  R = LSurvResp(enter, t, Int.(d), wt)
+  R = LSurvivalResp(enter, t, Int.(d), wt)
   P = PHParms(X)
   mf = PHModel(R,P)
-   LSurv._fit!(mf)
+   LSurvival._fit!(mf)
  ```
  """
 
@@ -325,7 +325,7 @@ DOC_ID = """
 
 
   Used for the id argument in 
-   - Outcome types: LSurvResp, LSurvCompResp 
+   - Outcome types: LSurvivalResp, LSurvivalCompResp 
    - Model types: PHModel, KMRisk, AJRisk
 
  Accepts any Number or String. There is no significance to having this particular struct, but it enables easier use of multiple dispatch.
@@ -400,9 +400,9 @@ DOC_COXPH = """
  # Example
 
  ```julia
-  using LSurv
+  using LSurvival
   using Random
-  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 200);
+  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 200);
   enter = zeros(length(t));
   X = hcat(x,z);
   tab = (enter=enter, t=t, d=d, x=x[:],z=z[:])
@@ -463,9 +463,9 @@ DOC_FIT_PHSURV = """
   fit for PHSurv objects
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
-   z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
    X = hcat(x,rand(length(x)));
   
@@ -547,8 +547,8 @@ coxph(X, enter, exit, y, args...; kwargs...)
 ```
 
  ```julia
-   using LSurv, Random
-   z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
+   using LSurvival, Random
+   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
    X = hcat(x,rand(length(x)));
     m = fit(PHModel, X, enter, t, d, ties="efron")
@@ -561,9 +561,9 @@ coxph(X, enter, exit, y, args...; kwargs...)
 
 `id` is not needed in person-period structure data for standard estimates or confidence intervals
  ```@example
-  using Random, LSurv
+  using Random, LSurvival
      id, int, outt, dat =
-         LSurv.dgm(MersenneTwister(123123), 100, 100; afun = LSurv.int_0)
+         LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
      data = (
              int = int,
              outt = outt,
@@ -645,9 +645,9 @@ Kaplan-Meier estimator for cumulative conditional risk
 
   
  ```@example
-  using LSurv
+  using LSurvival
   using Random
-  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
   m = fit(KMSurv, enter, t, d)
   mw = fit(KMSurv, enter, t, d, wts=wt)
@@ -674,9 +674,9 @@ DOC_FIT_AJSURV = """
   
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
-  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
      # event variable is coded 0[referent],1,2
   m = fit(AJSurv, enter, t, event)
@@ -708,9 +708,9 @@ DOC_VARIANCE_KMSURV = """
 
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
-  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
   m = fit(KMSurv, enter, t, d)
   mw = fit(KMSurv, enter, t, d, wts=wt)
@@ -724,7 +724,7 @@ DOC_VARIANCE_AJSURV = """
   Greenwood's formula for variance and confidence intervals of a Aalen-Johansen risk function
 
  ```@example
-  res = z, x, outt, d, event, wts = LSurv.dgm_comprisk(MersenneTwister(123123), 100)
+  res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
   int = zeros(length(d)) # no late entry
   m = fit(AJSurv, int, outt, event)
   stderror(m)
@@ -818,10 +818,10 @@ DOC_FIT_PHSURV = """
  - `pred_profile` = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
   # event variable is coded 0[referent],1,2
-  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
 
   ft1 = coxph(hcat(x,z), enter, t, (event .== 1))
@@ -865,7 +865,7 @@ DOC_DGM = """
   expit(-3 + 2*v + 0*l + 2*a)
   end
     # 10 individuals followed for up to 5 times
-  LSurv.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)
+  LSurvival.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)
  ```
 
  """
@@ -882,9 +882,9 @@ DOC_DGM_COMPRISK = """
   Example:
 
  ```julia
-  using LSurv
+  using LSurvival
       # 100 individuals with two competing events
-  z,x,t,d,event,weights = LSurv.dgm_comprisk(100)
+  z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
       
 
  ```
@@ -911,31 +911,31 @@ DOC_BOOTSTRAP_PHMODEL = """
 
 
  ```julia
-  using LSurv, Random
+  using LSurvival, Random
 
   id, int, outt, data =
-  LSurv.dgm(MersenneTwister(1212), 500, 5; afun = LSurv.int_0)
+  LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
 
   d, X = data[:, 4], data[:, 1:3]
   weights = rand(length(d))
 
   # survival outcome:
-  R = LSurvResp(int, outt, d, ID.(id))    # specification with ID only
+  R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
   P = PHParms(X)
 
   Mod = PHModel(R, P)
-  LSurv._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
+  LSurvival._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
 
 
   # careful propogation of bootstrap sampling
   idx, R2 = bootstrap(R)
   P2 = bootstrap(idx, P)
   Modb = PHModel(R2, P2)
-  LSurv._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
+  LSurvival._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
 
   # convenience function for bootstrapping a model
   Modc = bootstrap(Mod)
-  LSurv._fit!(Modc, start=Modc.P._B);
+  LSurvival._fit!(Modc, start=Modc.P._B);
   Modc
   Modc.P.X == nothing
   Modc.R == nothing
@@ -945,12 +945,12 @@ DOC_BOOTSTRAP_PHMODEL = """
   Bootstrap Cox model coefficients
 
  ```
-  LSurv._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
+  LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
  ```
 
  ```@example
-  using LSurv, Random
-  res = z, x, outt, d, event, wts = LSurv.dgm_comprisk(MersenneTwister(123123), 200)
+  using LSurvival, Random
+  res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 200)
   int = zeros(length(d)) # no late entry
   X = hcat(z, x)
 
@@ -995,11 +995,11 @@ DOC_BOOTSTRAP_KMSURV = """
     
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
 
   id, int, outt, data =
-  LSurv.dgm(MersenneTwister(1212), 20, 5; afun = LSurv.int_0)
+  LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
 
   d, X = data[:, 4], data[:, 1:3]
   wts = rand(length(d))
@@ -1035,10 +1035,10 @@ DOC_BOOTSTRAP_AJSURV = """
 
 
  ```@example
-  using LSurv
+  using LSurvival
   using Random
 
-  z, x, t, d, event, wt = LSurv.dgm_comprisk(MersenneTwister(1212), 100)
+  z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
   id = 1:length(x)
   enter = zeros(length(t))
 
@@ -1057,7 +1057,7 @@ DOC_BOOTSTRAP_AJSURV = """
 
 DOC_ROBUST_VCOV = """
 ```@example
-using LSurv
+using LSurvival
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1168,7 +1168,7 @@ residuals(ft, type="martingale")
 ## Score residuals: Per observation contribution to score function 
 
 ```julia
-using LSurv
+using LSurvival
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1183,7 +1183,7 @@ S = residuals(ft, type="score")[:]
 ####################################################################
 ## Schoenfeld residuals: Per time contribution to score function 
 ```julia
-using LSurv
+using LSurvival
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1201,7 +1201,7 @@ S = residuals(ft, type="schoenfeld")[:]
 ## dfbeta residuals: influence of individual observations on each parameter
 
 ```@example
-using LSurv
+using LSurvival
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1221,7 +1221,7 @@ sqrt(robVar)
 ```
 
 #  using the `id` keyword argument
-#  see help for LSurv.vcov for what happens when `id` keyword is not used
+#  see help for LSurvival.vcov for what happens when `id` keyword is not used
 ```@example
 dat1clust= (
     id = [1,2,3,3,4,4,5,5,6,6],
@@ -1274,9 +1274,9 @@ basehaz: Matrix: baseline hazard at referent level of all covariates, weighted r
 
 Examples: 
 ```julia-repl   
-  using LSurv
+  using LSurvival
   # simulating discrete survival data for 20 individuals at 10 time points
-  id, int, outt, data = LSurv.dgm(20, 5;afun=LSurv.int_0);
+  id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
   
   d,X = data[:,4], data[:,1:3]
   
@@ -1298,7 +1298,7 @@ Examples:
 *Deprecated function*
   Estimating cumulative incidence from two or more cause-specific Cox models
   
-  z,x,outt,d,event,weights = LSurv.dgm_comprisk(120)
+  z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)
   X = hcat(z,x)
   int = zeros(120)
   d1  = d .* Int.(event.== 1)
@@ -1395,9 +1395,9 @@ Note:
 
 Examples: 
 ```julia-repl   
-  using LSurv, Random
+  using LSurvival, Random
 
-  z,x,t,d, event,weights = LSurv.dgm_comprisk(1000);
+  z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
   
   # compare these two approaches, where Aalen-Johansen method requires having cause specific hazards for every event type
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);

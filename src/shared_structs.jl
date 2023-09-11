@@ -2,37 +2,37 @@
 # structs
 #####################################################################################################################
 
-abstract type AbstractLSurvID end
+abstract type AbstractLSurvivalID end
 abstract type AbstractSurvTime end
 
 """
 $DOC_ID
 """
-struct ID <: AbstractLSurvID
+struct ID <: AbstractLSurvivalID
     value::T where {T<:Union{Number,String}}
 end
 
 """
 $DOC_STRATA
 """
-struct Strata <: AbstractLSurvID
+struct Strata <: AbstractLSurvivalID
     value::T where {T<:Union{Number,String}}
 end
 
-function Base.values(x::Vector{I}) where {I<:AbstractLSurvID}
+function Base.values(x::Vector{I}) where {I<:AbstractLSurvivalID}
     [xi.value for xi in x]
 end
 
-function Base.show(io::IO, x::I) where {I<:AbstractLSurvID}
+function Base.show(io::IO, x::I) where {I<:AbstractLSurvivalID}
     show(io, x.value)
 end
-Base.show(x::I) where {I<:AbstractLSurvID} = Base.show(stdout, x::I)
+Base.show(x::I) where {I<:AbstractLSurvivalID} = Base.show(stdout, x::I)
 
-function Base.isless(x::I, y::I) where {I<:AbstractLSurvID}
+function Base.isless(x::I, y::I) where {I<:AbstractLSurvivalID}
     Base.isless(x.value, y.value)
 end
 
-function Base.length(x::I) where {I<:AbstractLSurvID}
+function Base.length(x::I) where {I<:AbstractLSurvivalID}
     Base.length(x.value)
 end
 
@@ -62,14 +62,14 @@ end
 """
 $DOC_LSURVRESP
 """
-struct LSurvResp{
+struct LSurvivalResp{
     E<:Vector,
     X<:Vector,
     Y<:Union{Vector{<:Real},BitVector},
     W<:Vector,
     T<:Real,
-    I<:AbstractLSurvID,
-} <: AbstractLSurvResp
+    I<:AbstractLSurvivalID,
+} <: AbstractLSurvivalResp
     enter::E
     "`exit`: Time at observation end"
     exit::X
@@ -85,7 +85,7 @@ struct LSurvResp{
     id::Vector{I}
 end
 
-function LSurvResp(
+function LSurvivalResp(
     enter::E,
     exit::X,
     y::Y,
@@ -97,7 +97,7 @@ function LSurvResp(
     X<:Vector,
     Y<:Union{Vector{<:Real},BitVector},
     W<:Vector,
-    I<:AbstractLSurvID,
+    I<:AbstractLSurvivalID,
 }
     ne = length(enter)
     nx = length(exit)
@@ -119,34 +119,34 @@ function LSurvResp(
         wts = ones(Int, ny)
     end
 
-    return LSurvResp(enter, exit, y, wts, eventtimes, origin, id)
+    return LSurvivalResp(enter, exit, y, wts, eventtimes, origin, id)
 end
 
-function LSurvResp(
+function LSurvivalResp(
     y::Vector{Y},
     wts::W,
     id::Vector{I};
     kwargs...,
-) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvID}
+) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvivalID}
     enter = [yi.enter for yi in y]
     exit = [yi.exit for yi in y]
     d = [yi.y for yi in y]
-    return LSurvResp(enter, exit, d, wts, id; kwargs...)
+    return LSurvivalResp(enter, exit, d, wts, id; kwargs...)
 end
 
 
-function LSurvResp(
+function LSurvivalResp(
     enter::E,
     exit::X,
     y::Y,
     id::Vector{I};
     kwargs...,
-) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvivalID}
     wts = similar(exit, 0)
-    return LSurvResp(enter, exit, y, wts, id; kwargs...)
+    return LSurvivalResp(enter, exit, y, wts, id; kwargs...)
 end
 
-function LSurvResp(
+function LSurvivalResp(
     enter::E,
     exit::X,
     y::Y,
@@ -171,38 +171,38 @@ function LSurvResp(
         wts = ones(Int, ny)
     end
     id = [ID(i) for i in eachindex(y)]
-    return LSurvResp(enter, exit, y, wts, id; kwargs...)
+    return LSurvivalResp(enter, exit, y, wts, id; kwargs...)
 end
 
 
-function LSurvResp(
+function LSurvivalResp(
     enter::E,
     exit::X,
     y::Y;
     kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     wts = similar(exit, 0)
-    return LSurvResp(enter, exit, y, wts; kwargs...)
+    return LSurvivalResp(enter, exit, y, wts; kwargs...)
 end
 
-function LSurvResp(exit::X, y::Y; kwargs...) where {X<:Vector,Y<:Vector}
+function LSurvivalResp(exit::X, y::Y; kwargs...) where {X<:Vector,Y<:Vector}
     enter = zeros(eltype(exit), length(exit))
-    return LSurvResp(enter, exit, y; kwargs...)
+    return LSurvivalResp(enter, exit, y; kwargs...)
 end
 
 """
 $DOC_LSURVCOMPRESP
 """
-struct LSurvCompResp{
+struct LSurvivalCompResp{
     E<:Vector,
     X<:Vector,
     Y<:Union{Vector{<:Real},BitVector},
     W<:Vector,
-    I<:AbstractLSurvID,
+    I<:AbstractLSurvivalID,
     V<:Vector,
     M<:AbstractMatrix,
     T<:Real,
-} <: AbstractLSurvResp
+} <: AbstractLSurvivalResp
     enter::E
     "`exit`: Time at observation end"
     exit::X
@@ -222,7 +222,7 @@ struct LSurvCompResp{
     eventmatrix::M
 end
 
-function LSurvCompResp(
+function LSurvivalCompResp(
     enter::E,
     exit::X,
     y::Y,
@@ -234,7 +234,7 @@ function LSurvCompResp(
     X<:Vector,
     Y<:Union{Vector{<:Real},BitVector},
     W<:Vector,
-    I<:AbstractLSurvID,
+    I<:AbstractLSurvivalID,
 }
     ne = length(enter)
     nx = length(exit)
@@ -258,7 +258,7 @@ function LSurvCompResp(
     eventtypes = sort(unique(y))
     eventmatrix = reduce(hcat, [y .== e for e in eventtypes[2:end]])
 
-    return LSurvCompResp(
+    return LSurvivalCompResp(
         enter,
         exit,
         y,
@@ -271,18 +271,18 @@ function LSurvCompResp(
     )
 end
 
-function LSurvCompResp(
+function LSurvivalCompResp(
     enter::E,
     exit::X,
     y::Y,
     id::Vector{I};
     kwargs...
-) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvID}
+) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvivalID}
     wts = ones(Int, length(y))
-    return LSurvCompResp(enter, exit, y, wts, id; kwargs...)
+    return LSurvivalCompResp(enter, exit, y, wts, id; kwargs...)
 end
 
-function LSurvCompResp(
+function LSurvivalCompResp(
     enter::E,
     exit::X,
     y::Y,
@@ -290,29 +290,29 @@ function LSurvCompResp(
     kwargs...
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},W<:Vector}
     id = [ID(i) for i in eachindex(y)]
-    return LSurvCompResp(enter, exit, y, wts, id; kwargs...)
+    return LSurvivalCompResp(enter, exit, y, wts, id; kwargs...)
 end
 
-function LSurvCompResp(
+function LSurvivalCompResp(
     enter::E,
     exit::X,
     y::Y;
     kwargs...
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     id = [ID(i) for i in eachindex(y)]
-    return LSurvCompResp(enter, exit, y, id; kwargs...)
+    return LSurvivalCompResp(enter, exit, y, id; kwargs...)
 end
 
-function LSurvCompResp(
+function LSurvivalCompResp(
     exit::X,
     y::Y;
     kwargs...
 ) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
-    return LSurvCompResp(zeros(length(exit)), exit, y; kwargs...)
+    return LSurvivalCompResp(zeros(length(exit)), exit, y; kwargs...)
 end
 
 
-function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
+function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvivalResp}
     lefttruncate = [e == x.origin ? "[" : "(" for e in x.enter]
     rightcensor = [y > 0 ? "]" : ")" for y in x.y]
     enter = [@sprintf("%.2g", e) for e in x.enter]
@@ -342,7 +342,7 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvResp}
     println(io, str)
 end
 
-Base.show(x::T; kwargs...) where {T<:AbstractLSurvResp} = Base.show(stdout, x; kwargs...)
+Base.show(x::T; kwargs...) where {T<:AbstractLSurvivalResp} = Base.show(stdout, x; kwargs...)
 
 function Base.show(io::IO, x::T) where {T<:AbstractSurvTime}
     lefttruncate = x.enter == x.origin ? "[" : "("
@@ -357,5 +357,5 @@ Base.show(x::T; kwargs...) where {T<:AbstractSurvTime} = Base.show(stdout, x; kw
 
 
 
-Base.length(x::LSurvCompResp) = length(x.exit)
-Base.length(x::LSurvResp) = length(x.exit)
+Base.length(x::LSurvivalCompResp) = length(x.exit)
+Base.length(x::LSurvivalResp) = length(x.exit)

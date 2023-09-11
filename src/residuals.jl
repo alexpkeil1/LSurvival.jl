@@ -227,7 +227,7 @@ function resid_Lmat_efron(m::M) where {M<:PHModel}
             for d in di[i]  # time index of all times
                 if (exit[i] == times[d]) && (y[i] > 0)
                     div = ties[d]
-                    ew = LSurv.efron_weights(div)
+                    ew = LSurvival.efron_weights(div)
                 else
                     div = 1.0
                     ew = 0.0
@@ -299,7 +299,7 @@ function muX_tE(m::M, whichbhindex) where {M<:PHModel}
             end
             for t in tied
                 if (y[i] > 0) && (exit[i] == bht[whichbhindex[i][t]])
-                    ew = LSurv.efron_weights(ties[t])
+                    ew = LSurvival.efron_weights(ties[t])
                     muXE[j][whichbhindex[i][t]] .+= (1 .- ew) .* X[i, j] * wts[i] * r[i]
                     nX[j][whichbhindex[i][t]] .+= (1 .- ew) .* wts[i] * r[i]
                 else
@@ -369,8 +369,8 @@ function dexpected_efronbasehaz(m::M) where {M<:PHModel}
         caseidx =
             findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
         nties = length(caseidx)
-        effwts = LSurv.efron_weights(nties)
-        denj = LSurv.expected_denj(m.P._r, m.R.wts, caseidx, risksetidx, nties, j)
+        effwts = LSurvival.efron_weights(nties)
+        denj = LSurvival.expected_denj(m.P._r, m.R.wts, caseidx, risksetidx, nties, j)
         _sumwtriskset[j] = sum(m.R.wts[risksetidx])
         _sumwtcase[j] = sum(m.R.wts[caseidx])
         denr[j] .= denj # correct

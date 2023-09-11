@@ -4,7 +4,7 @@
 # you may need to install some additional packages
 # import Pkg; Pkg.add("RCall")
 
-using LSurv, LinearAlgebra, RCall, BenchmarkTools, Random
+using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
 
 ###################################################################
@@ -40,7 +40,7 @@ dat4 = ( # mine
 # Fitting a basic Cox model, Kaplan-Meier curve using preferred functions
 ###################################################################
 id, int, outt, data =
-    LSurv.dgm(MersenneTwister(123123), 100, 100; afun = LSurv.int_0)
+    LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
@@ -96,7 +96,7 @@ show(stdout, kfit, maxrows = 40)
 ###################################################################
 # Competing risks: cause-specific Cox models, Aalen-Johansen estimator of cumulative incidence (risk)
 ###################################################################
-res = z, x, outt, d, event, weights = LSurv.dgm_comprisk(MersenneTwister(123123), 100)
+res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
@@ -157,9 +157,9 @@ risk1d = risk_from_coxphmodels([ft1d, ft2d]) # compare with risk2 object
 # Under the hood of some of the structs/models
 ###################################################################
 # survival outcome:
-R = LSurvResp(outt, d)         # specification if no late entry
-R = LSurvResp(int, outt, d)    # specification with  late entry
-R = LSurvResp(int, outt, d, weights)    # specification with  weights and late entry (no specification with weights and no late entry)
+R = LSurvivalResp(outt, d)         # specification if no late entry
+R = LSurvivalResp(int, outt, d)    # specification with  late entry
+R = LSurvivalResp(int, outt, d, weights)    # specification with  weights and late entry (no specification with weights and no late entry)
 
 # PH model predictors
 P = PHParms(X)
@@ -168,13 +168,13 @@ P = PHParms(X)
 M = PHModel(R, P, "breslow")
 M = PHModel(R, P)  #default is "efron" method for ties
 isfitted(M)  # confirm this is not yet "fitted"
-LSurv._fit!(M, start = [0.0, 0.0])
+LSurvival._fit!(M, start = [0.0, 0.0])
 isfitted(M)
 
 #################################################################################################################### 
 # space savers, bootstrapping
 ####################################################################################################################
-res = z, x, outt, d, event, weights = LSurv.dgm_comprisk(MersenneTwister(123123), 800)
+res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 800)
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
@@ -319,10 +319,10 @@ vcov(m2)
 ###################################################################
 # Time benchmarks using simulated data, calling R vs. using Julia
 ###################################################################
-using LSurv, LinearAlgebra, RCall, BenchmarkTools, Random
+using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
 
-id, int, outt, data = LSurv.dgm(MersenneTwister(), 1000, 100; afun = LSurv.int_0)
+id, int, outt, data = LSurvival.dgm(MersenneTwister(), 1000, 100; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
@@ -413,9 +413,9 @@ tj2 = @btime jfun2(int, outt, d, X, wt);
 ###################################################################
 # checking baseline hazard against R
 ###################################################################
-using LSurv, LinearAlgebra, RCall, BenchmarkTools, Random
+using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 
-id, int, outt, data = LSurv.dgm(MersenneTwister(345), 100, 10; afun = LSurv.int_0)
+id, int, outt, data = LSurvival.dgm(MersenneTwister(345), 100, 10; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
@@ -510,8 +510,8 @@ ft = coxph(
 resid_martingale(ft)
 @rget mresid
 
-using LSurv, Random
-id, int, outt, dat = LSurv.dgm(MersenneTwister(1212), 1000, 5);
+using LSurvival, Random
+id, int, outt, dat = LSurvival.dgm(MersenneTwister(1212), 1000, 5);
 d = dat[:, 4]
 x, z1, z2 = dat[:, 1], dat[:, 2], dat[:, 3]
 
@@ -538,10 +538,10 @@ sum(resid[lididx])
 
 m = ft1
 
-using LSurv, LinearAlgebra, RCall, Random, CSV
+using LSurvival, LinearAlgebra, RCall, Random, CSV
 
 id, int, outt, data =
-    LSurv.dgm(MersenneTwister(1232), 1000, 100; afun = LSurv.int_0)
+    LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
@@ -730,7 +730,7 @@ ft =
 hcat(resid, residuals(ft, type = "dfbeta"))
 hcat(resid2, residuals(ft, type = "dfbetas"))
 D = residuals(ft, type = "dfbeta")
-sqrt(LSurv.robust_vcov(ft)[1])
+sqrt(LSurvival.robust_vcov(ft)[1])
 
 sqrt.(D'D)
 
@@ -742,7 +742,7 @@ sqrt(rb[1])
 # Checking residuals against R
 ###################################################################
 id, int, outt, data =
-    LSurv.dgm(MersenneTwister(123123), 100, 10; afun = LSurv.int_0)
+    LSurvival.dgm(MersenneTwister(123123), 100, 10; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
@@ -833,8 +833,8 @@ cfit = coxph(
 @rget resid4
 
 jres = coxph(@formula(Surv(enter, exit, status) ~ z + x), dat4, ties="breslow")
-dM, dt, di = LSurv.dexpected_FH(jres)
-muXt = LSurv.muX_tE(jres, di)
+dM, dt, di = LSurvival.dexpected_FH(jres)
+muXt = LSurvival.muX_tE(jres, di)
 
 reduce(hcat, dat4)
 

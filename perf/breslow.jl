@@ -1,11 +1,11 @@
-using LSurv, Random
+using LSurvival, Random
 
 
 ###################################################################
 # Fitting a basic Cox model, Kaplan-Meier curve using preferred functions
 ###################################################################
 id, int, outt, data =
-    LSurv.dgm(MersenneTwister(123123), 500_000, 100; afun = LSurv.int_0)
+    LSurvival.dgm(MersenneTwister(123123), 500_000, 100; afun = LSurvival.int_0)
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
