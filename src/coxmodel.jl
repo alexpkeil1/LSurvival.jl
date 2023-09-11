@@ -424,17 +424,21 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     pval = calcp.(z)
     op = hcat(beta, std_err, lci, uci, z, pval)
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
+    pcol=6
+    zcol=5
     if !isnothing(m.RL)
         std_err_rob = stderror(m, type = "robust")
         lci = beta .+ zcrit[1] * std_err_rob
         uci = beta .+ zcrit[2] * std_err_rob
         op = hcat(beta, std_err, std_err_rob, lci, uci, z, pval)
-        head = ["ln(HR)", "StdErr", "RobSE", "LCI", "UCI", "Z", "P(>|Z|)"]
+        pcol += 1
+        zcol += 1
+        head = ["ln(HR)", "StdErr", "RobustSE", "LCI", "UCI", "Z", "P(>|Z|)"]
     end
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
     rown = length(rown) > 1 ? rown : [rown]
-    StatsBase.CoefTable(op, head, rown, 6, 5)
+    StatsBase.CoefTable(op, head, rown, pcol, zcol)
 end
 
 
