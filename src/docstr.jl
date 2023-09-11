@@ -354,6 +354,8 @@ DOC_COXPH = """
 
  Alias for`fit(PHModel, ..., <keyword arguments>)`.
 
+  Also see ?fit section on "Fit method for AbstractPH objects"
+
 
  Signatures
 
@@ -393,7 +395,7 @@ DOC_COXPH = """
   - `wts` vector of observation weights
   - `keepx` (boolean) keep the design matrix after fitting the model? (default `true`, `false` can be used to save space)
   - `keepy` (boolean) keep the outcome vector after fitting the model? (default `true`, `false` can be used to save space)
-  - `contrasts` an optional Dict used to process the columns in `dat` (CF: See the contrasts argument in GLM.glm)
+  - `contrasts` an optional Dict used to process the columns in `dat` (CF: See the contrasts argument in GLM.glm, and https://juliastats.org/StatsModels.jl/stable/contrasts/)
 
  # Example
 
@@ -512,7 +514,17 @@ DOC_E_YEARSOFLIFELOST = """
 ####### generic methods
 
 DOC_FIT_ABSTRACPH = """
-  Fit method for AbstractPH objects
+  Fit method for AbstractPH objects (Cox models)
+
+Keyword arguments (used here, and passed on to internal structs)
+
+- `ties` "breslow" or "efron" (default)
+- `wts` observation weights
+- `ties` "breslow" or "efron" (default)
+- `offset` not currently used at all
+- `fitargs` arguments passed to other structs, which include
+  - `id` cluster or individual level ID (defaults to a unique value for each row of data) see note below on ID
+  - `contrasts` StatsModel style contrasts (dicts) that can be used for variable transformations/indicator variable creation (e.g. https://juliastats.org/StatsModels.jl/stable/contrasts/)
 
  ```julia
   fit(::Type{M},
@@ -544,6 +556,10 @@ coxph(X, enter, exit, y, args...; kwargs...)
    coeftable(m)
  ```
 
+ ## Note on use of `id` keyword
+
+
+`id` is not needed in person-period structure data for standard estimates or confidence intervals
  ```@example
   using Random, LSurvival
      id, int, outt, dat =
@@ -559,10 +575,64 @@ coxph(X, enter, exit, y, args...; kwargs...)
      f = @formula(Surv(int, outt,d)~x+z)
      coxph(f, data)
  ```
+
+ # BUT, you must specify `id` to get appropriate robust variance and some other statistics.
+
+ Here is an example where the same data are presented in two different ways, which should yield identical statistics when used in Cox model.
+ ```@example
+ dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+ft = coxph(@formula(Surv(time,status)~x),dat1)
+bic(ft)
+nobs(ft)
+dof_residual(ft)
+# lrtest is another one
+
+stderror(ft)                     # model based
+stderror(ft, type="robust")   # robust standard error, based on dfbeta residuals
+ft
+
+# now using "clustered" data with multiple observations per individual
+ dat1clust= (
+     id = [1,2,3,3,4,4,5,5,6,6],
+     enter = [0,0,0,1,0,1,0,1,0,1],
+     exit = [1,1,1,6,1,6,1,8,1,9],
+     status = [1,0,0,1,0,1,0,0,0,1],
+     x = [1,1,1,1,0,0,0,0,0,0]
+ )
+ 
+ # use the `id` parameter with the ID struct
+ ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
+ bic(ft2)                       # CORRECT        
+ nobs(ft2)                      # CORRECT
+ dof_residual(ft2)              # CORRECT
+  
+ stderror(ft2)                  # model based (CORRECT)
+ stderror(ft2, type="robust")   # robust standard error, based on `id` level dfbeta residuals (CORRECT)
+ # once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
+ ft2   # CORRECT (compare to `ft` object)
+ ```
+ 
+ ## NOTE THE FOLLOWING IS INCORRECT because the `id` keyword is omitted
+ ```@example
+ ft2w = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust)
+ bic(ft2w)                          # INCORRECT 
+ nobs(ft2w)                         # INCORRECT
+ dof_residual(ft2w)                 # INCORRECT
+
+ stderror(ft2w)                     # model based (CORRECT)
+ stderror(ft2w, type="robust")      # robust variance (INCORRECT)
+ 
+ ft2w # the coefficient table now shows incorrect confidence intervals and test statistics
+  
+ ```
  """
 
 DOC_FIT_KMSURV = """
-  Fit methods for KMSurv objects
+Kaplan-Meier estimator for cumulative conditional risk
 
    Signatures
 
@@ -590,7 +660,7 @@ DOC_FIT_KMSURV = """
  """
 
 DOC_FIT_AJSURV = """
-  Aalen-Johansen estimator for cumulative risk
+  Aalen-Johansen estimator for cumulative cause-specific risk (in the presence of competing events)
 
   Signatures
 
@@ -997,7 +1067,7 @@ ft = coxph(@formula(Surv(time,status)~x),dat1, id=ID.(collect(1:6)))
 
 vcov(ft)                   # model based
 vcov(ft, type="robust")    # robust variance, based on dfbeta residuals
-# now coefficient table reflects robust variance
+# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
 ft
 ```
 
@@ -1013,27 +1083,24 @@ dat1clust= (
 
 ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
 
-vcov(ft2)                   # model based
-vcov(ft2, type="robust")    # robust variance, based on dfbeta residuals
-stderror(ft2, type="robust")    # robust variance, based on dfbeta residuals
+vcov(ft2)                     # model based
+vcov(ft2, type="robust")       # robust variance, based on dfbeta residuals
+stderror(ft2, type="robust")   # robust variance, based on dfbeta residuals
 confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
-
+nobs(ft2)                     # id argument yields correct value of number of independent observations
 # once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
-# this may not happen without specifying the `id` keyword
-ft2
+ft2 
+```
 
+## NOTE THE FOLLOWING IS INCORRECT because the `id` keyword is omitted
+```@example
 ft2w = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust)
 
-vcov(ft2)                   # model based
-vcov(ft2, type="robust")    # robust variance, based on dfbeta residuals
-stderror(ft2, type="robust")    # robust variance, based on dfbeta residuals
-confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
+vcov(ft2w)                   # model based (CORRECT)
+vcov(ft2w, type="robust")    # robust variance (INCORRECT)
+nobs(ft2w)
 
-# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
-# this may not happen without specifying the `id` keyword
-ft2
-
-
+ft2w
 ```
 
 """
@@ -1141,23 +1208,45 @@ dat1 = (
     x = [1,1,1,0,0,0]
 )
 
-ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
+ft = coxph(@formula(Surv(time,status)~x),dat1, ties="breslow")
+residuals(ft, type="dfbeta")
+
+# can also calculate from score residuals and Hessian matrix
 L = residuals(ft, type="score") # n X p
 H = ft.P._hess   # p X p
 dfbeta = L*inv(H)
 robVar = dfbeta'dfbeta
 sqrt(robVar)
 
-using LSurvival
-dat1 = (
-    time = [1,1,6,6,8,9],
-    status = [1,0,1,1,0,1],
-    x = [1,1,1,0,0,0]
-)
-ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
-
-residuals(ft, type="dfbeta")
 ```
+
+#  using the `id` keyword argument
+#  see help for LSurvival.vcov for what happens when `id` keyword is not used
+```@example
+dat1clust= (
+    id = [1,2,3,3,4,4,5,5,6,6],
+    enter = [0,0,0,1,0,1,0,1,0,1],
+    exit = [1,1,1,6,1,6,1,8,1,9],
+    status = [1,0,0,1,0,1,0,0,0,1],
+    x = [1,1,1,1,0,0,0,0,0,0]
+)
+
+ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id), ties="breslow")
+
+# note these are still on the observation level (not the id level)! 
+residuals(ft2, type="dfbeta")
+
+# getting id level dfbeta residuals
+dfbeta = residuals(ft2, type="dfbeta")
+id = values(ft2.R.id)
+D = reduce(vcat, [sum(dfbeta[findall(id .== i),:], dims=1) for i in unique(id)])
+D'D
+vcov(ft, type="robust")
+vcov(ft2, type="robust")
+```
+
+
+
 """
 
 ######## DEPRECATED FUNCTIONS ###############
