@@ -417,17 +417,17 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     mwarn(m)
     beta = coef(m)
     std_err = stderror(m)
-    z = beta ./ std_err
     zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
     lci = beta .+ zcrit[1] * std_err
     uci = beta .+ zcrit[2] * std_err
-    pval = calcp.(z)
+    z = beta ./ std_err
     op = hcat(beta, std_err, lci, uci, z, pval)
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
     pcol=6
     zcol=5
     if !isnothing(m.RL)
         std_err_rob = stderror(m, type = "robust")
+        z = beta ./ std_err_rob
         lci = beta .+ zcrit[1] * std_err_rob
         uci = beta .+ zcrit[2] * std_err_rob
         op = hcat(beta, std_err, std_err_rob, lci, uci, z, pval)
@@ -435,6 +435,7 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
         zcol += 1
         head = ["ln(HR)", "StdErr", "RobustSE", "LCI", "UCI", "Z", "P(>|Z|)"]
     end
+    pval = calcp.(z)
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
     rown = length(rown) > 1 ? rown : [rown]
@@ -504,7 +505,7 @@ end
 
 function StatsBase.nobs(m::M) where {M<:AbstractPH}
     mwarn(m)
-    m.P.n
+    length(unique(m.R.id))
 end
 
 """

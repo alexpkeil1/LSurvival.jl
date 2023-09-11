@@ -427,13 +427,16 @@ DOC_COXPH = """
 
  ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id), keepx=true)
  # model-based variance
- stderror(ft2, type="robust")
+ stderror(ft2)
 
  # robust variance
  stderror(ft2, type="robust")
 
  confint(ft2, type="robust")
 
+ # once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
+ ft2
+ ```
  """
 
 
@@ -990,12 +993,37 @@ dat1 = (
     status = [1,0,1,1,0,1],
     x = [1,1,1,0,0,0]
 )
-ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
+ft = coxph(@formula(Surv(time,status)~x),dat1, id=ID.(collect(1:6)))
 
-robust_vcov(ft)
 vcov(ft)                   # model based
 vcov(ft, type="robust")    # robust variance, based on dfbeta residuals
+# now coefficient table reflects robust variance
+ft
 ```
+
+# cluster robust standard errors using the `id` keyword argument
+```@example
+dat1clust= (
+    id = [1,2,3,3,4,4,5,5,6,6],
+    enter = [0,0,0,1,0,1,0,1,0,1],
+    exit = [1,1,1,6,1,6,1,8,1,9],
+    status = [1,0,0,1,0,1,0,0,0,1],
+    x = [1,1,1,1,0,0,0,0,0,0]
+)
+
+ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
+
+vcov(ft2)                   # model based
+vcov(ft2, type="robust")    # robust variance, based on dfbeta residuals
+stderror(ft2, type="robust")    # robust variance, based on dfbeta residuals
+confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
+
+# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
+# this may not happen without specifying the `id` keyword
+ft2
+
+```
+
 """
 
 DOC_VCOV = """
