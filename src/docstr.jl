@@ -1022,6 +1022,18 @@ confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
 # this may not happen without specifying the `id` keyword
 ft2
 
+ft2w = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust)
+
+vcov(ft2)                   # model based
+vcov(ft2, type="robust")    # robust variance, based on dfbeta residuals
+stderror(ft2, type="robust")    # robust variance, based on dfbeta residuals
+confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
+
+# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
+# this may not happen without specifying the `id` keyword
+ft2
+
+
 ```
 
 """
