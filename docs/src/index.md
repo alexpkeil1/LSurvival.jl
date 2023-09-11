@@ -1,15 +1,15 @@
 ```@meta
-CurrentModule = LSurvival=
+CurrentModule = LSurv=
 ```
 
-# [LSurvival](https://github.com/alexpkeil1/LSurvival.jl)
+# [LSurv](https://github.com/alexpkeil1/LSurvival.jl)
 
 Survival analysis functions in Julia for time-to-event outcomes that can include:
 - Loss-to-follow-up/right censoring
-- Late entry/left truncation (not available in the Survival.jl package)
-- "Person-period" data structures (not available in the Survival.jl package)
-- Observation weights (not available in the Survival.jl package)
-- Competing risks (not available in the Survival.jl package)
+- Late entry/left truncation (not available in Survival.jl)
+- "Person-period" data structures (not available in Survival.jl)
+- Observation weights (not available in Survival.jl)
+- Competing risks (not available in Survival.jl)
 
 Capabilities include estimators for
 - Kaplan-Meier non-parametric conditional risk functions
@@ -43,7 +43,7 @@ using Pkg; Pkg.add(url = "https://github.com/alexpkeil1/LSurvival.jl")
 
 ### Single event type: Cox model and Kaplan-Meier curve
 ```{julia}
-using Random, LSurvival, Distributions, LinearAlgebra
+using Random, LSurv, Distributions, LinearAlgebra
 
 # generate some data under a discrete hazards model
 expit(mu) = inv(1.0 + exp(-mu))
@@ -106,7 +106,7 @@ res = kaplan_meier(int, outt, d)
 
 ### Competing event analysis: Aalen-Johansen and Cox-model-based estimators of the cumulative risk/survival
 ```{julia}
-using Random, LSurvival, Distributions, LinearAlgebra
+using Random, LSurv, Distributions, LinearAlgebra
 
 # simulate some data
 function dgm_comprisk(; n = 100, rng = MersenneTwister())
@@ -176,5 +176,5 @@ LSurvResp(int, outt, data[:,4], ID.(id))
 ## Function help 
 
 ```@autodocs
-Modules = [LSurvival]
+Modules = [LSurv]
 ```

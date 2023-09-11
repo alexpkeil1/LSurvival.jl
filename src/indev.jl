@@ -2,7 +2,7 @@
 # ID level robust variance estimators
 
 
-using LSurvival, Random, Optim, BenchmarkTools, RCall
+using LSurv, Random, Optim, BenchmarkTools, RCall
 
 ######################################################################
 # residuals from fitted Cox models
@@ -21,7 +21,7 @@ function expected_denj(_r, wts, caseidx, risksetidx, nties, j)
     #
     risksetrisk = sum(_wtriskset .* _rriskset)
     #
-    effwts = LSurvival.efron_weights(nties)
+    effwts = LSurv.efron_weights(nties)
     sw = sum(_wtcases)
     aw = sw / nties
     casesrisk = sum(_wtcases .* _rcases)
@@ -71,9 +71,9 @@ if false
         end
         # cox risk and set to zero were both in step cox - return them?
         # loop over event times
-        #LSurvival._coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
-        #LSurvival._settozero!(m.P)
-        #LSurvival._partial_LL!(m, risksetidxs, caseidxs, ne, den)
+        #LSurv._coxrisk!(m.P) # updates all elements of _r as exp(X*_B)
+        #LSurv._settozero!(m.P)
+        #LSurv._partial_LL!(m, risksetidxs, caseidxs, ne, den)
 
         function coxupdate!(
             F,
@@ -90,7 +90,7 @@ if false
             m.P._hess = isnothing(H) ? m.P._hess : H
             m.P._B = isnothing(beta) ? m.P._B : beta
             #
-            LSurvival._update_PHParms!(m, ne, caseidxs, risksetidxs)
+            LSurv._update_PHParms!(m, ne, caseidxs, risksetidxs)
             # turn into a minimization problem
             F = -m.P._LL[1]
             m.P._grad .*= -1.0
@@ -134,19 +134,19 @@ end # if false
 
 if false
     id, int, outt, data =
-        LSurvival.dgm(MersenneTwister(345), 100, 10; afun=LSurvival.int_0)
+        LSurv.dgm(MersenneTwister(345), 100, 10; afun=LSurv.int_0)
     data[:, 1] = round.(data[:, 1], digits=3)
     d, X = data[:, 4], data[:, 1:3]
 
 
     # not-yet-fit PH model object
     #m = PHModel(R, P, "breslow")
-    #LSurvival._fit!(m, start = [0.0, 0.0, 0.0], keepx=true, keepy=true)
+    #LSurv._fit!(m, start = [0.0, 0.0, 0.0], keepx=true, keepy=true)
     #isfitted(m)
     R = LSurvResp(int, outt, d)
     P = PHParms(X)
     m = PHModel(R, P)  #default is "efron" method for ties
-    @btime res = LSurvival._fit!(m, start=[0.0, 0.0, 0.0], keepx=true, keepy=true)
+    @btime res = LSurv._fit!(m, start=[0.0, 0.0, 0.0], keepx=true, keepy=true)
 
     R2 = LSurvResp(int, outt, d)
     P2 = PHParms(X)

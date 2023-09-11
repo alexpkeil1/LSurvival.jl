@@ -1,5 +1,5 @@
 using Test
-using LSurvival
+using LSurv
 using Random
 #using DataFrames
 #using BenchmarkTools # add during testing
@@ -26,7 +26,7 @@ using Random
 
 
     id, int, outt, data =
-        LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
+        LSurv.dgm(MersenneTwister(112), 100, 10; afun = LSurv.int_0)
     data[:, 1] = round.(data[:, 1], digits = 3)
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
@@ -74,7 +74,7 @@ using Random
     )
 
     id, int, outt, data =
-        LSurvival.dgm(MersenneTwister(1212), 30, 5; afun = LSurvival.int_0)
+        LSurv.dgm(MersenneTwister(1212), 30, 5; afun = LSurv.int_0)
 
     d, X = data[:, 4], data[:, 1:3]
     weights = rand(length(d))
@@ -146,7 +146,7 @@ using Random
     # modelframe(f, data, contrasts, M)
 
 
-    LSurvival._fit!(M, start = [0.0, 0.0, 0.0])
+    LSurv._fit!(M, start = [0.0, 0.0, 0.0])
 
     R = LSurvResp(int, outt, d)
     R = LSurvResp(outt, d) # set all to zero
@@ -162,7 +162,7 @@ using Random
     (bootstrap(MersenneTwister(123), aalen_johansen(int, outt, d)))
 
 
-    z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
+    z, x, t, d, event, wt = LSurv.dgm_comprisk(MersenneTwister(1212), 100)
     enter = zeros(length(t))
 
     ajres = aalen_johansen(enter, t, event)
@@ -248,8 +248,8 @@ res_true = [0.85531,-0.02593,0.17636,0.17636,0.65131,-0.82364,-0.34869,-0.64894,
 
 
 ft = coxph(@formula(Surv(time,status)~x),dat3, wts=dat3.wt, keepx=true, keepy=true, ties="breslow", maxiter=0)
-dM, dt, di = LSurvival.dexpected_NA(ft);
-muX = LSurvival.muX_t(ft, di)
+dM, dt, di = LSurv.dexpected_NA(ft);
+muX = LSurv.muX_t(ft, di)
 truemuX = [13/19,11/16,2/3]
 
 @test all(isapprox.(muX, truemuX, atol=0.00001))
@@ -383,7 +383,7 @@ rdfbetas = [0.6278889620495443,0.03530427452450842,0.12949839663825446,0.1726645
 @test all(isapprox.(residuals(ft, type="dfbetas"), rdfbetas))
 
 #### can this recover from an observation that doesn't contribute to the likelihood?
-id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun=LSurvival.int_0)
+id, int, outt, data = LSurv.dgm(MersenneTwister(1232), 1000, 100; afun=LSurv.int_0)
 data[:, 1] = round.(data[:, 1], digits=3)
 d, X = data[:, 4], data[:, 1:3]
 wt = rand(length(d))
@@ -399,8 +399,8 @@ r2 = residuals(m2, type="dfbeta")
 println(stderror(m))
 println(stderror(m, type="robust"))
 
-mb = LSurvival.fit!(bootstrap(MersenneTwister(123),m), keepx=true, keepy=true)
-mb2 = LSurvival.fit!(bootstrap(MersenneTwister(123),m2), keepx=true, keepy=true)
+mb = LSurv.fit!(bootstrap(MersenneTwister(123),m), keepx=true, keepy=true)
+mb2 = LSurv.fit!(bootstrap(MersenneTwister(123),m2), keepx=true, keepy=true)
 
 
 

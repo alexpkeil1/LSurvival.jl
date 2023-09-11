@@ -1,4 +1,4 @@
-module LSurvival
+module LSurv
 ####### imports #######
 
 using Reexport

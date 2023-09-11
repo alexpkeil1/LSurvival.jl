@@ -197,7 +197,7 @@ DOC_LSURVCOMPRESP = """
 
 DOC_CONFINT = """
 ```julia
-using LSurvival
+using LSurv
  dat1= (
      time = [1,1,6,6,8,9],
      status = [1,0,1,1,0,1],
@@ -269,9 +269,9 @@ DOC_PHMODEL = """
   # Example
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
-  import LSurvival: _stepcox!, dgm_comprisk
+  import LSurv: _stepcox!, dgm_comprisk
 
   z,x,t,d, event,wt = dgm_comprisk(MersenneTwister(1212), 100);
   enter = zeros(length(t));
@@ -279,7 +279,7 @@ DOC_PHMODEL = """
   R = LSurvResp(enter, t, Int.(d), wt)
   P = PHParms(X)
   mf = PHModel(R,P)
-   LSurvival._fit!(mf)
+   LSurv._fit!(mf)
  ```
  """
 
@@ -400,9 +400,9 @@ DOC_COXPH = """
  # Example
 
  ```julia
-  using LSurvival
+  using LSurv
   using Random
-  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 200);
+  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 200);
   enter = zeros(length(t));
   X = hcat(x,z);
   tab = (enter=enter, t=t, d=d, x=x[:],z=z[:])
@@ -463,9 +463,9 @@ DOC_FIT_PHSURV = """
   fit for PHSurv objects
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
-   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
    X = hcat(x,rand(length(x)));
   
@@ -547,8 +547,8 @@ coxph(X, enter, exit, y, args...; kwargs...)
 ```
 
  ```julia
-   using LSurvival, Random
-   z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+   using LSurv, Random
+   z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
    X = hcat(x,rand(length(x)));
     m = fit(PHModel, X, enter, t, d, ties="efron")
@@ -561,9 +561,9 @@ coxph(X, enter, exit, y, args...; kwargs...)
 
 `id` is not needed in person-period structure data for standard estimates or confidence intervals
  ```@example
-  using Random, LSurvival
+  using Random, LSurv
      id, int, outt, dat =
-         LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
+         LSurv.dgm(MersenneTwister(123123), 100, 100; afun = LSurv.int_0)
      data = (
              int = int,
              outt = outt,
@@ -645,9 +645,9 @@ Kaplan-Meier estimator for cumulative conditional risk
 
   
  ```@example
-  using LSurvival
+  using LSurv
   using Random
-  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
   m = fit(KMSurv, enter, t, d)
   mw = fit(KMSurv, enter, t, d, wts=wt)
@@ -674,9 +674,9 @@ DOC_FIT_AJSURV = """
   
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
-  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
      # event variable is coded 0[referent],1,2
   m = fit(AJSurv, enter, t, event)
@@ -708,9 +708,9 @@ DOC_VARIANCE_KMSURV = """
 
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
-  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
   m = fit(KMSurv, enter, t, d)
   mw = fit(KMSurv, enter, t, d, wts=wt)
@@ -724,7 +724,7 @@ DOC_VARIANCE_AJSURV = """
   Greenwood's formula for variance and confidence intervals of a Aalen-Johansen risk function
 
  ```@example
-  res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+  res = z, x, outt, d, event, wts = LSurv.dgm_comprisk(MersenneTwister(123123), 100)
   int = zeros(length(d)) # no late entry
   m = fit(AJSurv, int, outt, event)
   stderror(m)
@@ -818,10 +818,10 @@ DOC_FIT_PHSURV = """
  - `pred_profile` = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
   # event variable is coded 0[referent],1,2
-  z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
+  z,x,t,d, event,wt = LSurv.dgm_comprisk(MersenneTwister(1212), 1000);
   enter = zeros(length(t));
 
   ft1 = coxph(hcat(x,z), enter, t, (event .== 1))
@@ -865,7 +865,7 @@ DOC_DGM = """
   expit(-3 + 2*v + 0*l + 2*a)
   end
     # 10 individuals followed for up to 5 times
-  LSurvival.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)
+  LSurv.dgm(10, 5;afun=aprob, yfun=yprob, lfun=lprob)
  ```
 
  """
@@ -882,9 +882,9 @@ DOC_DGM_COMPRISK = """
   Example:
 
  ```julia
-  using LSurvival
+  using LSurv
       # 100 individuals with two competing events
-  z,x,t,d,event,weights = LSurvival.dgm_comprisk(100)
+  z,x,t,d,event,weights = LSurv.dgm_comprisk(100)
       
 
  ```
@@ -911,10 +911,10 @@ DOC_BOOTSTRAP_PHMODEL = """
 
 
  ```julia
-  using LSurvival, Random
+  using LSurv, Random
 
   id, int, outt, data =
-  LSurvival.dgm(MersenneTwister(1212), 500, 5; afun = LSurvival.int_0)
+  LSurv.dgm(MersenneTwister(1212), 500, 5; afun = LSurv.int_0)
 
   d, X = data[:, 4], data[:, 1:3]
   weights = rand(length(d))
@@ -924,18 +924,18 @@ DOC_BOOTSTRAP_PHMODEL = """
   P = PHParms(X)
 
   Mod = PHModel(R, P)
-  LSurvival._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
+  LSurv._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
 
 
   # careful propogation of bootstrap sampling
   idx, R2 = bootstrap(R)
   P2 = bootstrap(idx, P)
   Modb = PHModel(R2, P2)
-  LSurvival._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
+  LSurv._fit!(Mod, start=Mod.P._B, keepx=true, keepy=true)
 
   # convenience function for bootstrapping a model
   Modc = bootstrap(Mod)
-  LSurvival._fit!(Modc, start=Modc.P._B);
+  LSurv._fit!(Modc, start=Modc.P._B);
   Modc
   Modc.P.X == nothing
   Modc.R == nothing
@@ -945,12 +945,12 @@ DOC_BOOTSTRAP_PHMODEL = """
   Bootstrap Cox model coefficients
 
  ```
-  LSurvival._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
+  LSurv._fit!(mb, keepx=true, keepy=true, start=[0.0, 0.0])
  ```
 
  ```@example
-  using LSurvival, Random
-  res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 200)
+  using LSurv, Random
+  res = z, x, outt, d, event, wts = LSurv.dgm_comprisk(MersenneTwister(123123), 200)
   int = zeros(length(d)) # no late entry
   X = hcat(z, x)
 
@@ -995,11 +995,11 @@ DOC_BOOTSTRAP_KMSURV = """
     
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
 
   id, int, outt, data =
-  LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+  LSurv.dgm(MersenneTwister(1212), 20, 5; afun = LSurv.int_0)
 
   d, X = data[:, 4], data[:, 1:3]
   wts = rand(length(d))
@@ -1035,10 +1035,10 @@ DOC_BOOTSTRAP_AJSURV = """
 
 
  ```@example
-  using LSurvival
+  using LSurv
   using Random
 
-  z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
+  z, x, t, d, event, wt = LSurv.dgm_comprisk(MersenneTwister(1212), 100)
   id = 1:length(x)
   enter = zeros(length(t))
 
@@ -1057,7 +1057,7 @@ DOC_BOOTSTRAP_AJSURV = """
 
 DOC_ROBUST_VCOV = """
 ```@example
-using LSurvival
+using LSurv
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1168,7 +1168,7 @@ residuals(ft, type="martingale")
 ## Score residuals: Per observation contribution to score function 
 
 ```julia
-using LSurvival
+using LSurv
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1183,7 +1183,7 @@ S = residuals(ft, type="score")[:]
 ####################################################################
 ## Schoenfeld residuals: Per time contribution to score function 
 ```julia
-using LSurvival
+using LSurv
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1201,7 +1201,7 @@ S = residuals(ft, type="schoenfeld")[:]
 ## dfbeta residuals: influence of individual observations on each parameter
 
 ```@example
-using LSurvival
+using LSurv
 dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1221,7 +1221,7 @@ sqrt(robVar)
 ```
 
 #  using the `id` keyword argument
-#  see help for LSurvival.vcov for what happens when `id` keyword is not used
+#  see help for LSurv.vcov for what happens when `id` keyword is not used
 ```@example
 dat1clust= (
     id = [1,2,3,3,4,4,5,5,6,6],
@@ -1274,9 +1274,9 @@ basehaz: Matrix: baseline hazard at referent level of all covariates, weighted r
 
 Examples: 
 ```julia-repl   
-  using LSurvival
+  using LSurv
   # simulating discrete survival data for 20 individuals at 10 time points
-  id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
+  id, int, outt, data = LSurv.dgm(20, 5;afun=LSurv.int_0);
   
   d,X = data[:,4], data[:,1:3]
   
@@ -1298,7 +1298,7 @@ Examples:
 *Deprecated function*
   Estimating cumulative incidence from two or more cause-specific Cox models
   
-  z,x,outt,d,event,weights = LSurvival.dgm_comprisk(120)
+  z,x,outt,d,event,weights = LSurv.dgm_comprisk(120)
   X = hcat(z,x)
   int = zeros(120)
   d1  = d .* Int.(event.== 1)
@@ -1395,9 +1395,9 @@ Note:
 
 Examples: 
 ```julia-repl   
-  using LSurvival, Random
+  using LSurv, Random
 
-  z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
+  z,x,t,d, event,weights = LSurv.dgm_comprisk(1000);
   
   # compare these two approaches, where Aalen-Johansen method requires having cause specific hazards for every event type
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);

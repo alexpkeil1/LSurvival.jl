@@ -2,7 +2,7 @@
 """
 ```
 id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+LSurv.dgm(MersenneTwister(1212), 20, 5; afun = LSurv.int_0)
 
 d, X = data[:, 4], data[:, 1:3]
 weights = rand(length(d))
@@ -27,7 +27,7 @@ bootstrap(R::T) where {T<:LSurvResp} = bootstrap(MersenneTwister(), R::T)
 """
 ```
 z,x,t,d,event,weights =
-LSurvival.dgm_comprisk(MersenneTwister(1212), 300)
+LSurv.dgm_comprisk(MersenneTwister(1212), 300)
 enter = zeros(length(event))
 
 # survival outcome:
@@ -49,10 +49,10 @@ bootstrap( R::T) where {T<:LSurvCompResp} = bootstrap(MersenneTwister(), R::T)
 
 """
 ```
-using LSurvival, Random
+using LSurv, Random
 
 id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
+LSurv.dgm(MersenneTwister(1212), 20, 5; afun = LSurv.int_0)
 
 d, X = data[:, 4], data[:, 1:3]
 weights = rand(length(d))
@@ -64,7 +64,7 @@ idx, R2 = bootstrap(R)
 P2 = bootstrap(idx, P)
 
 Mod = PHModel(R2, P2)
-LSurvival._fit!(Mod, start=Mod.P._B)
+LSurv._fit!(Mod, start=Mod.P._B)
 
 ```
 
@@ -96,7 +96,7 @@ function bootstrap(rng::MersenneTwister, m::PHModel, iter::Int; kwargs...)
     res = zeros(iter, length(coef(m)))
     @inbounds for i = 1:iter
         mb = bootstrap(rng, m)
-        LSurvival._fit!(mb; kwargs...)
+        LSurv._fit!(mb; kwargs...)
         @debug "Log-partial-likelihood $i: $(mb.P._LL[1])"
         res[i, :] = mb.P._B
     end
@@ -114,7 +114,7 @@ $DOC_BOOTSTRAP_KMSURV
 function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:KMSurv}
     _, R2 = bootstrap(rng, m.R)
     boot = KMSurv(R2)
-    LSurvival._fit!(boot;kwargs...)
+    LSurv._fit!(boot;kwargs...)
 end
 bootstrap(m::M;kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m;kwargs...)
 
@@ -128,7 +128,7 @@ $DOC_BOOTSTRAP_AJSURV
 function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:AJSurv}
     _, R2 = bootstrap(rng, m.R)
     boot = AJSurv(R2)
-    LSurvival._fit!(boot;kwargs...)
+    LSurv._fit!(boot;kwargs...)
 end
 bootstrap(m::M; kwargs...) where{M<:AJSurv} = bootstrap(MersenneTwister(), m;kwargs...)
 
@@ -143,7 +143,7 @@ function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:AJS
     res = zeros(iter, size(m.risk,2))
     @inbounds for i = 1:iter
         mb = bootstrap(rng, m)
-        LSurvival._fit!(mb; kwargs...)
+        LSurv._fit!(mb; kwargs...)
         res[i, :] = mb.risk[end,:]
     end
     res
@@ -162,7 +162,7 @@ function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:KMS
     res = zeros(iter, 1)
     @inbounds for i = 1:iter
         mb = bootstrap(rng, m)
-        LSurvival._fit!(mb; kwargs...)
+        LSurv._fit!(mb; kwargs...)
         res[i, :] = mb.surv[end:end]
     end
     res

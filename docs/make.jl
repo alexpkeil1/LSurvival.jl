@@ -1,13 +1,13 @@
-using Documenter, LSurvival, Random, Distributions, LinearAlgebra
+using Documenter, LSurv, Random, Distributions, LinearAlgebra
 
-#DocMeta.setdocmeta!(LSurvival, :DocTestSetup, :(using LSurvival); recursive = true)
+#DocMeta.setdocmeta!(LSurv, :DocTestSetup, :(using LSurv); recursive = true)
 
 push!(LOAD_PATH,"../src/")
 
 makedocs(;
     format = Documenter.HTML(),
-    modules = [LSurvival],
-    sitename = "LSurvival",
+    modules = [LSurv],
+    sitename = "LSurv",
     pages = ["Home" => "index.md"],
     debug = true,
     doctest = true,

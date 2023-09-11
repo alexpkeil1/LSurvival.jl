@@ -1,4 +1,4 @@
-# LSurvival
+# LSurv
 
 [![Build Status](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml/badge.svg?branch=main)](https://github.com/alexpkeil1/LSurvival.jl/actions/workflows/runtests.yml?query=branch%3Amain)
 [![Main](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexpkeil1.github.io/LSurvival.jl/stable/)
@@ -30,7 +30,7 @@ or directly in Julia
 ## Cox model
 
 ```{julia}
-using Random, LSurvival, Distributions, LinearAlgebra
+using Random, LSurv, Distributions, LinearAlgebra
 
 # generate some data
 expit(mu) = inv(1.0 + exp(-mu))
