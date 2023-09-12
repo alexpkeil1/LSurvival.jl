@@ -848,7 +848,7 @@ using Random, Tables
         rand(MersenneTwister(345), [0, 1], 100),
         wts = rand(MersenneTwister(345), [1, 2, 3], 100),
     )
-    @test (unique(op.R.wts) == unique(MersenneTwister(345), bootstrap(op).R.wts)) &&
+    @test (unique(op.R.wts) == unique(bootstrap(MersenneTwister(345), op).R.wts)) &&
           (op.R.wts != bootstrap(MersenneTwister(345), op).R.wts)
     op = aalen_johansen(
         zeros(100),
