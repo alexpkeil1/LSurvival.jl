@@ -30,7 +30,8 @@ using Random, Tables
 
 
 
-    id, int, outt, data = LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
+    id, int, outt, data =
+        LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
     data[:, 1] = round.(data[:, 1], digits = 3)
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
@@ -86,7 +87,8 @@ using Random, Tables
     @test isapprox(bic(res), bic(res2))
 
 
-    id, int, outt, data = LSurvival.dgm(MersenneTwister(1212), 30, 5; afun = LSurvival.int_0)
+    id, int, outt, data =
+        LSurvival.dgm(MersenneTwister(1212), 30, 5; afun = LSurvival.int_0)
 
     d, X = data[:, 4], data[:, 1:3]
     w = rand(length(d))
@@ -713,7 +715,8 @@ using Random, Tables
 
     # TEST: can algorithms recover from an observation that doesn't contribute to the likelihood?
     # NOTE: no formal test here, this will error if incorrect
-    id, int, outt, data = LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
+    id, int, outt, data =
+        LSurvival.dgm(MersenneTwister(1232), 1000, 100; afun = LSurvival.int_0)
     data[:, 1] = round.(data[:, 1], digits = 3)
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
@@ -795,7 +798,7 @@ using Random, Tables
         keepx = true,
     )
     ft2w = coxph(@formula(Surv(enter, exit, status) ~ x), dat1clust, keepx = true)
-    
+
     #TEST: does model-based variance follow expected behavior, regardless of id argument?
     @test stderror(ft2) == stderror(ft)
     @test stderror(ft2) == stderror(ft2w)
@@ -808,43 +811,69 @@ using Random, Tables
     # TEST: bootstrapping a survival response
     op = LSurvivalResp(zeros(100), rand(MersenneTwister(345), 100), ones(100))
     @test length(op.eventtimes) .> length(bootstrap(op)[2].eventtimes)
-    
+
     # TEST: bootstrapping a competing survival response
-    op = LSurvivalCompResp(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100))
+    op = LSurvivalCompResp(
+        zeros(100),
+        rand(MersenneTwister(345), 100),
+        rand(MersenneTwister(345), [0, 1, 2], 100),
+    )
     @test length(op.eventtimes) .> length(bootstrap(op)[2].eventtimes)
 
     # TEST: bootstrapping a cox model without a seed
     @test !bootstrap(ft2).fit
-    
+
     # TEST: bootstrapping a kaplan meier without a seed
     # TODO: will this fail with weights?
     #km = kaplan_meier(zeros(length(dat1.time)), dat1.time, dat1.status)
     #@test bootstrap(km)
 
     # TEST: bootstrapping aalen johansen fit, kaplan-meier fit: is behavior expected?
-    op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100))
+    op = aalen_johansen(
+        zeros(100),
+        rand(MersenneTwister(345), 100),
+        rand(MersenneTwister(345), [0, 1, 2], 100),
+    )
     @test length(op.times) .> length(bootstrap(op).times)
-    op = kaplan_meier(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1], 100))
+    op = kaplan_meier(
+        zeros(100),
+        rand(MersenneTwister(345), 100),
+        rand(MersenneTwister(345), [0, 1], 100),
+    )
     @test length(op.times) .> length(bootstrap(op).times)
 
-    op = kaplan_meier(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1], 100), wts=rand(MersenneTwister(345), [1,2,3], 100))
-    @test (unique(op.R.wts) == unique(bootstrap(op).R.wts)) && (op.R.wts != bootstrap(op).R.wts)
-    op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100), wts=rand(MersenneTwister(345), [1,2,3], 100))
-    @test (unique(op.R.wts) == unique(bootstrap(op).R.wts)) && (op.R.wts != bootstrap(op).R.wts)
+    op = kaplan_meier(
+        zeros(100),
+        rand(MersenneTwister(345), 100),
+        rand(MersenneTwister(345), [0, 1], 100),
+        wts = rand(MersenneTwister(345), [1, 2, 3], 100),
+    )
+    @test (unique(op.R.wts) == unique(MersenneTwister(345), bootstrap(op).R.wts)) &&
+          (op.R.wts != bootstrap(MersenneTwister(345), op).R.wts)
+    op = aalen_johansen(
+        zeros(100),
+        rand(MersenneTwister(345), 100),
+        rand(MersenneTwister(345), [0, 1, 2], 100),
+        wts = rand(MersenneTwister(345), [1, 2, 3], 100),
+    )
+    @test (unique(op.R.wts) == unique(bootstrap(op).R.wts)) &&
+          (op.R.wts != bootstrap(op).R.wts)
 
     # this is a need for re-factoring
     # op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100), keepy=false)
 
     # TEST: bootstrap errors
     ftf = coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false)
-    try bootstrap(ftf)
+    try
+        bootstrap(ftf)
     catch e
-      @test  typeof(e) == MethodError
+        @test typeof(e) == MethodError
     end
     ftf = coxph(@formula(Surv(time, status) ~ x), dat1, keepy = false)
-    try bootstrap(ftf, 2)
+    try
+        bootstrap(ftf, 2)
     catch e
-        @test  typeof(e) == String  # should this be converted to an error?
+        @test typeof(e) == String  # should this be converted to an error?
     end
 
     # TEST: show methods
@@ -854,20 +883,46 @@ using Random, Tables
     show(ftf.P)
 
     # TESTs: error/warning check
-    try coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false, ties="faketies")
+    try
+        coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false, ties = "faketies")
     catch e
-       @test typeof(e) == String
-       println(e)
+        @test typeof(e) == String
+        println(e)
     end
-    @test  coxph(@formula(Surv(time, status) ~ x), dat1, keepy = false, maxiter=0, verbose=true).fit
+    @test coxph(
+        @formula(Surv(time, status) ~ x),
+        dat1,
+        keepy = false,
+        maxiter = 0,
+        verbose = true,
+    ).fit
 
-    @test abs(coxph(@formula(Surv(time) ~ x+z), (time=[1,2,3,4], x=[0,0,1,1], z=[0,0,1,1.01]), keepy = false, verbose=true, maxiter=3).P._grad[1]) > 0.001
+    @test abs(
+        coxph(
+            @formula(Surv(time) ~ x + z),
+            (time = [1, 2, 3, 4], x = [0, 0, 1, 1], z = [0, 0, 1, 1.01]),
+            keepy = false,
+            verbose = true,
+            maxiter = 3,
+        ).P._grad[1],
+    ) > 0.001
 
 
     # TEST: specification
-    f, m = LSurvival.modelframe(@formula(a~b), Tables.columntable((a=[1,2], b=[3,5])),Dict{Symbol,Any}(), PHModel)
-    @test !PHModel(LSurvivalResp(zeros(100), rand(MersenneTwister(345), 100), ones(100)), PHParms(ones(100,1)), f).fit
+    f, m = LSurvival.modelframe(
+        @formula(a ~ b),
+        Tables.columntable((a = [1, 2], b = [3, 5])),
+        Dict{Symbol,Any}(),
+        PHModel,
+    )
+    @test !PHModel(
+        LSurvivalResp(zeros(100), rand(MersenneTwister(345), 100), ones(100)),
+        PHParms(ones(100, 1)),
+        f,
+    ).fit
 
-
-
+    # TEST: deprecated functions
+    args =
+        coxmodel(dat1clust.enter, dat1clust.exit, dat1clust.status, dat1clust.x[1:end, :])
+    @test cox_summary(args)[1] == args[1][1]
 end

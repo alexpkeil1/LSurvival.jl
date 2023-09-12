@@ -4,10 +4,11 @@ function _coxrisk!(_r, X, B)
     nothing
 end
 
-function _coxrisk(X, B)
-    _r = ones(size(X, 1))
-    _coxrisk!(_r, X, B)
-end
+# function _coxrisk(X, B)
+#     _r = ones(size(X, 1))
+#     _coxrisk!(_r, X, B)
+#     _r
+# end
 
 function lgh!(lowermethod3, _den, _LL, _grad, _hess, j, p, X, _r, _wt, caseidx, risksetidx)
     whichmeth = findfirst(lowermethod3 .== ["efr", "bre"])
