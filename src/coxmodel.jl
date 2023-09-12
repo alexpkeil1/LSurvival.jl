@@ -189,8 +189,6 @@ function _fit!(
     m::PHModel;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    atol::Float64 = sqrt(1e-8),
-    rtol::Float64 = 1e-8,
     gtol::Float64 = 1e-8,
     start = nothing,
     keepx = true,
@@ -231,14 +229,6 @@ function _fit!(
     # repeat newton raphson steps until convergence or max iterations
     while totiter < maxiter
         totiter += 1
-        # check convergence 
-        #if false
-        #    # check convergence using ratio or absolute difference in partial likelihood
-        #    likrat = (lastLL / m.P._LL[1])
-        #    absdiff = abs(lastLL - m.P._LL[1])
-        #    reldiff = max(likrat, inv(likrat)) - 1.0
-        #    converged = (reldiff < atol) || (absdiff < rtol)
-        #end
         # check convergence using infinite norm of gradient
         converged = (maximum(abs.(m.P._grad)) < gtol)
         if converged
@@ -285,8 +275,6 @@ function StatsBase.fit!(
     m::AbstractPH;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    atol::Float64 = 1e-6,
-    rtol::Float64 = 1e-6,
     gtol::Float64 = 1e-8,
     start = nothing,
     kwargs...,
@@ -313,8 +301,6 @@ function StatsBase.fit!(
         m,
         verbose = verbose,
         maxiter = maxiter,
-        atol = atol,
-        rtol = rtol,
         gtol = gtol,
         start = start;
         kwargs...,
@@ -594,7 +580,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
 end
 
 Base.show(m::M; kwargs...) where {M<:AbstractPH} =
-    Base.show(stdout, m::M; kwargs...) where {M<:AbstractPH}
+    Base.show(stdout, m; kwargs...)
 
 ##################################################################################################################### 
 # helper functions

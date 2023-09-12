@@ -53,7 +53,7 @@ using Random, Tables
 
     function jfun2(int, outt, d, X, wt, i)
         i == 1 && println("Stable method")
-        fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9)
+        fit(PHModel, X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9)
     end
 
     println("Compilation times")
@@ -76,12 +76,14 @@ using Random, Tables
         d,
         wts = wt,
         ties = "breslow",
-        rtol = 1e-9,
+        gtol = 1e-9,
         keepx = true,
         keepy = true,
     )
-    res2 = coxph(X, int, outt, d, wts = wt, ties = "breslow", rtol = 1e-9)
+    res2 = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9)
 
+    rfromc = risk_from_coxphmodels([res, res2])
+    println(rfromc)
 
     @test isapprox(logpartiallikelihood(res), logpartiallikelihood(res2))
     @test isapprox(bic(res), bic(res2))
@@ -141,6 +143,30 @@ using Random, Tables
     ftnull = coxph(fnull, tab)
     println(lrtest(ft, ft3))
 
+    ft = coxph(
+        @formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1 * x),
+        tab,
+        contrasts = Dict(:z1 => CategoricalTerm), maxIter = 100, convTol = 1e-9, tol=1e-9
+    )
+    println(ft)
+    stderror(ft, type="robust")
+    println(ft)
+
+    @test all(isapprox.(fitted(ft), log.(ft.P._r)))
+    @test aic(ft) > 0
+    @test aicc(ft) > 0
+    @test nulldeviance(ft) > 0
+    @test size(modelmatrix(ft), 2) == 4
+    @test isapprox(nulllogpartiallikelihood(ft), ft.P._LL[1])
+    @test isapprox(nulllogpartiallikelihood(ft), ft.P._LL[1])
+    @test typeof(model_response(ft)) <: LSurvivalResp
+    @test maximum(abs.(score(ft))) < 0.00000001
+    @test weights(ft) == ft.R.wts
+    
+    show(ft) 
+    ft.fit = false
+    print(ft)
+    
 
     (coxph(
         @formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1 * x),
@@ -194,13 +220,21 @@ using Random, Tables
     #println(R)
 
     # TESTs: do print functions work?
-    println(kaplan_meier(int, outt, d))
+    kmfit = kaplan_meier(int, outt, d)
+    println(kmfit)
     #trivial case of non-competing events with late entry
-    println(aalen_johansen(int, outt, d))
+    ajfit = aalen_johansen(int, outt, d)
+    println(ajfit)
 
-    (bootstrap(MersenneTwister(123), kaplan_meier(int, outt, d)))
+    # TESTs: do bootstrap functions work?
+    @test size(bootstrap(kmfit, 3)) == (3,1)
     #trivial case of non-competing events with late entry
-    (bootstrap(MersenneTwister(123), aalen_johansen(int, outt, d)))
+    @test size(bootstrap(ajfit, 3)) == (3,1)
+
+
+    z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000)
+    print(kaplan_meier(t,d))
+    print(aalen_johansen(t,event))
 
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
@@ -216,7 +250,8 @@ using Random, Tables
     bootstrap(MersenneTwister(123), ajres2)
     kms = kaplan_meier(enter, t, d, wts = wt)
 
-
+    LSurvival.km(enter, t, d, weights = nothing)
+    LSurvival.aj(enter, t, event, weights = nothing)
     _, oldsurv, _ = LSurvival.km(enter, t, d, weights = wt)
     @test isapprox(kms.surv, oldsurv[1:length(kms.surv)])
 
@@ -274,11 +309,16 @@ using Random, Tables
     _, _, _, _, bh2 = coxmodel(enter, t, Int.(event .== 2), X)
     _, _, _, _, bh1 = coxmodel(enter, t, Int.(event .== 1), X)
 
-    refrisk = risk_from_coxphmodels([ft1, ft2]).risk
-    oldrisk, _ = ci_from_coxmodels([bh1, bh2])
+    rfromc = risk_from_coxphmodels([ft1, ft2], coef_vectors=[coef(res), coef(res2)], pred_profile=[ -1 -1 -1])
+    println(rfromc)
+    refrisk = rfromc.risk
+    oldrisk, _ = ci_from_coxmodels([bh1, bh2]; coeflist=[coef(res), coef(res2)], covarmat=[ -1 -1 -1 ;])
+
+
 
     @test isapprox(refrisk, oldrisk, atol = 0.0001)
 
+    show(refrisk)
 
     # TEST: do predictions at covariate means change the risk?
     covarmat = sum(X, dims = 1) ./ size(X, 1)

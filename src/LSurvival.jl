@@ -104,7 +104,8 @@ export aic,
     stderror,
     residuals,
     #predict, predict!,
-    vcov
+    vcov,
+    weights
 
 ####### Documentation #######
 include("docstr.jl")

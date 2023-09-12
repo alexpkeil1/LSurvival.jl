@@ -68,8 +68,7 @@ phfit = fit(
     d,
     wts = wt,
     ties = "breslow",
-    rtol = 1e-13,
-    atol = 1e-8,
+    gtol = 1e-13,
     keepx = true,
     keepy = true,
 )
@@ -239,8 +238,7 @@ m = fit(
     cgd.status,
     wts = cgd.weight,
     ties = "efron",
-    rtol = 1e-12,
-    atol = 1e-6,
+    gtol = 1e-12,
     start = coxcoef,
     maxiter = 0,
 );
@@ -252,8 +250,7 @@ m2 = fit(
     cgd.status,
     wts = cgd.weight,
     ties = "breslow",
-    rtol = 1e-12,
-    atol = 1e-6,
+    gtol = 1e-12,
     start = coxcoef2,
     maxiter = 0,
 );
@@ -281,8 +278,7 @@ m = fit(
     cgd.status,
     wts = cgd.weight,
     ties = "efron",
-    rtol = 1e-18,
-    atol = 1e-9,
+    gtol = 1e-18,
     start = zeros(2),
 );
 m2 = fit(
@@ -293,8 +289,7 @@ m2 = fit(
     cgd.status,
     wts = cgd.weight,
     ties = "breslow",
-    rtol = 1e-18,
-    atol = 1e-9,
+    gtol = 1e-18,
     start = zeros(2),
 );
 
@@ -363,7 +358,7 @@ function jfun(int, outt, d, X, wt)
 end
 
 function jfun2(int, outt, d, X, wt)
-    fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", rtol=1e-9)
+    fit(PHModel, X, int, outt, d, wts=wt, ties="breslow", gtol=1e-9)
 end
 
 @rput int outt d X wt;
