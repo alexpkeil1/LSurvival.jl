@@ -235,7 +235,12 @@ using Random, Tables
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000)
     print(kaplan_meier(t,d))
     print(aalen_johansen(t,event))
+    # running through some deprecated functions
+    kmdep = LSurvival.km(t,d)
+    ajdep = LSurvival.aj(zeros(length(t)), t,event)
+    timessub, _, cisub = LSurvival.subdistribution_hazard_cuminc(zeros(length(t)),t,event)
 
+    LSurvival.e_yearsoflifelost(timessub,cisub)
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
 
@@ -309,10 +314,10 @@ using Random, Tables
     _, _, _, _, bh2 = coxmodel(enter, t, Int.(event .== 2), X)
     _, _, _, _, bh1 = coxmodel(enter, t, Int.(event .== 1), X)
 
-    rfromc = risk_from_coxphmodels([ft1, ft2], coef_vectors=[coef(res), coef(res2)], pred_profile=[ -1 -1 -1])
+    rfromc = risk_from_coxphmodels([ft1, ft2], coef_vectors=[coef(res), coef(res2)], pred_profile=[ 0 0 -1])
     println(rfromc)
     refrisk = rfromc.risk
-    oldrisk, _ = ci_from_coxmodels([bh1, bh2]; coeflist=[coef(res), coef(res2)], covarmat=[ -1 -1 -1 ;])
+    oldrisk, _ = ci_from_coxmodels([bh1, bh2]; coeflist=[coef(res), coef(res2)], covarmat=[  0 0 -1;])
 
 
 
@@ -443,8 +448,11 @@ using Random, Tables
 
     show(ft.R.id)
 
+    show(ft.R.id[1])
 
+    [length(i) for i in ft.R.id]
 
+    length(ft.R.id)
     ft = coxph(
         @formula(Surv(time, status) ~ x),
         dat1,
@@ -856,11 +864,15 @@ using Random, Tables
     # TEST: bootstrapping a cox model without a seed
     @test !bootstrap(ft2).fit
 
-    # TEST: bootstrapping a kaplan meier without a seed
-    # TODO: will this fail with weights?
-    #km = kaplan_meier(zeros(length(dat1.time)), dat1.time, dat1.status)
-    #@test bootstrap(km)
+      println(Surv(1,2,1))
 
+    # TEST: bootstrapping a kaplan meier without a seed
+    zz = zeros(length(dat1.time))
+    km = kaplan_meier(zz, Float64.(dat1.time), dat1.status)
+    @test bootstrap(km)
+    # TEST: weights argument
+    lsr = LSurvivalCompResp(zz, Float64.(dat1.time), dat1.status, ones(length(dat1.time)))
+    length(lsr)
     # TEST: bootstrapping aalen johansen fit, kaplan-meier fit: is behavior expected?
     op = aalen_johansen(
         zeros(100),
@@ -873,6 +885,7 @@ using Random, Tables
         rand(MersenneTwister(345), 100),
         rand(MersenneTwister(345), [0, 1], 100),
     )
+    length(op.R)
     @test length(op.times) .> length(bootstrap(op).times)
 
     op = kaplan_meier(
