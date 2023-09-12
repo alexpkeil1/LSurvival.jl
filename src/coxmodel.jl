@@ -232,13 +232,13 @@ function _fit!(
     while totiter < maxiter
         totiter += 1
         # check convergence 
-        if false
-            # check convergence using ratio or absolute difference in partial likelihood
-            likrat = (lastLL / m.P._LL[1])
-            absdiff = abs(lastLL - m.P._LL[1])
-            reldiff = max(likrat, inv(likrat)) - 1.0
-            converged = (reldiff < atol) || (absdiff < rtol)
-        end
+        #if false
+        #    # check convergence using ratio or absolute difference in partial likelihood
+        #    likrat = (lastLL / m.P._LL[1])
+        #    absdiff = abs(lastLL - m.P._LL[1])
+        #    reldiff = max(likrat, inv(likrat)) - 1.0
+        #    converged = (reldiff < atol) || (absdiff < rtol)
+        #end
         # check convergence using infinite norm of gradient
         converged = (maximum(abs.(m.P._grad)) < gtol)
         if converged

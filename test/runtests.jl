@@ -1,6 +1,6 @@
 using Test
 using LSurvival
-using Random
+using Random, Tables
 #using DataFrames
 #using BenchmarkTools # add during testing
 
@@ -821,6 +821,20 @@ using Random
     #km = kaplan_meier(zeros(length(dat1.time)), dat1.time, dat1.status)
     #@test bootstrap(km)
 
+    # TEST: bootstrapping aalen johansen fit, kaplan-meier fit: is behavior expected?
+    op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100))
+    @test length(op.times) .> length(bootstrap(op).times)
+    op = kaplan_meier(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1], 100))
+    @test length(op.times) .> length(bootstrap(op).times)
+
+    op = kaplan_meier(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1], 100), wts=rand(MersenneTwister(345), [1,2,3], 100))
+    @test (unique(op.R.wts) == unique(bootstrap(op).R.wts)) && (op.R.wts != bootstrap(op).R.wts)
+    op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100), wts=rand(MersenneTwister(345), [1,2,3], 100))
+    @test (unique(op.R.wts) == unique(bootstrap(op).R.wts)) && (op.R.wts != bootstrap(op).R.wts)
+
+    # this is a need for re-factoring
+    # op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100), keepy=false)
+
     # TEST: bootstrap errors
     ftf = coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false)
     try bootstrap(ftf)
@@ -833,7 +847,26 @@ using Random
         @test  typeof(e) == String  # should this be converted to an error?
     end
 
-    
+    # TEST: show methods
+    io = IOBuffer()
+    show(io, ftf)
+    show(io, ftf.P)
+    show(ftf.P)
+
+    # TESTs: error/warning check
+    try coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false, ties="faketies")
+    catch e
+       @test typeof(e) == String
+       println(e)
+    end
+    @test  coxph(@formula(Surv(time, status) ~ x), dat1, keepy = false, maxiter=0, verbose=true).fit
+
+    @test abs(coxph(@formula(Surv(time) ~ x+z), (time=[1,2,3,4], x=[0,0,1,1], z=[0,0,1,1.01]), keepy = false, verbose=true, maxiter=3).P._grad[1]) > 0.001
+
+
+    # TEST: specification
+    f, m = LSurvival.modelframe(@formula(a~b), Tables.columntable((a=[1,2], b=[3,5])),Dict{Symbol,Any}(), PHModel)
+    @test !PHModel(LSurvivalResp(zeros(100), rand(MersenneTwister(345), 100), ones(100)), PHParms(ones(100,1)), f).fit
 
 
 
