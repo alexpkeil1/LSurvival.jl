@@ -869,7 +869,7 @@ using Random, Tables
     # TEST: bootstrapping a kaplan meier without a seed
     zz = zeros(length(dat1.time))
     km = kaplan_meier(zz, Float64.(dat1.time), dat1.status)
-    @test bootstrap(km)
+    @test typeof(bootstrap(km)) <: KMSurv
     # TEST: weights argument
     lsr = LSurvivalCompResp(zz, Float64.(dat1.time), dat1.status, ones(length(dat1.time)))
     length(lsr)
