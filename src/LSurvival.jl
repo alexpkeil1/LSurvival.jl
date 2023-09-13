@@ -89,6 +89,7 @@ export aic,
     modelmatrix, #PValue
     fitted,
     isfitted,
+    jackknife,
     loglikelihood,
     logpartiallikelihood,
     lrtest, # re-exported
@@ -140,6 +141,7 @@ include("residuals.jl")
 include("npsurvival.jl")
 include("data_generators.jl")
 include("bootstrap.jl")
+include("jackknife.jl")
 include("deprecated.jl")
 
 

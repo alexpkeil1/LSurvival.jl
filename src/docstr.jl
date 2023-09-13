@@ -1105,16 +1105,6 @@ ft2w
 
 """
 
-DOC_VCOV = """
-Covariance matrix for Cox proportional hazards models  
-
-Keyword arguments
-- `type` nothing or "robust": determines whether model based or robust (dfbeta based) variance is returned.
-
-See ?residuals for info on `dfbeta` residuals
-
-$DOC_ROBUST_VCOV
-"""
 
 
 DOC_RESIDUALS = """
@@ -1245,9 +1235,36 @@ vcov(ft, type="robust")
 vcov(ft2, type="robust")
 ```
 
+####################################################################
+## jackknife residuals: influence of individual observations on each parameter
+
+```@example
+using LSurvival
+dat1 = (
+    time = [1,1,6,6,8,9],
+    status = [1,0,1,1,0,1],
+    x = [1,1,1,0,0,0]
+)
+
+ft = coxph(@formula(Surv(time,status)~x),dat1, ties="breslow")
+jackknife(ft)
+residuals(ft, type="jackknife")
 
 
+```
 """
+
+DOC_VCOV = """
+Covariance matrix for Cox proportional hazards models  
+
+Keyword arguments
+- `type` nothing or "robust": determines whether model based or robust (dfbeta based) variance is returned.
+
+See ?residuals for info on `dfbeta` residuals
+
+$DOC_ROBUST_VCOV
+"""
+
 
 ######## DEPRECATED FUNCTIONS ###############
 

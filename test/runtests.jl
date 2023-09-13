@@ -83,7 +83,7 @@ using Random, Tables
     res2 = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9)
 
     resnobh = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9, getbasehaz=false)
-    @test all(isapprox.(basehaz[end,:],zeros(6)))
+    @test all(isapprox.(resnobh.bh[end,:],zeros(6)))
 
 
     rfromc = risk_from_coxphmodels([res, res2])
@@ -686,6 +686,10 @@ using Random, Tables
         @test isapprox(ft.P._LL[[1, end]], [-4.56434819, -3.82474951], atol = 0.000001)
         @test isapprox(-ft.P._hess[1], 0.6341681, atol = 0.000001)
     end
+
+    # TEST: does jackknife residual return an answer
+    S = residuals(ft, type = "jackknife")
+    @test !any(isnothing(S))
 
     # TESTS: do cox models return the theoretic values appropriately for breslow and efron ties (following Terry Therneau's approach)
     ft = coxph(

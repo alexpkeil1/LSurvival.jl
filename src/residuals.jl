@@ -6,7 +6,7 @@ $DOC_RESIDUALS
 """
 function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
     valid_methods =
-        ["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld"]
+        ["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld", "jackknife"]
     whichmethod = findall(valid_methods .== lowercase(type))
     thismethod = valid_methods[whichmethod][1]
     if thismethod == "martingale"
@@ -22,6 +22,8 @@ function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
         resid ./= stderror(m)'
     elseif thismethod == "scaled_schoenfeld"
         resid = resid_schoenfeld(m) * inv(m.P._hess)
+    elseif thismethod == "jackknife"
+        resid = resid_jackknife(m)
     else
         throw("Method $type not supported yet")
     end
@@ -134,6 +136,11 @@ function resid_dfbeta(m::M) where {M<:PHModel}
     H = m.P._hess
     dfbeta = .-L * inv(H)
     return dfbeta .* m.R.wts
+end
+
+function resid_jackknife(m::M) where {M<:PHModel}
+    jk = jackknife(m);
+    permutedims(jk' .- coef(m))
 end
 
 """
