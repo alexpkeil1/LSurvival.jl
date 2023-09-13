@@ -82,6 +82,10 @@ using Random, Tables
     )
     res2 = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9)
 
+    resnobh = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9, getbasehaz=false)
+    @test all(isapprox.(basehaz[end,:],zeros(6)))
+
+
     rfromc = risk_from_coxphmodels([res, res2])
     println(rfromc)
 

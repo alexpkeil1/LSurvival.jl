@@ -288,8 +288,8 @@ function StatsBase.fit!(
         Base.depwarn("'convTol' argument is deprecated, use `gtol` instead", :fit!)
         gtol = kwargs[:convTol]
     end
-    if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy))
-        throw(ArgumentError("unsupported keyword argument"))
+    if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy, :getbasehaz))
+        throw(ArgumentError("unsupported keyword argument in: $(kwargs...)"))
     end
     if haskey(kwargs, :tol)
         Base.depwarn("`tol` argument is deprecated, use `gtol` instead", :fit!)

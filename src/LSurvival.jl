@@ -9,7 +9,7 @@ using Random, Distributions, LinearAlgebra, Tables
 #import DataFrames: DataFrame
 using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
-import Base: length, size
+import Base: length, size, popat!, push!
 
 import StatsBase:
     aic,

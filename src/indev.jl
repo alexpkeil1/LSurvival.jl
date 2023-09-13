@@ -43,7 +43,6 @@ wt ./= (sum(wt) / length(wt))
 P = PHParms(X)
 R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
 Ri, Rj, idxi, idxj = pop(R);
-import Base.popat!
 Pi = popat!(P, idxi, idxj)
 """
 function popat!(P::T, idxi, idxj) where {T<:PHParms}
@@ -54,15 +53,6 @@ function popat!(P::T, idxi, idxj) where {T<:PHParms}
     Pi
 end
 
-"""
-Insert an observation into the front of an LSurvivalResp object
-"""
-function push!(Pi::T, Pj::T) where {T<:PHParms}
-    Pj.X =  vcat(Pi.X, Pj.X)
-    Pj._r = vcat(Pi._r, Pj._r)
-    Pj.n +=1
-    nothing
-end
 
 
 """
@@ -92,7 +82,15 @@ function push(Ri::T, Rj::T) where {T<:LSurvivalResp}
         origintime= min(Ri.origin, Rj.origin))
 end
 
-function push(Pi::T, Pj::T) where {T<:PHParms}
+
+"""
+Insert an observation into the front of an PHParms object
+"""
+function push!(Pi::T, Pj::T) where {T<:PHParms}
+    Pj.X =  vcat(Pi.X, Pj.X)
+    Pj._r = vcat(Pi._r, Pj._r)
+    Pj.n +=1
+    nothing
 end
 
 
@@ -118,11 +116,13 @@ RL::Union{Nothing,Vector{Matrix{Float64}}}        # residual matrix
 """
 function jackknife(m::M) where {M<:PHmodel}
     uid = unique(m.R.id)
+    coefs = zeros(length(uid), length(m.P._B))
     for i in eachindex(uid)
         Ri, Rj, idxi, idxj = pop(m.R);
         Pi = popat!(m.P, idxi, idxj)
-        mi= PHModel(Rj, m.P, m.formula, m.ties, false, m.bh[1:Rj.eventtimes,:], nothing)
-        fit!()
+        mi= PHModel(Rj, m.P, m.formula, m.ties, false, m.bh[1:length(Rj.eventtimes),:], nothing)
+        fit!(mi, getbasehaz=false)
+        coefs[i,:] = mi.P._B
         m.R = push(Ri, Rj)
         push!(Pi, m.P)
     end
