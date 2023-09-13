@@ -8,6 +8,48 @@ using LSurvival, Random, Optim, BenchmarkTools, RCall
 # residuals from fitted Cox models
 ######################################################################
 
+#
+"""
+Remove the last element from an LSurvivalResp object
+
+R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
+Ri, Rj, idxi, idxj = pop(R);
+
+"""
+function pop(R::T) where {T<:LSurvivalResp}
+    uid = unique(R.id)[end]
+    idx = findall(getfield.(R.id, :value) .== uid.value)
+    nidx = setdiff(collect(eachindex(R.id)),idx)
+    Ri = LSurvivalResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], R.id[idx]; origintime= R.origin)
+    Rj = LSurvivalResp(R.enter[nidx], R.exit[nidx], R.y[nidx], R.wts[nidx], R.id[nidx],origintime= R.origin)
+    Ri, Rj, idx, nidx
+end
+
+"""
+Insert an observation into the front of an LSurvivalResp object
+
+"""
+function push(Ri::T, Rj::T) where {T<:LSurvivalResp}
+    Ri = LSurvivalResp(
+        vcat(Ri.enter, Rj.enter), 
+        vcat(Ri.exit, Rj.exit), 
+        vcat(Ri.y, Rj.y), 
+        vcat(Rj.wts, Rj.wts), 
+        vcat(Ri.id, Rj.id); 
+        origintime= min(Ri.origin, Rj.origin))
+end
+
+function jackknife(R::T, O::Union{Nothing,T}) where {T<:LSurvivalResp}
+    uid = unique(R.id)
+    jackid = uid[1]
+    idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
+    idx = reduce(vcat, idxl)
+    nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
+    R.id[idx]
+    R2 = LSurvivalResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], nid)
+    idx, R2
+end
+=#
 
 
 

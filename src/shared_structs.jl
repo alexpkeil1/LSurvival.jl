@@ -326,8 +326,10 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvivalR
     println("Max time: $(maximum(x.exit))")
     iob = IOBuffer()
     op = reduce(vcat, pr)
-    nr = size(op, 1)
-    if nr < maxrows
+    nr = typeof(op) ==  String ? 1 : size(op, 1)
+    if nr == 1
+        println(iob, "$(x.id[1]). $(op)")
+    elseif nr < maxrows
         [println(iob, "$(x.id[oo]). $(op[oo])") for oo in eachindex(op)]
     else
         len = floor(Int, maxrows / 2)

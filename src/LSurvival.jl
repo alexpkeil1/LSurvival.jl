@@ -38,30 +38,29 @@ import StatsBase:
     response,
     score,
     vcov,
-    #
     weights
 
 import Base: convert, show
 
 ####### exports #######
-# types
 
-# Model types
-export ID,
-    # Strata
-    PHModel,
-    KMSurv,
-    AJSurv,
-    PHSurv,
-    PHParms,
-    Surv,
-    AbstractPH,
+# Structs
+export AbstractPH,
     AbstractNPSurv,
     AbstractLSurvivalID,
     AbstractLSurvivalParms,
-    AbstractSurvTime
-# Outcome types
-export LSurvivalResp, LSurvivalCompResp
+    AbstractSurvTime,
+    AJSurv,
+    ID,
+    KMSurv,
+    LSurvivalResp,
+    LSurvivalCompResp,
+    PHModel,
+    PHParms,
+    PHSurv,
+    # Strata
+    Surv
+
 # functions    
 export kaplan_meier,        # interface for estimating cumulative risk from non-parametric estimator
     aalen_johansen,        # interface for estimating cumulative risk from non-parametric competing risk estimator
@@ -84,7 +83,7 @@ export aic,
     nulldeviance,
     deviance,
     dof,
-    fit, 
+    fit,
     fit!,
     model_response,
     modelmatrix, #PValue
