@@ -1,3 +1,6 @@
 
 .DS_Store
 settings/secrets.txt
+Manifest.toml
+.vscode/settings.json
+*.cov
