@@ -195,6 +195,7 @@ function _fit!(
     keepy = true,
     bootstrap_sample = false,
     bootstrap_rng = MersenneTwister(),
+    getbasehaz = true,
     kwargs...,
 )
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
@@ -265,7 +266,7 @@ function _fit!(
     end
     m.P._LL = _llhistory
     m.fit = true
-    basehaz!(m)
+    getbasehaz && basehaz!(m)
     m.P.X = keepx ? m.P.X : nothing
     m.R = keepy ? m.R : nothing
     m

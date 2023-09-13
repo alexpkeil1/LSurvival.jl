@@ -11,10 +11,17 @@ using LSurvival, Random, Optim, BenchmarkTools, RCall
 #
 """
 Remove the last element from an LSurvivalResp object
+```julia
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+wt ./= (sum(wt) / length(wt))
 
 R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
 Ri, Rj, idxi, idxj = pop(R);
-
+```
 """
 function pop(R::T) where {T<:LSurvivalResp}
     uid = unique(R.id)[end]
@@ -26,7 +33,53 @@ function pop(R::T) where {T<:LSurvivalResp}
 end
 
 """
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+wt ./= (sum(wt) / length(wt))
+
+P = PHParms(X)
+R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
+Ri, Rj, idxi, idxj = pop(R);
+import Base.popat!
+Pi = popat!(P, idxi, idxj)
+"""
+function popat!(P::T, idxi, idxj) where {T<:PHParms}
+    Pi = PHParms(P.X[idxi,:], P._B, P._r[idxi], P._LL, P._grad, P._hess, 1, P.p)
+    P.X =  P.X[idxj,:]
+    P._r = P._r[idxj]
+    P.n -= 1
+    Pi
+end
+
+"""
 Insert an observation into the front of an LSurvivalResp object
+"""
+function push!(Pi::T, Pj::T) where {T<:PHParms}
+    Pj.X =  vcat(Pi.X, Pj.X)
+    Pj._r = vcat(Pi._r, Pj._r)
+    Pj.n +=1
+    nothing
+end
+
+
+"""
+Insert an observation into the front of an LSurvivalResp object
+
+```julia
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+wt ./= (sum(wt) / length(wt))
+
+R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
+Ri, Rj, idxi, idxj = pop(R);
+R = push(Ri, Rj)
+```
 
 """
 function push(Ri::T, Rj::T) where {T<:LSurvivalResp}
@@ -34,20 +87,45 @@ function push(Ri::T, Rj::T) where {T<:LSurvivalResp}
         vcat(Ri.enter, Rj.enter), 
         vcat(Ri.exit, Rj.exit), 
         vcat(Ri.y, Rj.y), 
-        vcat(Rj.wts, Rj.wts), 
+        vcat(Ri.wts, Rj.wts), 
         vcat(Ri.id, Rj.id); 
         origintime= min(Ri.origin, Rj.origin))
 end
 
-function jackknife(R::T, O::Union{Nothing,T}) where {T<:LSurvivalResp}
-    uid = unique(R.id)
-    jackid = uid[1]
-    idxl = [findall(getfield.(R.id, :value) .== bootidi.value) for bootidi in bootid]
-    idx = reduce(vcat, idxl)
-    nid = ID.(reduce(vcat, [fill(i, length(idxl[i])) for i in eachindex(idxl)]))
-    R.id[idx]
-    R2 = LSurvivalResp(R.enter[idx], R.exit[idx], R.y[idx], R.wts[idx], nid)
-    idx, R2
+function push(Pi::T, Pj::T) where {T<:PHParms}
+end
+
+
+"""
+id, int, outt, data =
+LSurvival.dgm(MersenneTwister(112), 100, 10; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+wt ./= (sum(wt) / length(wt))
+m = coxph(X,int, outt,d, wts=wt)
+
+R::Union{Nothing,G}        # Survival response
+P::L        # parameters
+formula::Union{FormulaTerm,Nothing}
+ties::String
+fit::Bool
+bh::Matrix{Float64}
+RL::Union{Nothing,Vector{Matrix{Float64}}}        # residual matrix    
+
+
+
+"""
+function jackknife(m::M) where {M<:PHmodel}
+    uid = unique(m.R.id)
+    for i in eachindex(uid)
+        Ri, Rj, idxi, idxj = pop(m.R);
+        Pi = popat!(m.P, idxi, idxj)
+        mi= PHModel(Rj, m.P, m.formula, m.ties, false, m.bh[1:Rj.eventtimes,:], nothing)
+        fit!()
+        m.R = push(Ri, Rj)
+        push!(Pi, m.P)
+    end
 end
 =#
 
