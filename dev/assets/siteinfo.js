@@ -1,1 +1,1 @@
-dev/siteinfo.js
+var DOCUMENTER_CURRENT_VERSION = "0.19.2";
