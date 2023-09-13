@@ -1,6 +1,6 @@
 module LSurvival
 ####### imports #######
-
+using Documenter
 using Reexport
 using Printf
 using Random, Distributions, LinearAlgebra, Tables

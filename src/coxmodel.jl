@@ -547,7 +547,7 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:A
     mwarn(m)
     if type == "robust"
         res = robust_vcov(m)
-    elseif  type == "robust"
+    elseif  type == "jackknife"
         res = jackknife_vcov(m)
     else
         res = -inv(m.P._hess)
