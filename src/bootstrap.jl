@@ -1,15 +1,5 @@
-
 """
-```
-id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
-
-d, X = data[:, 4], data[:, 1:3]
-weights = rand(length(d))
-
-# survival outcome:
-R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
-```
+$DOC_BOOTSTRAP_SURVRESP
 """
 function bootstrap(rng::MersenneTwister, R::T) where {T<:LSurvivalResp}
     uid = unique(R.id)
@@ -24,16 +14,9 @@ end
 bootstrap(R::T) where {T<:LSurvivalResp} = bootstrap(MersenneTwister(), R::T)
 
 
-"""
-```
-z,x,t,d,event,weights =
-LSurvival.dgm_comprisk(MersenneTwister(1212), 300)
-enter = zeros(length(event))
 
-# survival outcome:
-R = LSurvivalCompResp(enter, t, event, weights, ID.(collect(1:length(t))))    # specification with ID only
-bootstrap(R) # note that entire observations/clusters identified by id are kept
-```
+"""
+$DOC_BOOTSTRAP_SURVCOMPRESP
 """
 function bootstrap(rng::MersenneTwister, R::T) where {T<:LSurvivalCompResp}
     uid = unique(R.id)
@@ -47,27 +30,9 @@ function bootstrap(rng::MersenneTwister, R::T) where {T<:LSurvivalCompResp}
 end
 bootstrap( R::T) where {T<:LSurvivalCompResp} = bootstrap(MersenneTwister(), R::T)
 
+
 """
-```
-using LSurvival, Random
-
-id, int, outt, data =
-LSurvival.dgm(MersenneTwister(1212), 20, 5; afun = LSurvival.int_0)
-
-d, X = data[:, 4], data[:, 1:3]
-weights = rand(length(d))
-
-# survival outcome:
-R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
-P = PHParms(X)
-idx, R2 = bootstrap(R)
-P2 = bootstrap(idx, P)
-
-Mod = PHModel(R2, P2)
-LSurvival._fit!(Mod, start=Mod.P._B)
-
-```
-
+$DOC_BOOTSTRAP_PHPARMS
 """
 function bootstrap(idx::Vector{Int}, P::PHParms)
     P2 = PHParms(P.X[idx, :])
@@ -118,6 +83,19 @@ function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:KMSurv}
 end
 bootstrap(m::M;kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m;kwargs...)
 
+function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:KMSurv}
+    if isnothing(m.R) 
+        throw("Model is missing response matrix, use keepy=true for original fit")
+    end
+    res = zeros(iter, 1)
+    @inbounds for i = 1:iter
+        mb = bootstrap(rng, m)
+        LSurvival._fit!(mb; kwargs...)
+        res[i, :] = mb.surv[end:end]
+    end
+    res
+end
+bootstrap(m::M, iter::Int; kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m, iter::Int;kwargs...)
 
 
 
@@ -132,10 +110,6 @@ function bootstrap(rng::MersenneTwister, m::M;kwargs...) where{M<:AJSurv}
 end
 bootstrap(m::M; kwargs...) where{M<:AJSurv} = bootstrap(MersenneTwister(), m;kwargs...)
 
-
-"""
-$DOC_BOOTSTRAP_AJSURV
-"""
 function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:AJSurv}
     if isnothing(m.R)
         throw("Model is missing response matrix, use keepy=true for original fit")
@@ -150,21 +124,3 @@ function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:AJS
 end
 bootstrap(m::M, iter::Int; kwargs...) where{M<:AJSurv} = bootstrap(MersenneTwister(), m, iter::Int;kwargs...)
 
-
-
-"""
-$DOC_BOOTSTRAP_KMSURV
-"""
-function bootstrap(rng::MersenneTwister, m::M, iter::Int;kwargs...) where{M<:KMSurv}
-    if isnothing(m.R) 
-        throw("Model is missing response matrix, use keepy=true for original fit")
-    end
-    res = zeros(iter, 1)
-    @inbounds for i = 1:iter
-        mb = bootstrap(rng, m)
-        LSurvival._fit!(mb; kwargs...)
-        res[i, :] = mb.surv[end:end]
-    end
-    res
-end
-bootstrap(m::M, iter::Int; kwargs...) where{M<:KMSurv} = bootstrap(MersenneTwister(), m, iter::Int;kwargs...)

@@ -44,17 +44,17 @@ struct Surv{E<:Real,X<:Real,Y<:Real,O<:Real} <: AbstractSurvTime
     origin::O
 end
 
-function Surv(enter::E, exit::X, y::Y, origintime=nothing) where {E<:Real,X<:Real,Y<:Real}
+function Surv(enter::E, exit::X, y::Y, origintime = nothing) where {E<:Real,X<:Real,Y<:Real}
     origin = isnothing(origintime) ? zero(E) : origintime
     return Surv(enter, exit, y, origin)
 end
 
-function Surv(exit::X, y::Y;kwargs...) where {X<:Real,Y<:Real}
-    return Surv(zero(X), exit, y;kwargs...)
+function Surv(exit::X, y::Y; kwargs...) where {X<:Real,Y<:Real}
+    return Surv(zero(X), exit, y; kwargs...)
 end
 
-function Surv(exit::X;kwargs...) where {X<:Real}
-    return Surv(zero(X), exit, 1;kwargs...)
+function Surv(exit::X; kwargs...) where {X<:Real}
+    return Surv(zero(X), exit, 1; kwargs...)
 end
 
 
@@ -78,7 +78,7 @@ struct LSurvivalResp{
     "`wts`: observation weights"
     wts::W
     "`eventtimes`: unique event times"
-    eventtimes::E
+    eventtimes::X
     "`origin`: origin on the time scale"
     origin::T
     "`id`: person level identifier (must be wrapped in ID() function)"
@@ -91,7 +91,7 @@ function LSurvivalResp(
     y::Y,
     wts::W,
     id::Vector{I};
-    origintime = nothing
+    origintime = nothing,
 ) where {
     E<:Vector,
     X<:Vector,
@@ -228,7 +228,9 @@ function LSurvivalCompResp(
     y::Y,
     wts::W,
     id::Vector{I};
-    origintime = nothing
+    origintime = nothing,
+    etypes = ones(0),
+    ematrix = ones(0,0),
 ) where {
     E<:Vector,
     X<:Vector,
@@ -251,12 +253,15 @@ function LSurvivalCompResp(
         throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
     end
     eventtimes = sort(unique(exit[findall(y .> 0)]))
+
     origin = isnothing(origintime) ? minimum(enter) : origintime
     if lw == 0
         wts = ones(Int, ny)
     end
-    eventtypes = sort(unique(y))
-    eventmatrix = reduce(hcat, [y .== e for e in eventtypes[2:end]])
+    eventtypes = length(etypes) == 0 ? sort(unique(y)) : etypes
+    length(eventtypes) < length(sort(unique(y))) &&
+        throw(DimensionMismatch("etypes cannot be have fewer unique values than y"))
+    eventmatrix = size(ematrix,1) == 0 ? reduce(hcat, [y .== e for e in eventtypes[2:end]]) : ematrix
 
     return LSurvivalCompResp(
         enter,
@@ -276,7 +281,7 @@ function LSurvivalCompResp(
     exit::X,
     y::Y,
     id::Vector{I};
-    kwargs...
+    kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},I<:AbstractLSurvivalID}
     wts = ones(Int, length(y))
     return LSurvivalCompResp(enter, exit, y, wts, id; kwargs...)
@@ -287,7 +292,7 @@ function LSurvivalCompResp(
     exit::X,
     y::Y,
     wts::W;
-    kwargs...
+    kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector},W<:Vector}
     id = [ID(i) for i in eachindex(y)]
     return LSurvivalCompResp(enter, exit, y, wts, id; kwargs...)
@@ -297,7 +302,7 @@ function LSurvivalCompResp(
     enter::E,
     exit::X,
     y::Y;
-    kwargs...
+    kwargs...,
 ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     id = [ID(i) for i in eachindex(y)]
     return LSurvivalCompResp(enter, exit, y, id; kwargs...)
@@ -306,7 +311,7 @@ end
 function LSurvivalCompResp(
     exit::X,
     y::Y;
-    kwargs...
+    kwargs...,
 ) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     return LSurvivalCompResp(zeros(length(exit)), exit, y; kwargs...)
 end
@@ -326,7 +331,7 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvivalR
     println("Max time: $(maximum(x.exit))")
     iob = IOBuffer()
     op = reduce(vcat, pr)
-    nr = typeof(op) ==  String ? 1 : size(op, 1)
+    nr = typeof(op) == String ? 1 : size(op, 1)
     if nr == 1
         println(iob, "$(x.id[1]). $(op)")
     elseif nr < maxrows
@@ -344,7 +349,8 @@ function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvivalR
     println(io, str)
 end
 
-Base.show(x::T; kwargs...) where {T<:AbstractLSurvivalResp} = Base.show(stdout, x; kwargs...)
+Base.show(x::T; kwargs...) where {T<:AbstractLSurvivalResp} =
+    Base.show(stdout, x; kwargs...)
 
 function Base.show(io::IO, x::T) where {T<:AbstractSurvTime}
     lefttruncate = x.enter == x.origin ? "[" : "("

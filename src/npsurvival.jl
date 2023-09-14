@@ -47,11 +47,19 @@ end
 # Fitting functions for non-parametric survival models
 #####################################################################################################################
 
-function _fit!(m::KMSurv; eps = 0.00000001, censval = 0, keepy = true, kwargs...)
+function _fit!(
+    m::KMSurv;
+    eps = 0.00000001,
+    censval = 0,
+    keepy = true,
+    atol = 0.00000001,
+    kwargs...,
+)
     # there is some bad floating point issue with epsilon that should be tracked
     # R handles this gracefully
     # ties allowed
     #_dt = zeros(length(orderedtimes))
+    eps = atol
     _1mdovern = ones(length(m.times))
     for (_i, tt) in enumerate(m.times)
         R = findall((m.R.exit .>= tt) .& (m.R.enter .< (tt - eps))) # risk set index (if in times are very close to other out-times, not using epsilon will make risk sets too big)
@@ -67,7 +75,8 @@ function _fit!(m::KMSurv; eps = 0.00000001, censval = 0, keepy = true, kwargs...
     m
 end
 
-function _fit!(m::AJSurv; keepy = true, eps = 0.00000001)
+function _fit!(m::AJSurv; keepy = true, eps = 0.00000001, atol = 0.00000001)
+    eps = atol
     dvalues = m.R.eventtypes[2:end]
     nvals = length(dvalues)
     kmfit = fit(KMSurv, m.R.enter, m.R.exit, m.R.y, wts = m.R.wts)
@@ -126,7 +135,17 @@ function fit(
 
     return fit!(res; fitargs...)
 end
+fit(::Type{M}, exit, y; kwargs...) where {M<:KMSurv} =
+    fit(M, zeros(eltype(exit), length(y)), exit, y; kwargs...)
+fit(::Type{M}, exit; kwargs...) where {M<:KMSurv} =
+    fit(M, exit, ones(Int, length(exit)); kwargs...)
 
+"""
+$DOC_FIT_KMSURV
+"""
+kaplan_meier(enter, exit, y; kwargs...) = fit(KMSurv, enter, exit, y; kwargs...)
+kaplan_meier(exit, y; kwargs...) = fit(KMSurv, exit, y; kwargs...)
+kaplan_meier(exit; kwargs...) = fit(KMSurv, exit; kwargs...)
 
 
 """
@@ -148,43 +167,44 @@ function fit(
 
     return fit!(res; fitargs...)
 end
+fit(::Type{M}, exit, y; kwargs...) where {M<:AJSurv} =
+    fit(M, zeros(eltype(exit), length(y)), exit, y; kwargs...)
+fit(::Type{M}, exit; kwargs...) where {M<:AJSurv} =
+    fit(M, exit, ones(Int, length(exit)); kwargs...)
 
-"""
-$DOC_FIT_KMSURV
-"""
-kaplan_meier(enter, exit, y; kwargs...) =
-    fit(KMSurv, enter, exit, y; kwargs...)
-
-kaplan_meier(exit, y; kwargs...) = 
-  kaplan_meier(zeros(length(y)), exit, y; kwargs...)
-
-kaplan_meier(exit; kwargs...) = 
-  kaplan_meier(exit, ones(length(exit)); kwargs...)
 
 """
 $DOC_FIT_AJSURV
 """
-aalen_johansen(enter, exit, y; kwargs...) =
-    fit(AJSurv, enter, exit, y; kwargs...)
-
-aalen_johansen(exit, y; kwargs...) =
-  aalen_johansen(zeros(length(y)), exit, y; kwargs...)
+aalen_johansen(enter, exit, y; kwargs...) = fit(AJSurv, enter, exit, y; kwargs...)
+aalen_johansen(exit, y; kwargs...) = fit(AJSurv, exit, y; kwargs...)
 
 ##################################################################################################################### 
 # Summary functions for non-parametric survival models
 #####################################################################################################################
-function StatsBase.isfitted(m::M) where {M<:KMSurv}
+
+function StatsBase.nobs(m::M) where {M<:AbstractNPSurv}
+    mwarn(m)
+    length(unique(m.R.id))
+end
+
+function StatsBase.isfitted(m::M) where {M<:AbstractNPSurv}
     m.fit
 end
 
 """
 $DOC_VARIANCE_KMSURV
 """
-function StatsBase.stderror(m::KMSurv)
-    var = m.surv .* m.surv .* cumsum(m.events ./ (m.riskset .* (m.riskset .- m.events)))
-    sqrt.(var)
+function StatsBase.stderror(m::KMSurv; type = nothing)
+    if type == "jackknife"
+        N = nobs(m)
+        jk = jackknife(m)
+        variance = var(jk, corrected = false) .* (N - 1)
+    else
+        variance = m.surv .* m.surv .* cumsum(m.events ./ (m.riskset .* (m.riskset .- m.events)))
+    end
+    sqrt.(variance)
 end
-
 
 function confint_normal(m::KMSurv; level = 0.95)
     se = stderror(m)
@@ -212,26 +232,31 @@ end
 """
 $DOC_VARIANCE_AJSURV
 """
-function StatsBase.stderror(m::AJSurv)
-    riski = m.risk[:, 1]
-    d = sum(m.events, dims = 2)
-    sm1 = vcat(1.0, m.surv[1:end-1])
-    vv = [
-        (
-            cumsum(
-                (m.surv .* m.risk[:, j]) .* (m.surv .* m.risk[:, j]) .*
-                (m.riskset .- 1.0) .* m.riskset .^ (-3.0) .* d,
-                dims = 1,
-            ) + cumsum(
-                (sm1) .* (sm1) .* (1.0 .- 2.0 .* m.risk[:, j]) .* (m.riskset .- 1.0) .*
-                m.riskset .^ (-3.0) .* m.events[:, j],
-                dims = 1,
-            )
-        ) for j = 1:size(m.risk, 2)
-    ]
+function StatsBase.stderror(m::AJSurv; type = nothing)
+    if type == "jackknife"
+        N = nobs(m)
+        jk = jackknife(m)
+        variance = var(jk, corrected = false) .* (N - 1)
+    else
+        riski = m.risk[:, 1]
+        d = sum(m.events, dims = 2)
+        sm1 = vcat(1.0, m.surv[1:end-1])
+        vv = [
+            (
+                cumsum(
+                    (m.surv .* m.risk[:, j]) .* (m.surv .* m.risk[:, j]) .*
+                    (m.riskset .- 1.0) .* m.riskset .^ (-3.0) .* d,
+                    dims = 1,
+                ) + cumsum(
+                    (sm1) .* (sm1) .* (1.0 .- 2.0 .* m.risk[:, j]) .* (m.riskset .- 1.0) .* m.riskset .^ (-3.0) .* m.events[:, j],
+                    dims = 1,
+                )
+            ) for j = 1:size(m.risk, 2)
+        ]
 
-    var = reduce(hcat, vv)
-    sqrt.(var)
+        variance = reduce(hcat, vv)
+    end
+    sqrt.(variance)
 end
 
 

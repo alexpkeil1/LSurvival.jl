@@ -68,9 +68,6 @@ mutable struct PHModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms} <: AbstractPH
     RL::Union{Nothing,Vector{Matrix{Float64}}}        # residual matrix    
 end
 
-"""
-$DOC_PHMODEL 
-"""
 function PHModel(
     R::Union{Nothing,G},
     P::L,
@@ -87,9 +84,6 @@ function PHModel(
     return PHModel(R, P, formula, ties, fit, bh, nothing)
 end
 
-"""
-$DOC_PHMODEL 
-"""
 function PHModel(
     R::Union{Nothing,G},
     P::L,
@@ -100,9 +94,6 @@ function PHModel(
     return PHModel(R, P, formula, ties, fit, zeros(Float64, length(R.eventtimes), 6))
 end
 
-"""
-$DOC_PHMODEL 
-"""
 function PHModel(
     R::Union{Nothing,G},
     P::L,
@@ -112,9 +103,6 @@ function PHModel(
     return PHModel(R, P, formula, ties, false)
 end
 
-"""
-$DOC_PHMODEL  
-"""
 function PHModel(
     R::Union{Nothing,G},
     P::L,
@@ -123,9 +111,6 @@ function PHModel(
     return PHModel(R, P, nothing, ties, false)
 end
 
-"""
-$DOC_PHMODEL    
-"""
 function PHModel(
     R::Union{Nothing,G},
     P::L,
@@ -134,9 +119,6 @@ function PHModel(
     return PHModel(R, P, formula, "efron", false)
 end
 
-"""
-$DOC_PHMODEL    
-"""
 function PHModel(R::Union{Nothing,G}, P::L) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, "efron")
 end
@@ -155,9 +137,6 @@ mutable struct PHSurv{G<:Array{T} where {T<:PHModel}} <: AbstractNPSurv
     fit::Bool
 end
 
-"""
-$DOC_PHSURV
-"""
 function PHSurv(fitlist::Array{T}, eventtypes) where {T<:PHModel}
     bhlist = [ft.bh for ft in fitlist]
     bhlist = [hcat(bh, fill(eventtypes[i], size(bh, 1))) for (i, bh) in enumerate(bhlist)]
@@ -171,9 +150,6 @@ function PHSurv(fitlist::Array{T}, eventtypes) where {T<:PHModel}
     PHSurv(fitlist, eventtypes, times, surv, risk, bh[:, 1], event, false)
 end
 
-"""
-$DOC_PHSURV
-"""
 function PHSurv(fitlist::Array{T}) where {T<:PHModel}
     eventtypes = collect(eachindex(fitlist))
     PHSurv(fitlist, eventtypes)
@@ -827,7 +803,7 @@ end
 """
 $DOC_FIT_PHSURV   
 """
-function fit(::Type{M}, fitlist::Vector{<:T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
+function fit(::Type{M}, fitlist::Vector{T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
 
     res = M(fitlist)
 
@@ -837,7 +813,7 @@ end
 """
 $DOC_FIT_PHSURV
 """
-risk_from_coxphmodels(fitlist::Array{T}, args...; kwargs...) where {T<:PHModel} =
+risk_from_coxphmodels(fitlist::Vector{T}, args...; kwargs...) where {T<:PHModel} =
     fit(PHSurv, fitlist, args...; kwargs...)
 
 

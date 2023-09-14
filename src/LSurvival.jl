@@ -37,6 +37,7 @@ import StatsBase:
     #predict, predict!,
     response,
     score,
+    var,
     vcov,
     weights
 

@@ -20,7 +20,7 @@ end
 """
 $DOC_DGM
 """
-function dgm(rng, n, maxT; afun = int_0, yfun = yprob, lfun = lprob)
+function dgm(rng::MersenneTwister, n::Int, maxT::Int; afun = int_0, yfun = yprob, lfun = lprob)
     V = rand(rng, n)
     LAY = Array{Float64,2}(undef, n * maxT, 4)
     keep = ones(Bool, n * maxT)
@@ -43,13 +43,13 @@ function dgm(rng, n, maxT; afun = int_0, yfun = yprob, lfun = lprob)
     end
     id[findall(keep)], time[findall(keep)] .- 1, time[findall(keep)], LAY[findall(keep), :]
 end
-dgm(n, maxT; kwargs...) = dgm(MersenneTwister(), n, maxT; kwargs...)
+dgm(n::Int, maxT::Int; kwargs...) = dgm(MersenneTwister(), n::Int, maxT::Int; kwargs...)
 
 
 """
 $DOC_DGM_COMPRISK
 """
-function dgm_comprisk(rng, n)
+function dgm_comprisk(rng::MersenneTwister, n::Int)
     z = rand(rng, n) .* 5
     x = rand(rng, n) .* 5
     dt1 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))

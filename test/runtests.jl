@@ -5,6 +5,13 @@ using Random, Tables
 #using BenchmarkTools # add during testing
 
 @testset "LSurvival.jl" begin
+
+
+
+
+    ################################################
+    ###### start of tests ############
+    ################################################
     println("Creating test datasets")
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
     dat2 = (
@@ -82,8 +89,9 @@ using Random, Tables
     )
     res2 = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9)
 
-    resnobh = coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9, getbasehaz=false)
-    @test all(isapprox.(resnobh.bh[end,:],zeros(6)))
+    resnobh =
+        coxph(X, int, outt, d, wts = wt, ties = "breslow", gtol = 1e-9, getbasehaz = false)
+    @test all(isapprox.(resnobh.bh[end, :], zeros(6)))
 
 
     rfromc = risk_from_coxphmodels([res, res2])
@@ -150,10 +158,13 @@ using Random, Tables
     ft = coxph(
         @formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1 * x),
         tab,
-        contrasts = Dict(:z1 => CategoricalTerm), maxIter = 100, convTol = 1e-9, tol=1e-9
+        contrasts = Dict(:z1 => CategoricalTerm),
+        maxIter = 100,
+        convTol = 1e-9,
+        tol = 1e-9,
     )
     println(ft)
-    stderror(ft, type="robust")
+    stderror(ft, type = "robust")
     println(ft)
 
     @test all(isapprox.(fitted(ft), log.(ft.P._r)))
@@ -166,11 +177,11 @@ using Random, Tables
     @test typeof(model_response(ft)) <: LSurvivalResp
     @test maximum(abs.(score(ft))) < 0.00000001
     @test weights(ft) == ft.R.wts
-    
-    show(ft) 
+
+    show(ft)
     ft.fit = false
     print(ft)
-    
+
 
     (coxph(
         @formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1 * x),
@@ -215,7 +226,8 @@ using Random, Tables
     @test M.ties == "efron"
 
     # this errors in Ubuntu
-    try LSurvival._fit!(M, start = [0.0, 0.0, 0.0])
+    try
+        LSurvival._fit!(M, start = [0.0, 0.0, 0.0])
     catch e
     end
 
@@ -231,20 +243,20 @@ using Random, Tables
     println(ajfit)
 
     # TESTs: do bootstrap functions work?
-    @test size(bootstrap(kmfit, 3)) == (3,1)
+    @test size(bootstrap(kmfit, 3)) == (3, 1)
     #trivial case of non-competing events with late entry
-    @test size(bootstrap(ajfit, 3)) == (3,1)
+    @test size(bootstrap(ajfit, 3)) == (3, 1)
 
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000)
-    print(kaplan_meier(t,d))
-    print(aalen_johansen(t,event))
+    print(kaplan_meier(t, d))
+    print(aalen_johansen(t, event))
     # running through some deprecated functions
-    kmdep = LSurvival.km(t,d)
-    ajdep = LSurvival.aj(zeros(length(t)), t,event)
-    timessub, _, cisub = LSurvival.subdistribution_hazard_cuminc(zeros(length(t)),t,event)
+    kmdep = LSurvival.km(t, d)
+    ajdep = LSurvival.aj(zeros(length(t)), t, event)
+    timessub, _, cisub = LSurvival.subdistribution_hazard_cuminc(zeros(length(t)), t, event)
 
-    LSurvival.e_yearsoflifelost(timessub,cisub)
+    LSurvival.e_yearsoflifelost(timessub, cisub)
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 100)
 
@@ -318,10 +330,18 @@ using Random, Tables
     _, _, _, _, bh2 = coxmodel(enter, t, Int.(event .== 2), X)
     _, _, _, _, bh1 = coxmodel(enter, t, Int.(event .== 1), X)
 
-    rfromc = risk_from_coxphmodels([ft1, ft2], coef_vectors=[coef(res), coef(res2)], pred_profile=[ 0 0 -1])
+    rfromc = risk_from_coxphmodels(
+        [ft1, ft2],
+        coef_vectors = [coef(res), coef(res2)],
+        pred_profile = [0 0 -1],
+    )
     println(rfromc)
     refrisk = rfromc.risk
-    oldrisk, _ = ci_from_coxmodels([bh1, bh2]; coeflist=[coef(res), coef(res2)], covarmat=[  0 0 -1;])
+    oldrisk, _ = ci_from_coxmodels(
+        [bh1, bh2];
+        coeflist = [coef(res), coef(res2)],
+        covarmat = [0 0 -1;],
+    )
 
 
 
@@ -872,7 +892,7 @@ using Random, Tables
     # TEST: bootstrapping a cox model without a seed
     @test !bootstrap(ft2).fit
 
-      println(Surv(1,2,1))
+    println(Surv(1, 2, 1))
 
     # TEST: bootstrapping a kaplan meier without a seed
     zz = zeros(length(dat1.time))
@@ -905,7 +925,7 @@ using Random, Tables
     #@test 
     # fails as a test on Ubuntu
     (unique(op.R.wts) == unique(bootstrap(MersenneTwister(345), op).R.wts)) &&
-          (op.R.wts != bootstrap(MersenneTwister(345), op).R.wts)
+        (op.R.wts != bootstrap(MersenneTwister(345), op).R.wts)
     op = aalen_johansen(
         zeros(100),
         rand(MersenneTwister(345), 100),
@@ -914,8 +934,7 @@ using Random, Tables
     )
     #@test 
     # fails as a test on Ubuntu
-    (unique(op.R.wts) == unique(bootstrap(op).R.wts)) &&
-          (op.R.wts != bootstrap(op).R.wts)
+    (unique(op.R.wts) == unique(bootstrap(op).R.wts)) && (op.R.wts != bootstrap(op).R.wts)
 
     # this is a need for re-factoring
     # op = aalen_johansen(zeros(100), rand(MersenneTwister(345), 100), rand(MersenneTwister(345), [0,1,2], 100), keepy=false)
@@ -983,4 +1002,43 @@ using Random, Tables
     args =
         coxmodel(dat1clust.enter, dat1clust.exit, dat1clust.status, dat1clust.x[1:end, :])
     @test cox_summary(args)[1] == args[1][1]
+
+    # TEST: jackknife functions of KM/AJ
+    m = kaplan_meier(dat1.time, dat1.status)
+    mc = kaplan_meier(
+        dat1clust.enter,
+        dat1clust.exit,
+        dat1clust.status,
+        id = ID.(dat1clust.id),
+    )
+    a = aalen_johansen(dat1.time, dat1.status)
+    ac = aalen_johansen(
+        dat1clust.enter,
+        dat1clust.exit,
+        dat1clust.status,
+        id = ID.(dat1clust.id),
+    )
+    jk = jackknife(m)
+    jkc = jackknife(mc)
+    jka = jackknife(a)
+    jkac = jackknife(ac)
+    @test jk == jkc
+    @test jka == jkac
+    @test stderror(m, type = "jackknife") == stderror(mc, type = "jackknife")
+    @test stderror(a, type = "jackknife") == stderror(ac, type = "jackknife")
+
+
+    #
+    a = aalen_johansen(dat1.time, dat1.status)
+    ac = aalen_johansen(
+        dat1clust.enter,
+        dat1clust.exit,
+        dat1clust.status,
+        id = ID.(dat1clust.id),
+    )
+    jkc = jackknife(mc)
+    jka = jackknife(a)
+    stderror(a, type = "jackknife")
+    stderror(ac, type = "jackknife")
+
 end
