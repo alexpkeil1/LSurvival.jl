@@ -126,7 +126,7 @@ DOC_LSURVCOMPRESP = raw"""
 - `eventtypes` vector of unique event types
 - `eventmatrix` matrix of indicators on the observation level
 
-  # ## Signatures:
+  ## Signatures:
 
  ```julia
  struct LSurvivalCompResp{
@@ -244,7 +244,7 @@ DOC_PHMODEL = raw"""
 - `fit` Bool: logical for whether the model has been fitted
 - `bh` AbstractMatrix: baseline hazard estimates
 
-  # ## Signatures
+  ## Signatures
 
  ```julia
  mutable struct PHModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms} <: AbstractPH
@@ -685,11 +685,11 @@ Aalen-Johansen estimator for cumulative cause-specific risk (in the presence of 
 ```
 
 ## Keyword arguments
-- wts::Vector{<:Real} = similar(enter, 0); vector of case weights (or zero length vector) for each observation
-- id::Vector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(y)]; Vector of AbstractSurvID objects denoting observations that form a single unit (used in bootstrap and jackknife methods)
-- atol = 0.00000001; absolute tolerance for defining tied event times
-- keepy = true; keep the outcome vector after fitting (may save memory with large datasets)
-- eps = 0.00000001; deprecated (replaced by atol)
+- `wts::Vector{<:Real} = similar(enter, 0)`; vector of case weights (or zero length vector) for each observation
+- `id::Vector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(y)]`; Vector of AbstractSurvID objects denoting observations that form a single unit (used in bootstrap and jackknife methods)
+- `atol = 0.00000001`; absolute tolerance for defining tied event times
+- `keepy = true`; keep the outcome vector after fitting (may save memory with large datasets)
+- `eps = 0.00000001`; deprecated (replaced by atol)
 
 
 ```@example
@@ -722,7 +722,7 @@ StatsBase.confint(m:KMSurv; level=0.95, method="normal")
 
 ## Keyword arguments
 
-method:
+`method`:
   - "normal" normality-based confidence intervals
   - "lognlog" log(-log(S(t))) based confidence intervals
 
@@ -1169,57 +1169,6 @@ LSurvival._fit!(Mod, start=Mod.P._B)
 
 """
 
-DOC_ROBUST_VCOV = raw"""
-```@example
-using LSurvival
-dat1 = (
-  time = [1,1,6,6,8,9],
-  status = [1,0,1,1,0,1],
-  x = [1,1,1,0,0,0]
-)
-ft = coxph(@formula(Surv(time,status)~x),dat1, id=ID.(collect(1:6)))
-
-vcov(ft)                   # model based
-vcov(ft, type="robust")    # robust variance, based on dfbeta residuals
-# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
-ft
-```
-
-# cluster robust standard errors using the `id` keyword argument
-
-```@example
-dat1clust= (
-  id = [1,2,3,3,4,4,5,5,6,6],
-  enter = [0,0,0,1,0,1,0,1,0,1],
-  exit = [1,1,1,6,1,6,1,8,1,9],
-  status = [1,0,0,1,0,1,0,0,0,1],
-  x = [1,1,1,1,0,0,0,0,0,0]
-)
-
-ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
-
-vcov(ft2)                     # model based
-vcov(ft2, type="robust")       # robust variance, based on dfbeta residuals
-stderror(ft2, type="robust")   # robust variance, based on dfbeta residuals
-confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
-nobs(ft2)                     # id argument yields correct value of number of independent observations
-# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
-ft2 
-```
-
-## NOTE THE FOLLOWING IS INCORRECT because the `id` keyword is omitted
-
-```@example
-ft2w = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust)
-
-vcov(ft2w)                   # model based (CORRECT)
-vcov(ft2w, type="robust")    # robust variance (INCORRECT)
-nobs(ft2w)
-
-ft2w
-```
-
-"""
 
 DOC_JACKKNIFE = raw"""
 Obtain jackknife (leave-one-out) estimates from a Cox model by refitting the model n times
@@ -1273,6 +1222,7 @@ stderror(mc, type="jackknife")
 
 DOC_RESIDUALS = raw"""
   ####################################################################
+  
   Cox proportional hazards model residuals:
 
   Signature
@@ -1290,6 +1240,7 @@ DOC_RESIDUALS = raw"""
   Residuals from the residuals function are designed to exactly emulate those from the `survival` package in R. Currently, they are validated for single observation data (e.g. one data row per individual).
 
   ####################################################################
+
   ## Martingale residuals: Observed versus expected
   
   ```@example
@@ -1320,6 +1271,7 @@ DOC_RESIDUALS = raw"""
 
   ```
   ####################################################################
+
   ## Score residuals: Per observation contribution to score function 
 
   ```julia
@@ -1336,7 +1288,9 @@ DOC_RESIDUALS = raw"""
   ```
 
   ####################################################################
+
   ## Schoenfeld residuals: Per time contribution to score function 
+
   ```julia
   using LSurvival
   dat1 = (
@@ -1353,6 +1307,7 @@ DOC_RESIDUALS = raw"""
   ```
 
   ####################################################################
+
   ## dfbeta residuals: influence of individual observations on each parameter
 
   ```@example
@@ -1402,6 +1357,7 @@ DOC_RESIDUALS = raw"""
   ```
 
   ####################################################################
+
   ## jackknife residuals: influence of individual observations on each parameter using leave-one-out estimates
  note there are other definitions of jackknife residuals
  See Chapter 7.1 of "Extending the Cox Model" by Therneau and Grambsch for an example of the type of jackknife residuals used here
@@ -1436,7 +1392,54 @@ DOC_VCOV = raw"""
 
   See ?residuals for info on `dfbeta` residuals
 
-$DOC_ROBUST_VCOV
+```@example
+using LSurvival
+dat1 = (
+  time = [1,1,6,6,8,9],
+  status = [1,0,1,1,0,1],
+  x = [1,1,1,0,0,0]
+)
+ft = coxph(@formula(Surv(time,status)~x),dat1, id=ID.(collect(1:6)))
+
+vcov(ft)                   # model based
+vcov(ft, type="robust")    # robust variance, based on dfbeta residuals
+# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
+ft
+```
+
+# cluster robust standard errors using the `id` keyword argument
+
+```@example
+dat1clust= (
+  id = [1,2,3,3,4,4,5,5,6,6],
+  enter = [0,0,0,1,0,1,0,1,0,1],
+  exit = [1,1,1,6,1,6,1,8,1,9],
+  status = [1,0,0,1,0,1,0,0,0,1],
+  x = [1,1,1,1,0,0,0,0,0,0]
+)
+
+ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
+
+vcov(ft2)                     # model based
+vcov(ft2, type="robust")       # robust variance, based on dfbeta residuals
+stderror(ft2, type="robust")   # robust variance, based on dfbeta residuals
+confint(ft2, type="robust")    # robust variance, based on dfbeta residuals
+nobs(ft2)                     # id argument yields correct value of number of independent observations
+# once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
+ft2 
+```
+
+## NOTE THE FOLLOWING IS INCORRECT because the `id` keyword is omitted
+
+```@example
+ft2w = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust)
+
+vcov(ft2w)                   # model based (CORRECT)
+vcov(ft2w, type="robust")    # robust variance (INCORRECT)
+nobs(ft2w)
+
+ft2w
+```
 """
 
 

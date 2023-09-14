@@ -1,0 +1,2 @@
+ignore:
+  - "src/plot_recipes.jl"  # ignore folders and all its contents

@@ -143,9 +143,6 @@ function resid_jackknife(m::M) where {M<:PHModel}
     permutedims(jk' .- coef(m))
 end
 
-"""
-$DOC_ROBUST_VCOV
-"""
 function robust_vcov(m::M) where {M<:PHModel}
     dfbeta = residuals(m, type="dfbeta")
     id = values(m.R.id)

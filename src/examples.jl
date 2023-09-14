@@ -5,7 +5,8 @@
 # import Pkg; Pkg.add("RCall")
 
 using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
-
+using Plots
+using RecipesBase
 
 ###################################################################
 # Test data
@@ -26,15 +27,21 @@ dat3 = (
 )
 
 dat4 = ( # mine
-    id =    [1, 1, 2, 2, 2, 3, 4, 5, 5, 6],
+    id = [1, 1, 2, 2, 2, 3, 4, 5, 5, 6],
     enter = [1, 2, 5, 4, 6, 7, 3, 6, 8, 0],
-    exit =  [2, 5, 6, 7, 8, 9, 6, 8, 14, 9],
-    status =[0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
-    x =     [.1, .1, 1.5, 1.5, 1.5, 0, 0, 0, 0, 3],
-    z =     [1, 1, 0, 0, 0, 0, 0, 1, 1, 0],
-    w =     [0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
+    exit = [2, 5, 6, 7, 8, 9, 6, 8, 14, 9],
+    status = [0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+    x = [0.1, 0.1, 1.5, 1.5, 1.5, 0, 0, 0, 0, 3],
+    z = [1, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+    w = [0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
 )
 
+###################################################################
+# plotting survival data
+###################################################################
+
+
+plot(R, maxids=10)
 
 ###################################################################
 # Fitting a basic Cox model, Kaplan-Meier curve using preferred functions
@@ -779,7 +786,12 @@ cfit = coxph(
 @rget resid3
 @rget resid4
 
-jres = coxph(@formula(Surv(enter, exit, d) ~  x1 + x2 + x3), datpp, id = ID.(datpp.id), wts = datpp.wt)
+jres = coxph(
+    @formula(Surv(enter, exit, d) ~ x1 + x2 + x3),
+    datpp,
+    id = ID.(datpp.id),
+    wts = datpp.wt,
+)
 residj = residuals(jres, type = "martingale")
 resid2j = residuals(jres, type = "dfbeta")
 resid3j = residuals(jres, type = "score")
@@ -790,14 +802,14 @@ hcat(resid2, resid2j)
 hcat(resid3, resid3j)
 #hcat(resid4, resid4j)
 stderror(jres, type = "robust")
-res[:,4]
+res[:, 4]
 
 
 
-sum(resid3, dims=1)
-sum(residuals(jres, type="score"), dims=1)
-extrema(resid3, dims=1)
-extrema(residuals(jres, type="score"), dims=1)
+sum(resid3, dims = 1)
+sum(residuals(jres, type = "score"), dims = 1)
+extrema(resid3, dims = 1)
+extrema(residuals(jres, type = "score"), dims = 1)
 
 # plot(resid3[:,1], residuals(jres, type="score")[:,1], st=:scatter)
 # plot(resid3[:,2], residuals(jres, type="score")[:,2], st=:scatter)
@@ -827,22 +839,22 @@ cfit = coxph(
 @rget resid3
 @rget resid4
 
-jres = coxph(@formula(Surv(enter, exit, status) ~ z + x), dat4, ties="breslow")
+jres = coxph(@formula(Surv(enter, exit, status) ~ z + x), dat4, ties = "breslow")
 dM, dt, di = LSurvival.dexpected_FH(jres)
 muXt = LSurvival.muX_tE(jres, di)
 
 reduce(hcat, dat4)
 
-hcat(resid, residuals(jres, type="martingale"))
-hcat(resid2, residuals(jres, type="dfbeta"))
-hcat(resid3, residuals(jres, type="score"))
-hcat(resid4, residuals(jres, type="schoenfeld"))
+hcat(resid, residuals(jres, type = "martingale"))
+hcat(resid2, residuals(jres, type = "dfbeta"))
+hcat(resid3, residuals(jres, type = "score"))
+hcat(resid4, residuals(jres, type = "schoenfeld"))
 
-sum(resid2, dims=1)
-sum(residuals(jres, type="dfbeta"), dims=1)
+sum(resid2, dims = 1)
+sum(residuals(jres, type = "dfbeta"), dims = 1)
 
-sum(resid3, dims=1)
-sum(residuals(jres, type="score"), dims=1)
+sum(resid3, dims = 1)
+sum(residuals(jres, type = "score"), dims = 1)
 
 
 jres.RL[1]

@@ -1,6 +1,7 @@
 module LSurvival
 ####### imports #######
 using Documenter
+using RecipesBase
 using Reexport
 using Printf
 using Random, Distributions, LinearAlgebra, Tables
@@ -143,6 +144,7 @@ include("npsurvival.jl")
 include("data_generators.jl")
 include("bootstrap.jl")
 include("jackknife.jl")
+include("plot_recipes.jl")
 include("deprecated.jl")
 
 
