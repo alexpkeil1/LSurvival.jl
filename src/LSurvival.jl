@@ -108,6 +108,8 @@ export aic,
     #predict, predict!,
     vcov,
     weights
+# data
+export survivaldata
 
 ####### Documentation #######
 include("docstr.jl")
@@ -145,6 +147,7 @@ include("data_generators.jl")
 include("bootstrap.jl")
 include("jackknife.jl")
 include("plot_recipes.jl")
+include("example_data.jl")
 include("deprecated.jl")
 
 
