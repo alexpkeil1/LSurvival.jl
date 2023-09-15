@@ -2,13 +2,105 @@
 # ID level robust variance estimators
 
 
-using LSurvival, Random, Optim, BenchmarkTools, RCall
+using LSurvival, Random, Optim, BenchmarkTools, RCall, SpecialFunctions
 
 ######################################################################
-# residuals from fitted Cox models
+# parametric survival model
 ######################################################################
 
 #
+SURVIVAL_LOG_LIKE=raw"""
+$L(e_i, t_i) = f(t_i)^\delta_i/S(e_i) S(t_i)^(1-\delta_i)/S(e_i) $
+for distribution function $f$ and survival function $S\equiv 
+"""
+
+
+"""
+Weibull model for left truncated, right censored data
+    
+    $SURVIVAL_LOG_LIKE
+
+ρ = .1    # linear predictor/shape parameter
+d = 1
+enter = 0
+exit = 3.2
+γ = 1   # transformation of scale parameter
+wt = 1
+loglik_weibull(enter, exit, d, wt, ρ, γ, α=1.)
+"""
+function loglik_weibull(enter, exit, d, wt, ρ, γ=1., α=1.)
+    # ρ is linear predictor
+    lambda = ρ*γ*exit^(γ-1.0)                            # hazard
+    ll = -(ρ * exit)^γ
+    ll += d == 1 ? log(ρ) + log(γ) + (γ-1)*log( ρ * exit)  : # extra contribution for events
+                            0 # extra contribution for censored (cumulative conditional survival at censoring)
+    ll -= enter > 0 ? (ρ * enter)^γ : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    ll *= wt
+    ll
+end
+"""
+ρ = .1    # linear predictor/shape parameter
+d = 1
+enter = 0
+exit = 3.2
+γ = 1   # transformation of scale parameter
+wt = 1
+loglik_exponential(enter, exit, d, wt, ρ, γ)
+loglik_exponential(enter, exit, d, wt, ρ)
+"""
+loglik_exponential(enter, exit, d, wt, ρ, γ=1., α=1.) = loglik_weibull(enter, exit, d, wt, ρ, 1.0, 1.0)
+
+
+
+raw"""
+generalized gamma likelihood  - based on Lee and Wang book, pg. 188
+
+Generalized gamma distribution function 
+    $f(t) = \frac{\lambda}{\Gamma(\gamma)}(\lambda t)^{\gamma-1}\exp(-\lambda t) \hspace{20pt} t \geq 0, \hspace{10pt} \alpha, \gamma, \lambda > 0$
+    $S(t) = 1 - I(\lambda t^\alpha, \beta$
+with Gamma function 
+$\Gamma(\gamma)
+\begin{cases}
+\int_0^\infty x^{\gamma-1}\exp(-x) dx\\ 
+(\gamma - 1)! & \mbox{for integer } \gamma
+\end{cases}$
+and incomplete gamma function
+$ \int_0^t u^{\gamma-1} \exp(-u)du/\Gamma(\gamma)$
+
+Source: Lee and Wang, Klein and Moeschberger (Table 2.2)
+
+Gamma distribution is the special case where $\alpha=1$
+
+For events ($\delta_i$), right censoring ($1-\delta_i$) and left truncated observations ($\kappa_i$), in a person-period structure with no interval
+ censoring
+
+"""
+function loglik_gengamma(enter, exit, d, wt, ρ, γ=1., α=1.)
+    # ρ is linear predictor
+    #;
+    lambda = ρ*γ*exit^(γ-1.0)                            # hazard
+    ll = 0.0
+    # l = (abs(α)*(γ**γ)*(ρ**(α*γ))*(exit)**(α*γ-1)*exp(-γ*(ρ*ageout)**α))/SpecialFunctions.gamma(γ)
+    
+    ll += d == 1 ?  log(α) + γ*log(γ) + α*γ*log(ρ) + α*(γ-1)*log(exit) - γ*(ρ*exit)^α - SpecialFunctions.loggamma(γ) : # extra contribution for events
+                            0 # extra contribution for censored (cumulative conditional survival at censoring)
+    ll -= enter > 0 ?  : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    ll *= wt
+    ll
+end
+
+
+function lpdf_gengamma(t,ρ, γ=1., α=1.)
+    log(α) + γ*log(γ) + α*γ*log(ρ) + α*(γ-1)*log(t) - γ*(ρ*t)^α - SpecialFunctions.loggamma(γ)
+end
+
+function lsurv_gengamma(t,ρ, γ=1., α=1.)
+    1 - gamma_inc(γ,x,IND=0)
+end
+
+
+
+
 
 
 
