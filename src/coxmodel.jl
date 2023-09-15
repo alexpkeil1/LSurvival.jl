@@ -402,7 +402,7 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     end
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
-    rown = length(rown) > 1 ? rown : [rown]
+    rown = typeof(rown)<:AbstractVector ? rown : [rown]
     StatsBase.CoefTable(op, head, rown, pcol, zcol)
 end
 

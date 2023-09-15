@@ -103,13 +103,13 @@ m2d = fit(PHModel, @formula(Surv(entertime, exittime, death) ~ x + z1 + z2), tab
 ## Kaplan-Meier estimator of the cumulative risk/survival
 ```{julia}
 res = kaplan_meier(int, outt, d)
+confint(res, method="lognlog")
+plot(res)
 ```
 
 ## Competing risk analysis with Aalen-Johansen estimator of the cumulative risk/survival
 
 ```{julia}
-
-
 function dgm_comprisk(; n = 100, rng = MersenneTwister())
     z = rand(rng, n) .* 5
     x = rand(rng, n) .* 5

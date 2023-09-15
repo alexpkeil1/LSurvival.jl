@@ -128,12 +128,12 @@ end
 Recipe for cox-model based risk curves
 
 ```julia
-    using Plots, LSurvival
-    res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+    using Plots, LSurvival, Random, StatsBase
+    res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
     X = hcat(z, x)
     int = zeros(length(d)) # no late entry
-    ft1 = fit(PHModel, X, int, outt, d .* (event .== 1))
-    ft2 = fit(PHModel, X, int, outt, d .* (event .== 2))
+    ft1 = fit(PHModel, X, int, outt, d .* (event .== 1), wts=wts)
+    ft2 = fit(PHModel, X, int, outt, d .* (event .== 2), wts=wts)
     c = risk_from_coxphmodels([ft1, ft2], pred_profile = mean(X, dims=1))
     
     plot(c)
@@ -253,7 +253,8 @@ dat2 = (
 )
 fte = coxph(@formula(Surv(enter, exit, status)~x), dat2)
 
-coxinfluence(fte, type="jackknife")
+coxinfluence(fte, type="jackknife", par=1)
+coxinfluence!(fte, type="dfbeta", color=:red, par=1)
 
 ```
 """
@@ -274,7 +275,7 @@ coxinfluence(fte, type="jackknife")
         label --> type
         markesize --> 2
         markeralpha --> 0.5
-        id, res
+        id, res[:,par]
     end
     @series begin
         seriestype := :hline
