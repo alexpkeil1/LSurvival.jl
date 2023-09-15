@@ -66,7 +66,7 @@ R = LSurvivalResp(dat4.enter, dat4.exit, dat4.status)
 ```
     
 """
-@recipe function f(r::KMSurv)
+@recipe function f(k::KMSurv)
     # global
     xlabel --> "Time" # --> sets default
     ylabel --> "Survival"
@@ -163,7 +163,7 @@ end
 
 
 # baseline hazard plot for Cox model
-
+@userplot BaseHazPlot
 """
 Plotting baseline hazard for a Cox model
 
@@ -183,7 +183,8 @@ plot!(ftb, label="Breslow")
 ```
 
 """
-@recipe function f(ft::PHModel)
+@recipe function f(h::BaseHazPlot)
+    ft = h.args[1]
     # global
     xlabel --> "Time" # --> sets default
     ylabel --> "Cumulative hazard"
@@ -202,3 +203,84 @@ plot!(ftb, label="Breslow")
         vcat(minT, times, maxT), vcat(0, cumbasehaz, maximum(cumbasehaz))
     end
 end
+
+
+
+@userplot CoxDX
+"""
+```julia
+using Plots, LSurvival
+dat2 = (
+    enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
+    exit = [2, 3, 6, 7, 8, 9, 9, 9, 14, 17],
+    status = [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+    x = [1, 0, 0, 1, 0, 1, 1, 1, 0, 0],
+)
+fte = coxph(@formula(Surv(enter, exit, status)~x), dat2)
+
+coxdx(fte)
+
+```
+"""
+@recipe function f(h::CoxDX; par=1)
+    ft = h.args[1]
+    time = ft.bh[:,1]
+    nms = coefnames(ft)
+    xlab --> "Time"
+    ylab --> "Schoenfeld residual"
+    res = residuals(ft, type = "schoenfeld")
+    @series begin
+        seriestype := :scatter
+        shape := :circle
+        markerstrokewidth := 0
+        color --> :black
+        label --> nms[par]
+        markesize --> 2
+        markeralpha --> 0.5
+        time, res[:,par]
+    end
+end
+
+@userplot CoxInfluence
+"""
+```julia
+using Plots, LSurvival
+dat2 = (
+    enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
+    exit = [2, 3, 6, 7, 8, 9, 9, 9, 14, 17],
+    status = [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+    x = [1, 0, 0, 1, 0, 1, 1, 1, 0, 0],
+)
+fte = coxph(@formula(Surv(enter, exit, status)~x), dat2)
+
+coxinfluence(fte, type="jackknife")
+
+```
+"""
+@recipe function f(h::CoxInfluence; type="dfbeta")
+    !issubset([type], ["dfbeta", "dfbetas", "jackknife"]) && throw("type must be 'dfbeta', 'dfbetas' or 'jackknife'")
+    ft = h.args[1]
+    id = values(ft.R.id)
+    nms = coefnames(ft)
+    xlab --> "ID"
+    ylab --> "Residual"
+    res = residuals(ft, type = type)
+    grid --> false
+    @series begin
+        seriestype := :scatter
+        shape := :circle
+        markerstrokewidth := 0
+        color --> :black
+        label --> type
+        markesize --> 2
+        markeralpha --> 0.5
+        id, res
+    end
+    @series begin
+        seriestype := :hline
+        label := ""
+        color := :black
+        [0]
+    end
+end
+

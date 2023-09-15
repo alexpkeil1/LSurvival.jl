@@ -6,7 +6,6 @@
 
 using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
 using Plots
-using RecipesBase
 
 ###################################################################
 # Test data
@@ -39,9 +38,20 @@ dat4 = ( # mine
 ###################################################################
 # plotting survival data
 ###################################################################
+id, int, outt, data =
+    LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(length(d))
+wt ./= (sum(wt) / length(wt))
+
+# equivalent methods for unweighted, default efron partial likelihood
+ft = coxph(X, int, outt, d, id=ID.(id))
+k = kaplan_meier(int, outt, d, id=ID.(id))
 
 
-plot(R, maxids=10)
+plot(ft.R, maxids=10)
+plot(k)
 
 ###################################################################
 # Fitting a basic Cox model, Kaplan-Meier curve using preferred functions
