@@ -4,7 +4,11 @@ using Documenter
 using RecipesBase
 using Reexport
 using Printf
-using Random, Distributions, LinearAlgebra, Tables
+using Random, LinearAlgebra, Tables
+#using Distributions
+#import Distributions: Chisq, Normal
+import SpecialFunctions: gamma_inc, erfinv, erf
+#using SpecialFunctions
 @reexport using StatsModels # ModelFrame, modelframe
 #
 #import DataFrames: DataFrame
@@ -48,9 +52,11 @@ import Base: convert, show
 
 # Structs
 export AbstractPH,
+    AbstractPSModel,
     AbstractNPSurv,
     AbstractLSurvivalID,
     AbstractLSurvivalParms,
+    AbstractSurvDist,
     AbstractSurvTime,
     AJSurv,
     ID,
@@ -58,7 +64,9 @@ export AbstractPH,
     LSurvivalResp,
     LSurvivalCompResp,
     PHModel,
+    PSModel,
     PHParms,
+    PSParms,
     PHSurv,
     # Strata
     Surv
@@ -87,8 +95,11 @@ export aic,
     dof,
     fit,
     fit!,
+    lpdf,
+    lsurv,
     model_response,
     modelmatrix, #PValue
+    params,
     fitted,
     isfitted,
     jackknife,
@@ -97,6 +108,8 @@ export aic,
     lrtest, # re-exported
     modelmatrix,
     length,
+    scale,
+    shape,
     size,
     nullloglikelihood,
     nulllogpartiallikelihood,
@@ -133,13 +146,29 @@ $DOC_ABSTRACTPH
 abstract type AbstractPH <: RegressionModel end   # model based on a linear predictor
 
 """
+AbstractPS
+
+Abstract type for parametric survival models
+"""
+abstract type AbstractPSModel <: RegressionModel end   # model based on a linear predictor
+
+"""
 $DOC_ABSTRACTNPSURV
 """
 abstract type AbstractNPSurv end
 
+"""
+AbstractSurvDist
+
+Abstract type for parametric survival distributions
+"""
+abstract type AbstractSurvDist end
+
+
 ####### function definitions #######
 
 include("shared_structs.jl")
+include("distributions.jl")
 include("coxmodel.jl")
 include("residuals.jl")
 include("npsurvival.jl")

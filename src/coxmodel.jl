@@ -119,7 +119,10 @@ function PHModel(
     return PHModel(R, P, formula, "efron", false)
 end
 
-function PHModel(R::Union{Nothing,G}, P::L) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
+function PHModel(
+    R::Union{Nothing,G},
+    P::L,
+) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
     return PHModel(R, P, "efron")
 end
 
@@ -274,14 +277,7 @@ function StatsBase.fit!(
 
     start = isnothing(start) ? zeros(Float64, m.P.p) : start
 
-    _fit!(
-        m,
-        verbose = verbose,
-        maxiter = maxiter,
-        gtol = gtol,
-        start = start;
-        kwargs...,
-    )
+    _fit!(m, verbose = verbose, maxiter = maxiter, gtol = gtol, start = start; kwargs...)
 end
 
 
@@ -339,7 +335,9 @@ function fit(
     f::FormulaTerm,
     data;
     ties = "efron",
-    id::AbstractVector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(getindex(data, 1))],
+    id::AbstractVector{<:AbstractLSurvivalID} = [
+        ID(i) for i in eachindex(getindex(data, 1))
+    ],
     wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
@@ -376,33 +374,36 @@ function StatsBase.coef(m::M) where {M<:AbstractPH}
     m.P._B
 end
 
+# quantile function for standard normal
+
 function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     mwarn(m)
-    beta = coef(m)
+    β = coef(m)
     std_err = stderror(m)
-    zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
-    lci = beta .+ zcrit[1] * std_err
-    uci = beta .+ zcrit[2] * std_err
-    z = beta ./ std_err
+    #zcrit = quantile.(Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
+    zcrit = qstdnorm.([(1 - level) / 2, 1 - (1 - level) / 2])
+    lci = β .+ zcrit[1] * std_err
+    uci = β .+ zcrit[2] * std_err
+    z = β ./ std_err
     pval = calcp.(z)
-    op = hcat(beta, std_err, lci, uci, z, pval)
+    op = hcat(β, std_err, lci, uci, z, pval)
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
-    pcol=6
-    zcol=5
+    pcol = 6
+    zcol = 5
     if !isnothing(m.RL)
         std_err_rob = stderror(m, type = "robust")
-        z = beta ./ std_err_rob
+        z = β ./ std_err_rob
         pval = calcp.(z)
-        lci = beta .+ zcrit[1] * std_err_rob
-        uci = beta .+ zcrit[2] * std_err_rob
-        op = hcat(beta, std_err, std_err_rob, lci, uci, z, pval)
+        lci = β .+ zcrit[1] * std_err_rob
+        uci = β .+ zcrit[2] * std_err_rob
+        op = hcat(β, std_err, std_err_rob, lci, uci, z, pval)
         pcol += 1
         zcol += 1
         head = ["ln(HR)", "StdErr", "RobustSE", "LCI", "UCI", "Z", "P(>|Z|)"]
     end
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
-    rown = typeof(rown)<:AbstractVector ? rown : [rown]
+    rown = typeof(rown) <: AbstractVector ? rown : [rown]
     StatsBase.CoefTable(op, head, rown, pcol, zcol)
 end
 
@@ -523,7 +524,7 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:A
     mwarn(m)
     if type == "robust"
         res = robust_vcov(m)
-    elseif  type == "jackknife"
+    elseif type == "jackknife"
         res = jackknife_vcov(m)
     else
         res = -inv(m.P._hess)
@@ -536,6 +537,7 @@ function StatsBase.weights(m::M) where {M<:AbstractPH}
     m.R.wts
 end
 
+
 function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     if !m.fit
         println(io, "Model not yet fitted")
@@ -546,7 +548,9 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     chi2 = 2 * (ll - llnull)
     coeftab = coeftable(m, level = level)
     df = length(coeftab.rownms)
-    lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
+    #lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
+    #lrtp = 1 - cdf(Chisq(df), chi2)
+    lrtp = 1 - cdfchisq(df, chi2)
     iob = IOBuffer()
     println(iob, coeftab)
     str = """\nMaximum partial likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
@@ -558,8 +562,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     println(io, str)
 end
 
-Base.show(m::M; kwargs...) where {M<:AbstractPH} =
-    Base.show(stdout, m; kwargs...)
+Base.show(m::M; kwargs...) where {M<:AbstractPH} = Base.show(stdout, m; kwargs...)
 
 ##################################################################################################################### 
 # helper functions
@@ -570,8 +573,6 @@ function mwarn(m)
         @warn "Model not yet fitted"
     end
 end
-
-calcp(z) = (1.0 - cdf(Distributions.Normal(), abs(z))) * 2
 
 function _coxrisk!(p::P) where {P<:PHParms}
     map!(z -> exp(z), p._r, p.X * p._B)

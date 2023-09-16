@@ -2,58 +2,180 @@
 # ID level robust variance estimators
 
 
-using LSurvival, Random, Optim, BenchmarkTools, RCall, SpecialFunctions
+using LSurvival, Random, Optim, BenchmarkTools, RCall
+using Zygote # parametric survival models
+
+using SpecialFunctions: loggamma, gamma_inc
 
 ######################################################################
 # parametric survival model
 ######################################################################
 
-#
-SURVIVAL_LOG_LIKE=raw"""
-$L(e_i, t_i) = f(t_i)^\delta_i/S(e_i) S(t_i)^(1-\delta_i)/S(e_i) $
-for distribution function $f$ and survival function $S\equiv 
-"""
+mutable struct PSParms{
+    D<:Matrix{<:Real},
+    B<:Vector{<:Float64},
+    R<:Vector{<:Float64},
+    L<:Vector{<:Float64},
+    G<:Union{Nothing,Vector{<:Float64}},
+    H<:Union{Nothing,Matrix{<:Float64}},
+    I<:Int,
+} <: AbstractLSurvivalParms
+    X::Union{Nothing,D}
+    _B::B                        # coefficient vector
+    _r::R                        # linear predictor/risk
+    _LL::L                       # partial likelihood history
+    _grad::G                     # gradient vector
+    _hess::H                     # Hessian matrix
+    n::I                         # number of observations
+    p::I                         # number of parameters
+end
 
+
+mutable struct PSModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms} <: AbstractPSModel
+    R::Union{Nothing,G}        # Survival response
+    P::L        # parameters
+    formula::Union{FormulaTerm,Nothing}
+    dist::String
+    fit::Bool
+    bh::Matrix{Float64}
+    RL::Union{Nothing,Vector{Matrix{Float64}}}        # residual matrix    
+end
+
+#todo make a subtype of Distributions.UnivariateDistribution ?
+mutable struct SurvDistribution{} <: AbstractSurvDist
+    lpdf
+end
+
+#struct Weibull{T<:Real} <: ContinuousUnivariateDistribution
+#    α::T   # shape
+#    θ::T   # scale
+#
+#    function Weibull{T}(α::T, θ::T) where {T <: Real}
+#        new{T}(α, θ)
+#    end
+#end
+
+#=
+SURVIVAL_LOG_LIKE = raw"""
+  $L(e_i, t_i) = f(t_i)^\delta_i/S(e_i) S(t_i)^(1-\delta_i)/S(e_i) $
+  for distribution function $f$ and survival function $S\equiv 
+  """
+
+
+function lpdf_weibull(t, ρ, γ, α = 1.0)
+    # parameterization of Lee and Wang (SAS)
+    log(ρ) + log(γ) + (γ - 1) * log(ρ * t) - (ρ * t) ^ γ
+end
+
+function lsurv_weibull(t, ρ, γ, α = 1.0)
+    # parameterization of Lee and Wang (SAS)
+    -(ρ * t)^γ
+end
+
+function lpdf_expon(t, ρ, γ=1.0, α = 1.0)
+    # parameterization of Lee and Wang (SAS)
+    log(ρ) - (ρ * t)
+end
+
+function lsurv_expon(t, ρ, γ=1.0, α = 1.0)
+    # parameterization of Lee and Wang (SAS)
+    -(ρ * t)
+end
+=#
 
 """
 Weibull model for left truncated, right censored data
     
     $SURVIVAL_LOG_LIKE
-
+α=1.
 ρ = .1    # linear predictor/shape parameter
 d = 1
 enter = 0
 exit = 3.2
 γ = 1   # transformation of scale parameter
 wt = 1
-loglik_weibull(enter, exit, d, wt, ρ, γ, α=1.)
+loglik_weibull(enter, exit, d, wt, ρ, γ, α)
 """
-function loglik_weibull(enter, exit, d, wt, ρ, γ=1., α=1.)
+function loglik_weibull(enter, exit, d, wt, ρ, γ, α = 1.0)
     # ρ is linear predictor
-    lambda = ρ*γ*exit^(γ-1.0)                            # hazard
-    ll = -(ρ * exit)^γ
-    ll += d == 1 ? log(ρ) + log(γ) + (γ-1)*log( ρ * exit)  : # extra contribution for events
-                            0 # extra contribution for censored (cumulative conditional survival at censoring)
-    ll -= enter > 0 ? (ρ * enter)^γ : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    lambda = ρ * γ * exit^(γ - 1.0)                            # hazard
+    ll = enter > 0 ? lsurv_weibull(enter, ρ, γ, α) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    ll +=
+        d == 1 ? lpdf_weibull(exit, ρ, γ, α) : # extra contribution for events
+        lsurv_weibull(exit, ρ, γ, α) # extra contribution for censored (cumulative conditional survival at censoring)
     ll *= wt
     ll
 end
+
 """
 ρ = .1    # linear predictor/shape parameter
 d = 1
 enter = 0
 exit = 3.2
-γ = 1   # transformation of scale parameter
+γ = 1.   # transformation of scale parameter
 wt = 1
 loglik_exponential(enter, exit, d, wt, ρ, γ)
 loglik_exponential(enter, exit, d, wt, ρ)
 """
-loglik_exponential(enter, exit, d, wt, ρ, γ=1., α=1.) = loglik_weibull(enter, exit, d, wt, ρ, 1.0, 1.0)
+loglik_exponential(enter, exit, d, wt, ρ, γ = 1.0, α = 1.0) =
+    loglik_weibull(enter, exit, d, wt, ρ, 1.0, 1.0)
 
+
+
+###### autodiff using zygote
+function lle(θ, x, enter, exit, d, wt)
+    rho = exp.(x * θ)
+    sum(loglik_exponential.(enter, exit, d, wt, rho))
+end
+
+function llw(θ, x, enter, exit, d, wt)
+    rho = exp.(x * θ[1:end-1])
+    sum(loglik_weibull.(enter, exit, d, wt, rho, θ[end]))
+end
+
+function lgh!(_theta, x, enter, exit, d, wt; ll = llw)
+    _loglik = ll(_theta, x, enter, t, d, wt)
+
+    g = gradient(a -> ll(a, x, enter, t, d, wt), _theta)[1]
+    h = Zygote.hessian(θ -> ll(θ, x, enter, exit, d, wt), _theta)
+    _loglik, g, h
+end
+
+
+"""
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+enter = zeros(length(dat1.time))
+t = dat1.time
+d = dat1.status
+x = hcat(ones(length(dat1.x)), dat1.x)
+wt = ones(length(t))
+LSurvival.coxph(x[:,2:2],enter,t,d) # lnhr = 1.67686
+
+function fitexpon()
+    parms = rand(2)
+    _ll, _grad, _hess = lgh!(parms, x, enter, t, d, wt; ll = lle)
+    maxgrad = _grad'_grad
+    while maxgrad > 1e-12
+    #for j in 1:10
+        _ll, _grad, _hess = lgh!(parms, x, enter, t, d, wt; ll = lle)
+        # newton raphson update
+        parms .+= inv(-_hess) * _grad
+        maxgrad = _grad'_grad
+    end
+    v = inv(-_hess)
+    parms, [sqrt(v[i,i]) for i in 1:size(v,2)]
+end
+p,se = fitexpon()
+
+
+"""
 
 
 raw"""
-generalized gamma likelihood  - based on Lee and Wang book, pg. 188
+Generalized gamma likelihood
+
+$SURVIVAL_LOG_LIKE
+
 
 Generalized gamma distribution function 
     $f(t) = \frac{\lambda}{\Gamma(\gamma)}(\lambda t)^{\gamma-1}\exp(-\lambda t) \hspace{20pt} t \geq 0, \hspace{10pt} \alpha, \gamma, \lambda > 0$
@@ -73,29 +195,37 @@ Gamma distribution is the special case where $\alpha=1$
 
 For events ($\delta_i$), right censoring ($1-\delta_i$) and left truncated observations ($\kappa_i$), in a person-period structure with no interval
  censoring
+ 
+ loglik_gengamma(enter, exit, d, wt, ρ, γ, α)
+ loglik_gengamma(enter, exit, d, wt, ρ, 1., 1.)
 
 """
-function loglik_gengamma(enter, exit, d, wt, ρ, γ=1., α=1.)
+function loglik_gengamma(enter, exit, d, wt, ρ, γ = 1.0, α = 1.0)
     # ρ is linear predictor
-    #;
-    lambda = ρ*γ*exit^(γ-1.0)                            # hazard
-    ll = 0.0
-    # l = (abs(α)*(γ**γ)*(ρ**(α*γ))*(exit)**(α*γ-1)*exp(-γ*(ρ*ageout)**α))/SpecialFunctions.gamma(γ)
-    
-    ll += d == 1 ?  log(α) + γ*log(γ) + α*γ*log(ρ) + α*(γ-1)*log(exit) - γ*(ρ*exit)^α - SpecialFunctions.loggamma(γ) : # extra contribution for events
-                            0 # extra contribution for censored (cumulative conditional survival at censoring)
-    ll -= enter > 0 ?  : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    #lambda = ρ * γ * exit^(γ - 1.0)                            # hazard
+    ll = 0
+    ll +=
+        d == 1 ? lpdf_gengamma(exit, ρ, γ, α) : #  contribution for events
+        lsurv_gengamma(exit, ρ, γ, α) # contribution for censored (cumulative conditional survival at censoring)
+    ll -= enter > 0 ? lsurv_gengamma(enter, ρ, γ, α) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     ll *= wt
     ll
 end
 
+#### log pdf and surv functions
 
-function lpdf_gengamma(t,ρ, γ=1., α=1.)
-    log(α) + γ*log(γ) + α*γ*log(ρ) + α*(γ-1)*log(t) - γ*(ρ*t)^α - SpecialFunctions.loggamma(γ)
+
+
+
+function lpdf_gengamma(t, ρ, γ = 1.0, α = 1.0)
+    log(α) + γ * log(γ) + α * γ * log(ρ) + α * (γ - 1) * log(t) - γ * (ρ * t)^α -
+    SpecialFunctions.loggamma(γ)
 end
 
-function lsurv_gengamma(t,ρ, γ=1., α=1.)
-    1 - gamma_inc(γ,x,IND=0)
+function lsurv_gengamma(t, ρ, γ = 1.0, α = 1.0)
+    # not correct use of P here! double check docs on specialfunctions
+    p, q = SpecialFunctions.gamma_inc(γ, t, 0) # last arg (IND) controls level of accuracy (due to Legendre approximation?)
+    1.0 - p
 end
 
 
