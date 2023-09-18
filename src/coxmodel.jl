@@ -417,7 +417,8 @@ function StatsBase.confint(m::M; level::Float64 = 0.95, kwargs...) where {M<:Abs
     beta = coef(m)
     std_err = stderror(m; kwargs...) # can have type="robust"
     z = beta ./ std_err
-    zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
+    #zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
+    zcrit = qstdnorm.([(1 - level) / 2, 1 - (1 - level) / 2])
     lci = beta .+ zcrit[1] * std_err
     uci = beta .+ zcrit[2] * std_err
     hcat(lci, uci)
