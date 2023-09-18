@@ -1,3 +1,4 @@
+# Non-parametric survival estimators 
 
 ##################################################################################################################### 
 # structs
@@ -209,7 +210,9 @@ end
 function confint_normal(m::KMSurv; level = 0.95)
     se = stderror(m)
     halfalpha = (1.0 - level) / 2.0
-    zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    #zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    #zcrit = quantile.(Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
+    zcrit = qstdnorm.([(1 - level) / 2, 1 - (1 - level) / 2])
     cimat = reduce(hcat, [m.surv .+ zcriti .* se for zcriti in zcrit])
     cimat
 end
@@ -217,7 +220,8 @@ end
 function confint_lognlog(m::KMSurv; level = 0.95)
     se = stderror(m)
     halfalpha = (1.0 - level) / 2.0
-    zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    #zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    zcrit = qstdnorm.([(1 - level) / 2, 1 - (1 - level) / 2])
     logci = reduce(
         hcat,
         [
@@ -263,7 +267,8 @@ end
 function confint_normal(m::AJSurv; level = 0.95)
     se = stderror(m)
     halfalpha = (1.0 - level) / 2.0
-    zcrit = quantile.(Normal(), [halfalpha, 1.0 - halfalpha])
+    #zcrit = quantile.(Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
+    zcrit = qstdnorm.([(1 - level) / 2, 1 - (1 - level) / 2])
     cimat = reduce(
         hcat,
         [

@@ -288,7 +288,8 @@ function cox_summary(args; alpha = 0.05, verbose = true)
     beta, ll, g, h, basehaz = args
     std_err = sqrt.(diag(-inv(h)))
     z = beta ./ std_err
-    zcrit = quantile.(Distributions.Normal(), [alpha / 2.0, 1.0 - alpha / 2.0])
+    #zcrit = quantile.(Distributions.Normal(), [alpha / 2.0, 1.0 - alpha / 2.0])
+    zcrit = qstdnorm.([alpha / 2.0, 1.0 - alpha / 2.0])
     lci = beta .+ zcrit[1] * std_err
     uci = beta .+ zcrit[2] * std_err
     pval = calcp.(z)
@@ -296,7 +297,9 @@ function cox_summary(args; alpha = 0.05, verbose = true)
     verbose ? true : return (op)
     chi2 = ll[end] - ll[1]
     df = length(beta)
-    lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
+    #lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
+    #lrtp = 1 - cdf(Chisq(df), chi2)
+    lrtp = 1 - cdfchisq(df, chi2)
     head = ["ln(HR)", "StdErr", "LCI", "UCI", "Z", "P(>|Z|)"]
     rown = ["b$i" for i = 1:size(op)[1]]
     coeftab = CoefTable(op, head, rown, 6, 5)

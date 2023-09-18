@@ -52,10 +52,14 @@ $DOC_DGM_COMPRISK
 function dgm_comprisk(rng::MersenneTwister, n::Int)
     z = rand(rng, n) .* 5
     x = rand(rng, n) .* 5
-    dt1 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))
-    dt2 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))
-    t01 = rand.(rng, dt1)
-    t02 = rand.(rng, dt2)
+    #dt1 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))
+    #dt2 = Weibull.(fill(0.75, n), inv.(exp.(-x .- z)))
+    #t01 = rand.(rng, dt1)
+    #t02 = rand.(rng, dt2)
+    h1 = inv.(exp.(-x .- z))
+    h2 = inv.(exp.(-x .- z))
+    t01 = [randweibull(rng, .75, hi) for hi in h1]
+    t02 = [randweibull(rng, .75, hi) for hi in h2]
     t0 = min.(t01, t02)
     t = Array{Float64,1}(undef, n)
     for i = 1:n
