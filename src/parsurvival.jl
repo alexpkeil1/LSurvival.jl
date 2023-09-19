@@ -70,6 +70,7 @@ mutable struct PSModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSur
     d::D
     fit::Bool
 end
+
 function PSModel(
     R::Union{Nothing,G},
     P::L,
@@ -77,7 +78,9 @@ function PSModel(
 ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist}
     np = length(d)
     P._S = zeros(np)
-    P.r = P.p + np
+    r = P.p + np
+    P._grad = fill(0.0, r),
+    P._hess = fill(0.0, r, r),
     PSModel(R, P, nothing, d, false)
 end
 
