@@ -17,101 +17,7 @@ function name(::Type{T}) where {T}
     isempty(T.parameters) ? T : T.name.wrapper
 end
 
-##################
-# Weibull
-##################
-struct Weibull{T<:Real} <: AbstractSurvDist
-    ρ::T   # scale: linear effects on this parameter
-    γ::T   # shape
-end
 
-function Weibull(ρ::T, γ::T) where {T<:Int}
-    Weibull(Float64(ρ), Float64(γ))
-end
-
-function Weibull(ρ::T, γ::R) where {T<:Int,R<:Float64}
-    Weibull(Float64(ρ), γ)
-end
-
-function Weibull(ρ::R, γ::T) where {R<:Float64,T<:Int}
-    Weibull(ρ, Float64(γ))
-end
-
-function Weibull(v::Vector{R}) where {R<:Real}
-    Weibull(v[1], v[2])
-end
-
-function Weibull()
-    Weibull(ones(Float64, 2)...)
-end
-
-# Methods for Weibull
-
-function lpdf(d::Weibull, t)
-    # parameterization of Lee and Wang (SAS)
-    #log(d.ρ) + log(d.γ) + t*(d.γ - 1.0) * log(d.ρ) - (d.ρ * t^d.γ)
-    # location scale representation (Klein Moeschberger ch 12)
-    # Lik: 1/sigma * exp((logt - mu)/sigma - exp((logt-mu)/sigma))
-    # lLik: log(1/sigma) +  (logt - mu)/sigma - exp((logt-mu)/sigma)
-    z = (log(t) - d.ρ) / d.γ
-    -log(d.γ) + z - exp(z)
-end
-
-function lsurv(d::Weibull, t)
-    # parameterization of Lee and Wang (SAS)
-    #-(d.ρ * t^d.γ)
-    # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page on Gumbel Distribution)
-    z = (log(t) - d.ρ) / d.γ
-    -exp(z)
-end
-
-
-shape(d::Weibull) = d.γ
-scale(d::Weibull) = d.ρ
-params(d::Weibull) = (d.ρ, d.γ)
-
-
-
-##################
-# Exponential
-##################
-mutable struct Exponential{T<:Real} <: AbstractSurvDist
-    ρ::T   # scale (Weibull shape is 1.0)
-end
-
-function Exponential(ρ::T) where {T<:Int}
-    Exponential(Float64(ρ))
-end
-
-function Exponential(v::Vector{R}) where {R<:Real}
-    length(v) > 1 &&
-        throw("Vector of arguments given to `Exponential()`; did you mean Exponential.() ?")
-    Exponential(v[1])
-end
-
-function Exponential()
-    Exponential(one(Float64))
-end
-
-# Methods for exponential
-
-function lpdf(d::Exponential, t)
-    # parameterization of Lee and Wang (SAS)
-    log(d.ρ) - (d.ρ * t)
-    # location scale parameterization (Kalbfleisch and Prentice)
-    #log(t) - (d.ρ * t)
-end
-
-function lsurv(d::Exponential, t)
-    # parameterization of Lee and Wang (SAS), survival uses Kalbfleisch and Prentice
-    -d.ρ * t
-    # location scale parameterization (Kalbfleisch and Prentice)
-    #-d.ρ * t
-end
-
-shape(d::Exponential) = 1.0
-scale(d::Exponential) = d.γ
-params(d::Exponential) = (d.γ)
 
 ##################################################################################################################### 
 # structs
@@ -146,7 +52,7 @@ function PSParms(X::Union{Nothing,D}; extraparms = 1) where {D<:AbstractMatrix}
         X,
         fill(0.0, p),
         fill(0.0, n),
-        zeros(Float64, 1),
+        zeros(Float64, 0),
         fill(0.0, r),
         fill(0.0, r, r),
         zeros(extraparms),
@@ -179,11 +85,11 @@ params(m::PSModel) = vcat(m.P._B, m.P._S)
 Log likelihood contribution for an observation in a parametric survival model
 """
 function loglik(d::D, enter, exit, y, wts) where {D<:AbstractSurvDist}
-    # ρ is linear predictor
-    ll = enter > 0 ? lsurv(d, enter) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    # ρ is linear predictor, log(enter) term shows up as Jacobian of transform
+    ll = enter > 0 ? -lsurv(d, enter) + log(enter) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     ll +=
-        y == 1 ? lpdf(d, exit) : # extra contribution for events
-        lsurv(d, exit) # extra contribution for censored (cumulative conditional survival at censoring)
+        y == 1 ? lpdf(d, exit) - log(exit) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        lsurv(d, exit) - log(exit) # extra contribution for censored (cumulative conditional survival at censoring)
     ll *= wts
     ll
 end
@@ -192,6 +98,13 @@ end
 
 
 # theta includes linear predictor and other parameters
+"""
+i=1
+θ = rand(3)
+Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx][1])              # scale, linear model
+LSurvival.lpdf(Distr, m.R.exit[i])
+t = m.R.exit[i]
+"""
 function ll_unfixedscale(m::M, θ) where {M<:PSModel}
     newidx = (m.P.p+1):length(θ)
     oldidx = 1:m.P.p
@@ -201,24 +114,40 @@ function ll_unfixedscale(m::M, θ) where {M<:PSModel}
         #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
         #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), exp.(θ[newidx])...) # log scale, exponential mean model
         #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), θ[newidx]...)       # scale, exponential mean model
-        Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx]...)              # scale, linear model
+        #Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx.start])              # scale, linear model
+        Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), exp(θ[newidx.start]))              # log scale, linear model
         #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
         LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
     end
     LL
 end
+
 
 function ll_fixedscale(m::M, θ) where {M<:PSModel}
     LL = 0.0
     for i = 1:length(m.R.enter)
         #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
-        Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ)))
+        #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ)))
+        Distr =  name(typeof(m.d))(dot(m.P.X[i:i, :], θ))              # log scale, linear model
         #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
         LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
     end
     LL
 end
 
+"""
+i=1
+θ = [2.23733, -0.744225, 0.456316]
+_theta = θ
+f(_theta)
+gradient(f, _theta)
+Zygote.hessian(f, _theta)
+Zygote.hessian_reverse(f, _theta)
+y, back = Zygote.pullback(f, _theta)
+back(_theta)
+
+
+"""
 function lgh!(m::M, _theta) where {M<:PSModel}
     #r = [updateparams(m.d, _theta) for i in eachindex(m.R.enter)]
     newidx = (m.P.p+1):length(_theta)
@@ -231,6 +160,26 @@ function lgh!(m::M, _theta) where {M<:PSModel}
 end
 
 
+
+"""
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+
+X = ones(length(dat1.x),1)
+dist = LSurvival.Weibull()
+P = PSParms(X, extraparms=length(dist)-1)
+P._B
+P._grad
+R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
+m = PSModel(R,P,dist)
+m.P._grad
+
+#parms = vcat(zeros(length(m.P._grad)-1), 1.0)
+parms = [2.001, .551]
+_theta = parms
+θ = _theta
+
+
+"""
 function _fit!(
     m::PSModel;
     verbose::Bool = false,
@@ -244,7 +193,7 @@ function _fit!(
     kwargs...,
 )
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
-    start = isnothing(start) ? zeros(length(m.P._grad)) : start
+    start = isnothing(start) ? vcat(zeros(length(m.P._B)), ones(length(m.P._grad)-length(m.P._B))) : start
     parms = deepcopy(start)
     λ = 1.0
     #
@@ -599,6 +548,8 @@ res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull());
 #include(expanduser("~/repo/LSurvival.jl/src/parsurvival.jl"))
 #include(expanduser("~/repo/LSurvival.jl/src/distributions.jl"))
 
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+
 dist = LSurvival.Weibull()
 P = PSParms(X, extraparms=length(dist)-1)
 P._B
@@ -608,6 +559,7 @@ m = PSModel(R,P,dist)
 
 m.P._B
 m.P._S
+m.P._LL
 
 LSurvival._fit!(m);
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])

@@ -899,3 +899,17 @@ res = survreg(Surv(time , status) ~ x,data = dat1, dist="exponential")
 ret = summary(res)
 """
 @rget ret
+
+rng = MersenneTwister(1232)
+datgen = (
+    time = rand(rng, 100),
+    status = rand(rng, [0,1],100),
+    x = rand(rng, [0,1],100)
+)
+@rput datgen
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = datgen, dist="weibull")
+ret = summary(res)
+"""
+survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), verbose=true)
