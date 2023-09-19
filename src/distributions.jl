@@ -205,18 +205,17 @@ function Lognormal()
     Lognormal(ones(Float64, 2)...)
 end
 
-# Methods for Weibull
+# Methods for Lognormal
 """
 d = Distr
 t = m.R.exit[i]
 
 """
 function lpdf(d::Lognormal, t)
-    # parameterization of Lee and Wang (SAS)
-    #log(d.ρ) + log(d.γ) + t*(d.γ - 1.0) * log(d.ρ) - (d.ρ * t^d.γ)
     # location scale representation (Klein Moeschberger ch 12)
-    # Lik: 1/sigma * exp((logt - mu)/sigma - exp((logt-mu)/sigma))
-    # lLik: log(1/sigma) +  (logt - mu)/sigma - exp((logt-mu)/sigma)
+    inv(sqrt(2pi))
+
+
     z = (log(t) - d.ρ) / d.γ
     ret = -log(d.γ) + z - exp(z)
     #ret -= log(t)   # change in variables, log transformation on t
@@ -224,9 +223,7 @@ function lpdf(d::Lognormal, t)
 end
 
 function lsurv(d::Lognormal, t)
-    # parameterization of Lee and Wang (SAS)
-    #-(d.ρ * t^d.γ)
-    # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page on Gumbel Distribution)
+    # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page 
     z = (log(t) - d.ρ) / d.γ
     ret =  -exp(z)
     #ret -= log(t)   # change in variables, log transformation on t
