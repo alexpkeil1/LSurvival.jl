@@ -5,15 +5,49 @@
 
 #abstract type AbstractSurvDist end
 
+function copydist(d::T, args...) where {T<:AbstractSurvDist}
+    typeof(d)(args...)
+end
+
+function Base.length(d::T) where {T<:AbstractSurvDist}
+    length(fieldnames(T))
+end
+
+function name(::Type{T}) where {T}
+    isempty(T.parameters) ? T : T.name.wrapper
+end
+
+
+
+##################
 # Weibull
-mutable struct Weibull{T<:Real} <: AbstractSurvDist
+##################
+struct Weibull{T<:Real} <: AbstractSurvDist
     ρ::T   # scale: linear effects on this parameter
     γ::T   # shape
 end
 
-function Weibull()
-    Weibull(ones(Float64,2)...)
+function Weibull(ρ::T, γ::T) where {T<:Int}
+    Weibull(Float64(ρ), Float64(γ))
 end
+
+function Weibull(ρ::T, γ::R) where {T<:Int,R<:Float64}
+    Weibull(Float64(ρ), γ)
+end
+
+function Weibull(ρ::R, γ::T) where {R<:Float64,T<:Int}
+    Weibull(ρ, Float64(γ))
+end
+
+function Weibull(v::Vector{R}) where {R<:Real}
+    Weibull(v[1], v[2])
+end
+
+function Weibull()
+    Weibull(ones(Float64, 2)...)
+end
+
+# Methods for Weibull
 
 function lpdf(d::Weibull, t)
     # parameterization of Lee and Wang (SAS)
@@ -29,19 +63,30 @@ shape(d::Weibull) = d.γ
 scale(d::Weibull) = d.ρ
 params(d::Weibull) = (d.ρ, d.γ)
 
-function updateparams!(d::Weibull, θ::Vector{T}) where {T<:Real}
-    d.ρ = θ[1]
-    d.γ = θ[2]
-    d
-end
 
-function newdist(d::Weibull, θ::Vector{T}) where {T<:Real}
-    typeof(d)(θ...)
-end
 
+##################
+# Exponential
+##################
 mutable struct Exponential{T<:Real} <: AbstractSurvDist
     ρ::T   # scale (Weibull shape is 1.0)
 end
+
+function Exponential(ρ::T) where {T<:Int}
+    Exponential(Float64(ρ))
+end
+
+function Exponential(v::Vector{R}) where {R<:Real}
+    length(v) > 1 &&
+        throw("Vector of arguments given to `Exponential()`; did you mean Exponential.() ?")
+    Exponential(v[1])
+end
+
+function Exponential()
+    Exponential(one(Float64))
+end
+
+# Methods for exponential
 
 function lpdf(d::Exponential, t)
     # parameterization of Lee and Wang (SAS)
@@ -49,16 +94,13 @@ function lpdf(d::Exponential, t)
 end
 
 function lsurv(d::Exponential, t)
-    # parameterization of Lee and Wang (SAS)
+    # parameterization of Lee and Wang (SAS), survival uses Kalbfleisch and Prentice
     -d.ρ * t
 end
 
 shape(d::Exponential) = 1.0
 scale(d::Exponential) = d.γ
 params(d::Exponential) = (d.γ)
-function updateparams!(d::Exponential, θ)
-    d.ρ = θ[1]
-end
 
 ##################################################################################################################### 
 # structs
@@ -84,7 +126,7 @@ mutable struct PSParms{
     p::I                         # number of parameters
 end
 
-function PSParms(X::Union{Nothing,D};extraparms=1) where {D<:AbstractMatrix}
+function PSParms(X::Union{Nothing,D}; extraparms = 1) where {D<:AbstractMatrix}
     n, p = size(X)
     r = p + extraparms
     PSParms(
@@ -144,67 +186,55 @@ function updatemu!(m::M, θ) where {M<:PSModel}
 end
 
 function getmu(m::M, θ) where {M<:PSModel}
-    m.P._B = θ[1:m.P.p]
-    _r = parsurvrisk(m.P.X, m.P._B)
-    remparms = setdiff(θ, θ[1:m.P.p])
-    remparms, _r
-end
-
-
-function updatedist!(m::M, parms) where {M<:PSModel}
-
-    remparms
+    parsurvrisk(m.P.X, θ[1:m.P.p])
 end
 
 
 
 # theta includes linear predictor and other parameters
-function ll!(m::M, θ) where {M<:PSModel}
+function ll_unfixedscale(m::M, θ) where {M<:PSModel}
+    newidx = (m.P.p+1):length(θ)
+    oldidx = 1:m.P.p
     # put theta into correct parameters
-    η = updatemu!(m, θ)
-    disti = [updateparams!(m.d, vcat(m.P._r[i], η)) for i in eachindex(m.R.enter)]
+    #_r = getmu(m, θ)
     LL = 0.0
-    for i in eachindex(m.R.enter)
-        LL +=
-            loglik(disti[i], m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
+    for i = 1:length(m.R.enter)
+        #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
+        Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), exp.(θ[newidx])...)
+        #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
+        LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
     end
     LL
 end
 
-function ll(m::M, θ) where {M<:PSModel}
-    # put theta into correct parameters
-    m.P._B = θ[1:m.P.p]
-    η, _r = getmu(m, θ)
-    disti = [newdist(m.d, vcat(_r[i], η)) for i in eachindex(m.R.enter)]
+function ll_fixedscale(m::M, θ) where {M<:PSModel}
     LL = 0.0
-    for i in eachindex(m.R.enter)
-        LL +=
-            loglik(disti[i], m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
+    for i = 1:length(m.R.enter)
+        #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
+        Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ)))
+        #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
+        LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
     end
     LL
 end
 
 
-function lgh!(m::M, _theta, x, enter, exit, d, wt) where {M<:PSModel}
+
+function lgh!(m::M, _theta) where {M<:PSModel}
     #r = [updateparams(m.d, _theta) for i in eachindex(m.R.enter)]
-    llt(_theta) = ll(m, _theta)
-    _loglik = llt(_theta)
-    
-    gradient( parm -> ll(m, parm), _theta)[1]
-
-    ReverseDiff.gradient(llt, _theta)
-    h = ForwardDiff.hessian!(m.P._hess, parm -> ll(m, parm), _theta)
-    _loglik, g, h
+    newidx = (m.P.p+1):length(θ)
+    ll = newidx.start <= newidx.stop ? ll_unfixedscale : ll_fixedscale
+    f(x) = ll(m, x)
+    push!(m.P._LL, f(_theta))
+    m.P._grad = gradient(f, _theta)[1]
+    m.P._hess = Zygote.hessian(f, _theta)
+    m.P._LL[end], m.P._grad, m.P._hess
 end
 
 
 """
-# ForwardDiff is algorithmically more efficient for differentiating functions where the input dimension 
-# is less than the output dimension, while ReverseDiff is algorithmically more efficient for differentiating 
-# functions where the output dimension is less than the input dimension
 
-#using ReverseDiff
-using LSurvival
+using LSurvival, Zygote
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 enter = zeros(length(dat1.time))
 t = dat1.time
@@ -216,28 +246,34 @@ coxph(X[:,2:2],enter,t,d) # lnhr = 1.67686
 include(expanduser("~/repo/LSurvival.jl/src/parsurvival.jl"))
 include(expanduser("~/repo/LSurvival.jl/src/distributions.jl"))
 
-
-P = PSParms(X, extraparms=1)
+dist = Weibull()
+P = PSParms(X, extraparms=length(dist)-1)
 R = LSurvivalResp(enter, t, d)    # specification with ID only
+m = PSModel(R,P,dist)
 
-m = PSModel(R,P,Weibull())
 
-θ = rand(size(X,2)+1)
-_theta = θ
+θ = rand(length(m.P._B)+length(m.d)-1)
 
-function fitexpon()
-    parms = rand(2)
-    _ll, _grad, _hess = lgh!(parms, x, enter, t, d, wt; ll = lle)
-    maxgrad = _grad'_grad
+function _fit!(m;start=rand(length(m.P._B)+length(m.d)-1))
+    parms = deepcopy(start)
+    maxgrad = 1e12
+    λ = 1.0
     while maxgrad > 1e-12
-    #for j in 1:10
-        _ll, _grad, _hess = lgh!(parms, x, enter, t, d, wt; ll = lle)
-        # newton raphson update
-        parms .+= inv(-_hess) * _grad
-        maxgrad = _grad'_grad
+         lastgrad = deepcopy(maxgrad)
+         lgh!(m, parms)
+         maxgrad = m.P._grad'm.P._grad
+         if lastgrad < maxgrad
+             λ*=0.5
+         else
+            λ = min(λ*1.5, 1)
+         end
+         λ
+         # newton raphson update
+         parms .+= inv(-m.P._hess) * m.P._grad * λ
+         λ
     end
-    v = inv(-_hess)
+    v = inv(-m.P._hess)
     parms, [sqrt(v[i,i]) for i in 1:size(v,2)]
 end
-p,se = fitexpon()
+p,se = _fit!(m)
 """

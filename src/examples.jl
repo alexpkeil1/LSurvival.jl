@@ -869,3 +869,16 @@ sum(residuals(jres, type = "score"), dims = 1)
 
 jres.RL[1]
 jres.RL[2]
+
+
+###################################################################
+# checking parametric survival against R
+###################################################################
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
+summary(res)
+"""
+@rget res
