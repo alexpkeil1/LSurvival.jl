@@ -39,10 +39,56 @@ using Random, Tables
     ################################################
 
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
-    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential()))
-    ft = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull())
-    println(ft.P._B)
+    ft = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
+    println(params(ft))
     println(ft)
+
+    # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "exponential")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.442      0.707  3.45 0.00055
+    # x           -1.056      1.000 -1.06 0.29094
+    # 
+    # Scale fixed at 1 
+    # 
+    # Exponential distribution
+    # Loglik(model)= -11.7   Loglik(intercept only)= -12.2
+    #         Chisq= 1.07 on 1 degrees of freedom, p= 0.3 
+    # Number of Newton-Raphson Iterations: 4 
+    
+    # intercept only model
+    ft = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull());
+    println(params(ft))
+    println(ft.P._LL)
+
+        # Call:
+    # survreg(formula = Surv(time, status) ~ 1, data = dat1, dist = "weibull")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.001      0.275  7.27 3.6e-13
+    # Log(scale)  -0.597      0.443 -1.35    0.18
+    # 
+    # Scale= 0.551 
+    # 
+    # Weibull distribution
+    # Loglik(model)= -11.4   Loglik(intercept only)= -11.4
+    # Number of Newton-Raphson Iterations: 8 
+    
+
+    ft = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull());
+    println(params(ft))
+    println(ft.P._LL)
+
+    #   survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "weibull")
+    #                Value Std. Error     z       p
+    #   (Intercept)  2.237      0.330  6.78 1.2e-11
+    #   x           -0.744      0.486 -1.53    0.13
+    #   Log(scale)  -0.785      0.433 -1.81    0.07
+    #   
+    #   Scale= 0.456 
+    #   
+    #   Weibull distribution
+    #   Loglik(model)= -10.3   Loglik(intercept only)= -11.4
+    #           Chisq= 2.22 on 1 degrees of freedom, p= 0.14 
+    #   Number of Newton-Raphson Iterations: 8 
     
 
     throw("remove me")

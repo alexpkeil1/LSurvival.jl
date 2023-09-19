@@ -878,7 +878,24 @@ using RCall
 @rput dat1
 R"""
 library(survival)
+res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull")
+ret = summary(res)
+"""
+@rget ret
+
+@rput dat1
+R"""
+library(survival)
 res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
+ret = summary(res)
+"""
+@rget ret
+
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="exponential")
 ret = summary(res)
 """
 @rget ret

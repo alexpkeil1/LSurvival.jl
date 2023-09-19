@@ -51,16 +51,18 @@ function lpdf(d::Weibull, t)
     # parameterization of Lee and Wang (SAS)
     #log(d.ρ) + log(d.γ) + t*(d.γ - 1.0) * log(d.ρ) - (d.ρ * t^d.γ)
     # location scale representation (Klein Moeschberger ch 12)
-    B = (log(t) - d.ρ)/d.γ
-    -log(d.γ) + B - exp(B)
+    # Lik: 1/sigma * exp((logt - mu)/sigma - exp((logt-mu)/sigma))
+    # lLik: log(1/sigma) +  (logt - mu)/sigma - exp((logt-mu)/sigma)
+    z = (log(t) - d.ρ) / d.γ
+    -log(d.γ) + z - exp(z)
 end
 
 function lsurv(d::Weibull, t)
     # parameterization of Lee and Wang (SAS)
     #-(d.ρ * t^d.γ)
-    # location scale representation (Klein Moeschberger ch 12)
-    B = (log(t) - d.ρ)/d.γ
-    -B
+    # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page on Gumbel Distribution)
+    z = (log(t) - d.ρ) / d.γ
+    -exp(z)
 end
 
 
@@ -104,7 +106,7 @@ function lsurv(d::Exponential, t)
     # parameterization of Lee and Wang (SAS), survival uses Kalbfleisch and Prentice
     -d.ρ * t
     # location scale parameterization (Kalbfleisch and Prentice)
-    -d.ρ * t
+    #-d.ρ * t
 end
 
 shape(d::Exponential) = 1.0
@@ -147,13 +149,12 @@ function PSParms(X::Union{Nothing,D}; extraparms = 1) where {D<:AbstractMatrix}
         zeros(Float64, 1),
         fill(0.0, r),
         fill(0.0, r, r),
-        Float64[],
+        zeros(extraparms),
         n,
         p,
     )
 end
 
-#Base.convert(PSParms, PHParms)
 
 mutable struct PSModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist} <:
                AbstractPSModel
@@ -171,14 +172,12 @@ function PSModel(
     PSModel(R, P, nothing, d, false)
 end
 
-function parsurvrisk!(_r, X, β)
-    _r .= exp.(-X * β)
-end
+params(m::PSModel) = vcat(m.P._B, m.P._S)
 
-function parsurvrisk(X, β)
-    exp.(-X * β)
-end
 
+"""
+Log likelihood contribution for an observation in a parametric survival model
+"""
 function loglik(d::D, enter, exit, y, wts) where {D<:AbstractSurvDist}
     # ρ is linear predictor
     ll = enter > 0 ? lsurv(d, enter) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
@@ -190,17 +189,6 @@ function loglik(d::D, enter, exit, y, wts) where {D<:AbstractSurvDist}
 end
 
 
-function updatemu!(m::M, θ) where {M<:PSModel}
-    m.P._B = θ[1:m.P.p]
-    parsurvrisk!(m.P._r, m.P.X, m.P._B)
-    remparms = setdiff(θ, θ[1:m.P.p])
-    remparms
-end
-
-function getmu(m::M, θ) where {M<:PSModel}
-    parsurvrisk(m.P.X, θ[1:m.P.p])
-end
-
 
 
 # theta includes linear predictor and other parameters
@@ -208,11 +196,12 @@ function ll_unfixedscale(m::M, θ) where {M<:PSModel}
     newidx = (m.P.p+1):length(θ)
     oldidx = 1:m.P.p
     # put theta into correct parameters
-    #_r = getmu(m, θ)
     LL = 0.0
     for i = 1:length(m.R.enter)
         #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
-        Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), exp.(θ[newidx])...)
+        #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), exp.(θ[newidx])...) # log scale, exponential mean model
+        #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), θ[newidx]...)       # scale, exponential mean model
+        Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx]...)              # scale, linear model
         #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
         LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
     end
@@ -229,8 +218,6 @@ function ll_fixedscale(m::M, θ) where {M<:PSModel}
     end
     LL
 end
-
-
 
 function lgh!(m::M, _theta) where {M<:PSModel}
     #r = [updateparams(m.d, _theta) for i in eachindex(m.R.enter)]
@@ -262,7 +249,8 @@ function _fit!(
     λ = 1.0
     #
     totiter = 0
-    lgh!(m, parms)
+    #lgh!(m, parms)
+    m.P._grad .+= 100.0
     oldQ = floatmax()
     while totiter < maxiter
         totiter += 1
@@ -270,36 +258,36 @@ function _fit!(
         if converged
             break
         end
+        lgh!(m, parms)
         Q = m.P._grad' * m.P._grad #l2 norm of vector
         if Q > oldQ # gradient has increased, indicating the maximum  was overshot
             λ *= 0.5  # step-halving
         else
             λ = min(2.0λ, 1.0) # de-halving
         end
-        lgh!(m, parms)
         isnan(m.P._LL[end]) ?
-        throw("Log-partial-likelihood is NaN: try different starting values") : true
+        throw("Log-likelihood is NaN: try different starting values") : true
         if abs(m.P._LL[end]) != Inf
             parms .+= inv(-m.P._hess) * m.P._grad * λ
             oldQ = Q
         else
-            @debug "Log-partial-likelihood history: $_llhistory $(m.P._LL[1])"
-            throw("Log-partial-likelihood is not finite: check model inputs")
+            @debug "Log-likelihood history: $_llhistory $(m.P._LL[1])"
+            throw("Log-likelihood is not finite: check model inputs")
         end
         # newton raphson update
         verbose ? println(m.P._LL[end]) : true
     end
     if (totiter == maxiter) && (maxiter > 0)
         @warn "Algorithm did not converge after $totiter iterations: check for collinearity of predictors"
-        @debug "recent log-partial-likelihood history: $(_llhistory[end-max(10,maxiter-1):end]) $(m.P._LL[1])"
+        @debug "recent log-likelihood history: $(_llhistory[end-max(10,maxiter-1):end]) $(m.P._LL[1])"
     end
     if verbose && (maxiter == 0)
         @warn "maxiter = 0, model coefficients set to starting values"
     end
     m.fit = true
     m.P._LL = m.P._LL[2:end]
-    m.P._B = parms[1:m.P.p]
-    m.P._S = parms[(m.P.p+1):end]
+    m.P._B .= parms[1:m.P.p]
+    m.P._S .= parms[(m.P.p+1):end]
     m.P.X = keepx ? m.P.X : nothing
     m.R = keepy ? m.R : nothing
     m
@@ -394,7 +382,7 @@ function fit(
 
     R = LSurvivalResp(y, wts, id)
     P = PSParms(X, extraparms = length(dist) - 1)
-    res = M(R, P, f, dist,false)
+    res = M(R, P, f, dist, false)
     return fit!(res; fitargs...)
 end
 
@@ -435,7 +423,7 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:PSModel}
     pcol = 6
     zcol = 5
     #rown = ["b$i" for i = 1:size(op)[1]]
-    rown = vcat(coefnames(m), ["log(Scale)" for i in 1:length(scale(m))])
+    rown = vcat(coefnames(m), ["log(Scale)" for i = 1:length(scale(m))])
     rown = typeof(rown) <: AbstractVector ? rown : [rown]
     if length(m.P._grad) > length(m.P._B)
         #println("Scale parameter")
@@ -606,16 +594,22 @@ X = hcat(ones(length(dat1.x)), dat1.x)
 wt = ones(length(t))
 coxph(X[:,2:2],enter,t,d) # lnhr = 1.67686
 res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
-res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull())
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull());
 
 #include(expanduser("~/repo/LSurvival.jl/src/parsurvival.jl"))
 #include(expanduser("~/repo/LSurvival.jl/src/distributions.jl"))
 
 dist = LSurvival.Weibull()
 P = PSParms(X, extraparms=length(dist)-1)
-R = LSurvivalResp(enter, t, d)    # specification with ID only
+P._B
+P._grad
+R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
 m = PSModel(R,P,dist)
-LSurvival._fit!(m)
+
+m.P._B
+m.P._S
+
+LSurvival._fit!(m);
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
 """
