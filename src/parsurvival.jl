@@ -79,8 +79,8 @@ function PSModel(
     np = length(d)
     P._S = zeros(np)
     r = P.p + np
-    P._grad = fill(0.0, r),
-    P._hess = fill(0.0, r, r),
+    P._grad = fill(0.0, r)
+    P._hess = fill(0.0, r, r)
     PSModel(R, P, nothing, d, false)
 end
 
