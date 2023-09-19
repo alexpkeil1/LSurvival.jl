@@ -874,11 +874,11 @@ jres.RL[2]
 ###################################################################
 # checking parametric survival against R
 ###################################################################
-
+using RCall
 @rput dat1
 R"""
 library(survival)
 res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
-summary(res)
+ret = summary(res)
 """
-@rget res
+@rget ret
