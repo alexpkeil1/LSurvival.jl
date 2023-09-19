@@ -40,7 +40,9 @@ using Random, Tables
 
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential()))
-    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull()))
+    ft = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull())
+    println(ft.P._B)
+    println(ft)
     
 
     throw("remove me")

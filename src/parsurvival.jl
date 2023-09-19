@@ -47,28 +47,22 @@ end
 
 # Methods for Weibull
 
-function hazard(d::Weibull, t)
-    # parameterization of Lee and Wang (SAS)
-    #log(d.ρ) + log(d.γ) + (d.γ - 1.0) * log(d.ρ * t) - (d.ρ * t)^d.γ
-    #d.ρ*d.γ
-end
-
-
 function lpdf(d::Weibull, t)
     # parameterization of Lee and Wang (SAS)
-    log(d.ρ) + log(d.γ) + (d.γ - 1.0) * log(d.ρ * t) - ((d.ρ * t)^d.γ)
+    #log(d.ρ) + log(d.γ) + t*(d.γ - 1.0) * log(d.ρ) - (d.ρ * t^d.γ)
+    # location scale representation (Klein Moeschberger ch 12)
+    B = (log(t) - d.ρ)/d.γ
+    -log(d.γ) + B - exp(B)
 end
-
 
 function lsurv(d::Weibull, t)
     # parameterization of Lee and Wang (SAS)
-    -((d.ρ * t)^d.γ)
+    #-(d.ρ * t^d.γ)
+    # location scale representation (Klein Moeschberger ch 12)
+    B = (log(t) - d.ρ)/d.γ
+    -B
 end
 
-function surv(d::Weibull, t)
-    # parameterization of Lee and Wang (SAS)
-    exp(-d.ρ * t^d.γ)
-end
 
 shape(d::Weibull) = d.γ
 scale(d::Weibull) = d.ρ
@@ -102,10 +96,14 @@ end
 function lpdf(d::Exponential, t)
     # parameterization of Lee and Wang (SAS)
     log(d.ρ) - (d.ρ * t)
+    # location scale parameterization (Kalbfleisch and Prentice)
+    #log(t) - (d.ρ * t)
 end
 
 function lsurv(d::Exponential, t)
     # parameterization of Lee and Wang (SAS), survival uses Kalbfleisch and Prentice
+    -d.ρ * t
+    # location scale parameterization (Kalbfleisch and Prentice)
     -d.ρ * t
 end
 
