@@ -75,6 +75,9 @@ function PSModel(
     P::L,
     d::D,
 ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist}
+    np = length(d)
+    P._S = zeros(np)
+    P.r = P.p + np
     PSModel(R, P, nothing, d, false)
 end
 
@@ -159,9 +162,13 @@ function lgh!(m::M, _theta) where {M<:PSModel}
     m.P._LL[end], m.P._grad, m.P._hess
 end
 
+function setinits(m::M) where {M<:PSModel}
+  params(m)
+end
 
 
 """
+using LSurvival
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 
 X = ones(length(dat1.x),1)
