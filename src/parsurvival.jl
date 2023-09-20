@@ -166,7 +166,10 @@ function lgh!(m::M, _theta) where {M<:PSModel}
 end
 
 function setinits(m::M) where {M<:PSModel}
-  params(m)
+    startint = log(mean(m.R.exit)) / (mean(m.R.y))
+    startscale = sqrt(var(log.(m.R.exit)) / mean(m.R.y))
+    start0 = [startint, startscale]
+    start0[1:length(params(m))]
 end
 
 
@@ -203,7 +206,9 @@ function _fit!(
     kwargs...,
 )
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
-    start = isnothing(start) ? vcat(zeros(length(m.P._B)), ones(length(m.P._grad)-length(m.P._B))) : start
+    start =
+        isnothing(start) ?
+        vcat(zeros(length(m.P._B)), ones(length(m.P._grad) - length(m.P._B))) : start
     parms = deepcopy(start)
     λ = 1.0
     #
@@ -298,10 +303,16 @@ function fit(
     if size(X, 1) != size(y, 1)
         throw(DimensionMismatch("number of rows in X and y must match"))
     end
+        
+    R = LSurvivalResp(enter, exit, y, wts, id)
+    P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
+    res0 = M(R, P0, dist)
+    start0 = setinits(res0)
+    fit!(res0, start=start0)
 
     P = PSParms(X, extraparms = length(dist) - 1)
-    R = LSurvivalResp(enter, exit, y, wts, id)
     res = M(R, P, dist)
+    push!(res.P._LL, res0.P._LL[end])
     return fit!(res; fitargs...)
 end
 
@@ -340,8 +351,16 @@ function fit(
     f, (y, X) = modelframe(f, data, contrasts, M)
 
     R = LSurvivalResp(y, wts, id)
+
+    P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
+    res0 = M(R, P0, dist)
+    start0 = setinits(res0)
+    fit!(res0, start=start0)
+
+
     P = PSParms(X, extraparms = length(dist) - 1)
     res = M(R, P, f, dist, false)
+    push!(res.P._LL, res0.P._LL[end])
     return fit!(res; fitargs...)
 end
 

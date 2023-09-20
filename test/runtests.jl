@@ -89,7 +89,6 @@ using Random, Tables
     println(ftc)
     println(ft)
 
-    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [2., -.5, -.5]))
 
     #   survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "weibull")
     #                Value Std. Error     z       p
@@ -104,7 +103,22 @@ using Random, Tables
     #           Chisq= 2.22 on 1 degrees of freedom, p= 0.14 
     #   Number of Newton-Raphson Iterations: 8 
     
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [2., -.5, -.5]))
 
+    # Call:
+    # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "lognormal")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.210      0.404  5.48 4.4e-08
+    # x           -1.268      0.585 -2.17    0.03
+    # Log(scale)  -0.446      0.342 -1.30    0.19
+    # 
+    # Scale= 0.64 
+    # Log Normal distribution
+    # Loglik(model)= -10.5   Loglik(intercept only)= -12.1
+    #         Chisq= 3.26 on 1 degrees of freedom, p= 0.071 
+    # Number of Newton-Raphson Iterations: 5 
+
+    
     throw("remove me")
     ################################################
     ###### rest  of tests ############
