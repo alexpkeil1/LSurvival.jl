@@ -77,7 +77,7 @@ function PSModel(
     d::D,
 ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist}
     np = length(d)
-    P._S = zeros(np)-1
+    P._S = zeros(np-1)
     r = P.p + np
     P._grad = fill(0.0, r)
     P._hess = fill(0.0, r, r)
