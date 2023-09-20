@@ -77,7 +77,7 @@ function PSModel(
     d::D,
 ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist}
     np = length(d)
-    P._S = zeros(np)
+    P._S = zeros(np)-1
     r = P.p + np
     P._grad = fill(0.0, r)
     P._hess = fill(0.0, r, r)
@@ -166,8 +166,8 @@ function lgh!(m::M, _theta) where {M<:PSModel}
 end
 
 function setinits(m::M) where {M<:PSModel}
-    startint = log(mean(m.R.exit)) / (mean(m.R.y))
-    startscale = sqrt(var(log.(m.R.exit)) / mean(m.R.y))
+    startint = mean(log.(m.R.exit)) / (mean(m.R.y))
+    startscale = log(sqrt(var(log.(m.R.exit)) / mean(m.R.y)))
     start0 = [startint, startscale]
     start0[1:length(params(m))]
 end
@@ -307,7 +307,7 @@ function fit(
     R = LSurvivalResp(enter, exit, y, wts, id)
     P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
-    start0 = setinits(res0)
+    start0 = LSurvival.setinits(res0)
     fit!(res0, start=start0)
 
     P = PSParms(X, extraparms = length(dist) - 1)
@@ -354,7 +354,7 @@ function fit(
 
     P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
-    start0 = setinits(res0)
+    start0 = LSurvival.setinits(res0)
     fit!(res0, start=start0)
 
 
