@@ -52,7 +52,7 @@ function PSParms(X::Union{Nothing,D}; extraparms = 1) where {D<:AbstractMatrix}
         X,
         fill(0.0, p),
         fill(0.0, n),
-        zeros(Float64, 0),
+        zeros(Float64, 1),
         fill(0.0, r),
         fill(0.0, r, r),
         zeros(extraparms),
@@ -166,9 +166,9 @@ function lgh!(m::M, _theta) where {M<:PSModel}
 end
 
 function setinits(m::M) where {M<:PSModel}
-    startint = mean(log.(m.R.exit)) / (mean(m.R.y))
-    startscale = log(sqrt(var(log.(m.R.exit)) / mean(m.R.y)))
-    start0 = [startint, startscale]
+    startint = m.P.X\log.(m.R.exit)
+    startscale = std(log.(m.R.exit) .- m.P.X*startint)
+    start0 = vcat(startint, log(startscale))
     start0[1:length(params(m))]
 end
 
@@ -206,9 +206,7 @@ function _fit!(
     kwargs...,
 )
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
-    start =
-        isnothing(start) ?
-        vcat(zeros(length(m.P._B)), ones(length(m.P._grad) - length(m.P._B))) : start
+    start = !isnothing(start) ? start : setinits(m)
     parms = deepcopy(start)
     λ = 1.0
     #
@@ -281,7 +279,7 @@ function StatsBase.fit!(
         gtol = kwargs[:tol]
     end
 
-    start = isnothing(start) ? zeros(Float64, length(m.P._grad)) : start
+    #start = isnothing(start) ? setinits(m) : start
 
     _fit!(m, verbose = verbose, maxiter = maxiter, gtol = gtol, start = start; kwargs...)
 end
@@ -308,9 +306,15 @@ function fit(
     P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fit!(res0, start=start0)
+    fit!(res0, start=start0, maxiter=1);
 
     P = PSParms(X, extraparms = length(dist) - 1)
+    if !haskey(fitargs, :start)
+        st=zeros(length(P._grad))
+        st[1] = params(res0)[1]
+        st[end] = params(res0)[end]
+        fitargs = (start=st, fitargs...)
+    end
     res = M(R, P, dist)
     push!(res.P._LL, res0.P._LL[end])
     return fit!(res; fitargs...)
@@ -357,9 +361,15 @@ function fit(
     start0 = LSurvival.setinits(res0)
     fit!(res0, start=start0)
 
-
     P = PSParms(X, extraparms = length(dist) - 1)
+    if !haskey(fitargs, :start)
+        st=zeros(length(P._grad))
+        st[1] = params(res0)[1]
+        st[end] = params(res0)[end]
+        fitargs = (start=st, fitargs...)
+    end
     res = M(R, P, f, dist, false)
+
     push!(res.P._LL, res0.P._LL[end])
     return fit!(res; fitargs...)
 end
@@ -543,7 +553,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
     llnull = nullloglikelihood(m)
     chi2 = 2 * (ll - llnull)
     coeftab = coeftable(m, level = level)
-    df = length(coeftab.rownms)
+    df = length(coeftab.rownms)-1
     #lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
     #lrtp = 1 - cdf(Chisq(df), chi2)
     lrtp = 1 - cdfchisq(df, chi2)
@@ -551,8 +561,8 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
     println(iob, coeftab)
     str = """\nMaximum likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
     str *= String(take!(iob))
-    str *= "Log-likelihood (null): $(@sprintf("%8g", llnull))\n"
-    str *= "Log-likelihood (fitted): $(@sprintf("%8g", ll))\n"
+    str *= "Log-likelihood (Intercept only): $(@sprintf("%8g", llnull))\n"
+    str *= "Log-likelihood (full): $(@sprintf("%8g", ll))\n"
     str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
     str *= "Newton-Raphson iterations: $(length(m.P._LL)-1)"
     println(io, str)
@@ -573,6 +583,8 @@ wt = ones(length(t))
 coxph(X[:,2:2],enter,t,d) # lnhr = 1.67686
 res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
 res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull());
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2.4, -1, 0]);
+
 
 #include(expanduser("~/repo/LSurvival.jl/src/parsurvival.jl"))
 #include(expanduser("~/repo/LSurvival.jl/src/distributions.jl"))
@@ -580,6 +592,7 @@ res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull());
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 
 dist = LSurvival.Weibull()
+P = PSParms(X[:,1:1], extraparms=length(dist)-1)
 P = PSParms(X, extraparms=length(dist)-1)
 P._B
 P._grad

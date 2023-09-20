@@ -39,9 +39,7 @@ using Random, Tables
     ################################################
 
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
-    ft = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
-    println(params(ft))
-    println(ft)
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential()))
 
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "exponential")
     #              Value Std. Error     z       p
@@ -56,11 +54,9 @@ using Random, Tables
     # Number of Newton-Raphson Iterations: 4 
     
     # intercept only model
-    ft = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, .5]);
-    println(params(ft))
-    println(ft.P._LL)
-    println(ft)
-
+    sr = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0);
+    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0))
+    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true))
         # Call:
     # survreg(formula = Surv(time, status) ~ 1, data = dat1, dist = "weibull")
     #              Value Std. Error     z       p
@@ -74,20 +70,14 @@ using Random, Tables
     # Number of Newton-Raphson Iterations: 8 
     
 
-    ftc = coxph(@formula(Surv(time,status)~x), dat1);
-    ft = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]);
-    println(params(ft))
-    println(ft.P._LL)
-    println(ftc)
-    println(ft)
+    println(coxph(@formula(Surv(time,status)~x), dat1))
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull()));
 
 
-    ftc = coxph(@formula(Surv(enter, exit,status)~x), dat1clust);
-    ft = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5]);
-    println(params(ft))
-    println(ft.P._LL)
-    println(ftc)
-    println(ft)
+    println(coxph(@formula(Surv(enter, exit,status)~x), dat1clust))
+    println(survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5]))
+    println(survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull()))
 
 
     #   survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "weibull")
@@ -104,6 +94,7 @@ using Random, Tables
     #   Number of Newton-Raphson Iterations: 8 
     
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [2., -.5, -.5]))
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal()))
 
     # Call:
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "lognormal")

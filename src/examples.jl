@@ -875,10 +875,12 @@ jres.RL[2]
 # checking parametric survival against R
 ###################################################################
 using RCall
+start0 = [1.310030842912028, 0.02682650385621469]
 @rput dat1
+@rput start0
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull")
+res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull", init=start0, iter=0)
 ret = summary(res)
 """
 @rget ret
@@ -899,6 +901,9 @@ res = survreg(Surv(time , status) ~ x,data = dat1, dist="exponential")
 ret = summary(res)
 """
 @rget ret
+survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=true)
+
+
 
 rng = MersenneTwister(1232)
 datgen = (
@@ -918,9 +923,9 @@ survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), verbose
 @rput dat1
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal")
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal", init=c(0,0,0))
 ret = summary(res)
 """
-survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start=[2, -0.5, -0.5])
+survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=true, start=[0,0,0], maxiter=1)
 
 @rget ret

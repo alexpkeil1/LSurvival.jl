@@ -119,10 +119,14 @@ log probability distribution function: Weibull distribution
 # lLik: -log(σ) + z - exp(z) - log(t),                                        σ=d.γ=γ^-1, α=d.ρ=-log(λ)
 
 """
-function lpdf(d::Weibull, t)
-    z = (log(t) - d.ρ) / d.γ
-    ret = -log(d.γ) + z - exp(z) -log(t)
+function lpdf_weibull(ρ, γ, t)
+    z = (log(t) - ρ) / γ
+    ret = -log(γ) + z - exp(z) -log(t)
     ret
+end
+
+function lpdf(d::Weibull, t)
+    lpdf_weibull(d.ρ, d.γ, t)
 end
 
 """
@@ -134,11 +138,15 @@ end
 # lSurv: -exp(z)
 
 """
+function lsurv_weibull(ρ, γ, t)
+    z = (log(t) - ρ) / γ
+    ret = -exp(z)
+    ret
+end
+
 function lsurv(d::Weibull, t)
     # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page on Gumbel Distribution)
-    z = (log(t) - d.ρ) / d.γ
-    ret =  -exp(z)
-    ret
+    lsurv_weibull(d.ρ, d.γ, t)
 end
 
 
@@ -176,7 +184,7 @@ Derivation in lsurv(d::Weibull), setting σ=d.γ=1
 """
 function lpdf(d::Exponential, t)
     # location scale parameterization (Kalbfleisch and Prentice)
-    log(t) - d.ρ - exp(log(t) - d.ρ)
+    - d.ρ - t*exp(-d.ρ) 
 end
 """
 Derivation in lsurv(d::Weibull), setting σ=d.γ=1
