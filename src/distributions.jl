@@ -15,6 +15,14 @@ qstdnorm(p) = sqrt(2) * erfinv(2.0 * p - 1.0)
 
 
 """
+quantile function for a standard normal distribution
+    depends on SpecialFunctions
+    https://en.wikipedia.org/wiki/Normal_distribution
+"""
+cdfnorm(z) = 0.5 * (1 + erf(z/sqrt(2)))
+
+
+"""
 quantile function for a chi-squared distribution
     depends on SpecialFunctions
     https://en.wikipedia.org/wiki/Chi-squared_distribution
@@ -99,29 +107,37 @@ end
 
 # Methods for Weibull
 """
-d = Distr
-t = m.R.exit[i]
+log probability distribution function: Weibull distribution
+
+# location scale representation (Klein Moeschberger ch 12)
+# Lik: λγ(λt)^{γ-1}exp(-(λt)^γ) # traditional Weibull
+# Lik: exp(-α)(1/σ) (exp(-α)exp(log(t)))^{(1/σ)-1} exp(-(exp(-α)exp(log(t)))^(1/σ))           , γ=σ^-1, λ=exp(-α), t = exp(log(t))
+# Lik: (1/σ)exp(-α)  exp(log(t)-α)^{(1/σ)-1} exp(-(exp(log(t)-α)/σ))           
+# Lik: 1/σ *exp(-α) exp((log(t)-α)/σ-(log(t)-α)) exp(-(exp(log(t)-α)/σ))           
+# lLik: log(1/σ) - α +  (log(t)-α)/σ -log(t)+α       - exp(log(t)-α)/σ)           
+# lLik: log(1/σ)     +  z            -log(t)         - exp(z)                 z = (log(t)-α)/σ
+# lLik: -log(σ) + z - exp(z) - log(t),                                        σ=d.γ=γ^-1, α=d.ρ=-log(λ)
 
 """
 function lpdf(d::Weibull, t)
-    # parameterization of Lee and Wang (SAS)
-    #log(d.ρ) + log(d.γ) + t*(d.γ - 1.0) * log(d.ρ) - (d.ρ * t^d.γ)
-    # location scale representation (Klein Moeschberger ch 12)
-    # Lik: 1/sigma * exp((logt - mu)/sigma - exp((logt-mu)/sigma))
-    # lLik: log(1/sigma) +  (logt - mu)/sigma - exp((logt-mu)/sigma)
     z = (log(t) - d.ρ) / d.γ
-    ret = -log(d.γ) + z - exp(z)
-    #ret -= log(t)   # change in variables, log transformation on t
+    ret = -log(d.γ) + z - exp(z) -log(t)
     ret
 end
 
+"""
+# location scale representation (Klein Moeschberger ch 12)
+# Surv: exp(-(λt)^γ) # traditional Weibull
+# Surv: exp(-(exp(-α)exp(log(t)))^(1/σ)) , γ=σ^-1, λ=exp(-α), t = exp(log(t))
+# Surv: exp(-exp((log(t)-α)/σ)) 
+# lSurv: -exp((log(t)-α)/σ)
+# lSurv: -exp(z)
+
+"""
 function lsurv(d::Weibull, t)
-    # parameterization of Lee and Wang (SAS)
-    #-(d.ρ * t^d.γ)
     # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page on Gumbel Distribution)
     z = (log(t) - d.ρ) / d.γ
     ret =  -exp(z)
-    #ret -= log(t)   # change in variables, log transformation on t
     ret
 end
 
@@ -155,16 +171,17 @@ end
 
 # Methods for exponential
 
+"""
+Derivation in lsurv(d::Weibull), setting σ=d.γ=1
+"""
 function lpdf(d::Exponential, t)
-    # parameterization of Lee and Wang (SAS)
-    #log(d.ρ) - (d.ρ * t)
     # location scale parameterization (Kalbfleisch and Prentice)
     log(t) - d.ρ - exp(log(t) - d.ρ)
 end
-
+"""
+Derivation in lsurv(d::Weibull), setting σ=d.γ=1
+"""
 function lsurv(d::Exponential, t)
-    # parameterization of Lee and Wang (SAS), survival uses Kalbfleisch and Prentice
-    #-d.ρ * t
     # location scale parameterization (Kalbfleisch and Prentice)
     z = log(t) - d.ρ
     ret =  -exp(z)
@@ -178,7 +195,7 @@ params(d::Exponential) = (d.γ)
 
 
 ##################
-# Weibull
+# Lognormal
 ##################
 struct Lognormal{T<:Real} <: AbstractSurvDist
     ρ::T   # scale: linear effects on this parameter
@@ -207,26 +224,38 @@ end
 
 # Methods for Lognormal
 """
-d = Distr
-t = m.R.exit[i]
+log probability distribution function: Weibull distribution
+
+# location scale representation (Klein Moeschberger ch 12)
+# Lik: (2π)^(-1/2)γ/t exp((-γ^2 log(λt)^2)/2)       # traditional Lognormal
+# Lik: (2π)^(-1/2)(1/σ)/exp(log(t)) exp((-(1/σ)^2 log(exp(-α)exp(log(t)))^2)/2)           , γ=σ^-1, λ=exp(-α), t = exp(log(t))
+# Lik: (2π)^(-1/2)(1/σt) exp((-(1/σ)^2 log(exp(log(t)-α))^2)/2)
+# Lik: (2π)^(-1/2)(1/σt) exp((-1/2 * (log(t)-α)/σ)^2))
+# Lik: (2π)^(-1/2)(1/σt) exp((-1/2 * z^2))
+# lLik: log(-sqrt(2π σ^2 t^2)) -z^2/2                                        σ=d.γ=γ^-1, α=d.ρ=-log(λ)
 
 """
 function lpdf(d::Lognormal, t)
     # location scale representation (Klein Moeschberger ch 12)
-    inv(sqrt(2pi))
-
-
     z = (log(t) - d.ρ) / d.γ
-    ret = -log(d.γ) + z - exp(z)
-    #ret -= log(t)   # change in variables, log transformation on t
+    ret = log(inv(sqrt(2pi)*d.γ*t)) 
+    ret += -z*z/2.0
     ret
 end
 
+"""
+log probability distribution function: Weibull distribution
+
+# location scale representation (Klein Moeschberger ch 12)
+# Surv: 1- Φ(γlog(λt))      # traditional Lognormal
+# Surv: 1- Φ((1/σ)log(exp(-α)exp(log(t))))                        , γ=(1/σ), λ=exp(-α), t = exp(log(t))
+# Surv: 1- Φ((log(t)-α)/σ)
+# iSurv: log(1-Φ(z))                                        σ=d.γ=γ^-1, α=d.ρ=-log(λ)
+"""
 function lsurv(d::Lognormal, t)
     # location scale representation (Klein Moeschberger ch 12, modified from Wikipedia page 
     z = (log(t) - d.ρ) / d.γ
-    ret =  -exp(z)
-    #ret -= log(t)   # change in variables, log transformation on t
+    ret =  log(1-cdfnorm(z))
     ret
 end
 

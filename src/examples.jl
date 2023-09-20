@@ -913,3 +913,14 @@ res = survreg(Surv(time , status) ~ x,data = datgen, dist="weibull")
 ret = summary(res)
 """
 survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), verbose=true)
+
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal")
+ret = summary(res)
+"""
+survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start=[2, -0.5, -0.5])
+
+@rget ret

@@ -91,11 +91,11 @@ params(m::PSModel) = vcat(m.P._B, m.P._S)
 Log likelihood contribution for an observation in a parametric survival model
 """
 function loglik(d::D, enter, exit, y, wts) where {D<:AbstractSurvDist}
-    # ρ is linear predictor, log(enter) term shows up as Jacobian of transform
-    ll = enter > 0 ? -lsurv(d, enter) + log(enter) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    # ρ is linear predictor
+    ll = enter > 0 ? -lsurv(d, enter) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     ll +=
-        y == 1 ? lpdf(d, exit) - log(exit) : # extra contribution for events plus the log of the Jacobian of the transform on time
-        lsurv(d, exit) - log(exit) # extra contribution for censored (cumulative conditional survival at censoring)
+        y == 1 ? lpdf(d, exit) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        lsurv(d, exit) # extra contribution for censored (cumulative conditional survival at censoring)
     ll *= wts
     ll
 end
@@ -134,7 +134,7 @@ function ll_fixedscale(m::M, θ) where {M<:PSModel}
     for i = 1:length(m.R.enter)
         #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
         #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ)))
-        Distr =  name(typeof(m.d))(dot(m.P.X[i:i, :], θ))              # log scale, linear model
+        Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ))              # log scale, linear model
         #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
         LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
     end

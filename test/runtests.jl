@@ -89,6 +89,7 @@ using Random, Tables
     println(ftc)
     println(ft)
 
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [2., -.5, -.5]))
 
     #   survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "weibull")
     #                Value Std. Error     z       p
