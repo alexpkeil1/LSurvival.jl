@@ -7,7 +7,7 @@ using Zygote # parametric survival models
 using RCall
 using BenchmarkTools
 using LSurvival, Zygote, Random, StatsBase, Printf, Tables
-using Symbolics
+using Symbolics, LinearAlgebra, LSurvival # 
 
 
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
@@ -18,9 +18,9 @@ X = hcat(ones(length(dat1.x)), dat1.x)
 wt = ones(length(t))
 
 dist = LSurvival.Weibull()
-P = PSParms(X, extraparms=length(dist)-1)
+P = PSParms(X, extraparms = length(dist) - 1)
 R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
-m = PSModel(R,P,dist)
+m = PSModel(R, P, dist)
 m.P._LL = [0.0]
 
 function loss!(F, G, H, _theta, m::M) where {M<:PSModel}
@@ -32,7 +32,7 @@ function loss!(F, G, H, _theta, m::M) where {M<:PSModel}
     m.P._hess = isnothing(H) ? m.P._hess : H
     m.P._B = isnothing(_theta) ? m.P._B : _theta[1:m.P.p]
     m.P._S = isnothing(_theta) ? m.P._S : _theta[end:end]
-    lgh!(m,_theta)
+    lgh!(m, _theta)
     F = -f(_theta)
     push!(m.P._LL, -F)
     m.P._grad .*= -1.0
@@ -53,19 +53,15 @@ res = optimize(
     fgh!,
     start,
     opt,
-    Optim.Options(
-        g_tol=1e-8,
-        iterations=100,
-        store_trace=true,
-    ),
+    Optim.Options(g_tol = 1e-8, iterations = 100, store_trace = true),
 )
 
-m.fit=true
+m.fit = true
 m.P._grad .*= -1.0
 m.P._hess .*= -1.0
 m.P._LL = [-x.value for x in res.trace]
 _theta = vcat(m.P._B, m.P._S)
-lgh!(m,_theta)
+lgh!(m, _theta)
 inv(-m.P._hess)
 
 #=
@@ -238,38 +234,43 @@ end
 
 @variables ρ γ t;
 
-f = -log(γ) + ((log(t) - ρ) / γ) - exp(((log(t) - ρ) / γ)) -log(t)
+f = -log(γ) + ((log(t) - ρ) / γ) - exp(((log(t) - ρ) / γ)) - log(t)
 
-Symbolics.gradient(f, [ρ,γ], simplify=true)
+Symbolics.gradient(f, [ρ, γ], simplify = true)
 
 using LinearAlgebra
 @variables ρ[1:3] γ t x[1:3];
 
-f = -log(γ) + ((log(t) - dot(ρ,x)) / γ) - exp(((log(t) - dot(ρ,x)) / γ)) -log(t)
+f = -log(γ) + ((log(t) - dot(ρ, x)) / γ) - exp(((log(t) - dot(ρ, x)) / γ)) - log(t)
 
-grad = Symbolics.gradient(f, [ρ,γ], simplify=true)
+grad = Symbolics.gradient(f, [ρ, γ], simplify = true)
 grad[1]
 grad[2]
 
 build_function(grad, ρ, γ, t, x)
 
-Symbolics.hessian(f, [ρ,γ], simplify=true)
+Symbolics.hessian(f, [ρ, γ], simplify = true)
 
 
-function lpdf_weibull(ρ, γ, t,x)
-    z = (log(t) - dot(ρ,x)) / γ
-    ret = -log(γ) + z - exp(z) -log(t)
+function lpdf_weibull(ρ, γ, t, x)
+    z = (log(t) - dot(ρ, x)) / γ
+    ret = -log(γ) + z - exp(z) - log(t)
     ret
 end
 
-@variables ρ[1:3] γ t x[1:3];
+@variables ρ[1:2] γ t x[1:2];
+
+expand_derivatives(Differential(ρ)(ρ[1]))
 
 f = lpdf_weibull(ρ, γ, t, x)
-grad_symb = Symbolics.gradient(f, [ρ,γ], simplify=true)
-grad_code = build_function(grad, ρ, γ, t, x, expression = Val{true}, fname=:grad_weibull)
+grad_symb = Symbolics.gradient(f, [ρ, γ], simplify = true)
+expand_derivatives(grad_symb[1])
+grad_symb = Symbolics.hessian(f, [ρ, γ])
+
+
 
 
 write(expanduser("~/temp/test.jl"), string(grad_code[2]))
 gradfun = include(expanduser("~/temp/test.jl"))
-lpdf_weibull(.1, .2, 12, 1)
-gradfun[1](.1, .2, 12, 1)
+lpdf_weibull(0.1, 0.2, 12, 1)
+gradfun[1](0.1, 0.2, 12, 1)

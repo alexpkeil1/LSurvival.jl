@@ -880,7 +880,7 @@ start0 = [1.310030842912028, 0.02682650385621469]
 @rput start0
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull", init=start0, iter=0)
+res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull", init=start0)
 ret = summary(res)
 """
 @rget ret

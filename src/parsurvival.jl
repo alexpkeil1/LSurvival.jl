@@ -284,6 +284,43 @@ function StatsBase.fit!(
     _fit!(m, verbose = verbose, maxiter = maxiter, gtol = gtol, start = start; kwargs...)
 end
 
+
+"""
+R = LSurvivalResp(enter, exit, y, wts, id)
+P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
+#M = PSModel
+res0 = M(R, P0, dist)
+start0 = LSurvival.setinits(res0)
+start0 = [2.00124, log(0.550543)]
+
+fit!(res0, start=start0, maxiter=1);
+res0.P._LL
+res0.P._grad
+res0.P._hess
+res0.P._B
+
+function grad_wlp(ρ, γ, t)  
+    [(exp((log(t) - ρ) / γ) - 1.0) / γ,
+    (ρ + log(t)*exp((log(t) - ρ) / γ) - γ - log(t) - ρ*exp((log(t) - ρ) / γ)) / (γ^2)]
+end
+function grad_wls(ρ, γ, t)
+    [exp((log(t) - ρ) / γ) / γ,
+    ((log(t) - ρ)*exp((log(t) - ρ) / γ)) / (γ^2)]
+end
+
+ρ = res0.P._B[1]
+γ = exp(res0.P._S[1])
+t = R.exit
+y = R.y
+explicit_gradient = grad_w(1, 1, 1) .* 0.0  
+for (i,t) in enumerate(R.exit)
+    explicit_gradient .+= y[i] > 0 ? grad_wlp(ρ, γ, t) :  grad_wls(ρ, γ, t)  
+end
+explicit_gradient
+res0.P._grad
+res0.P._hess
+
+"""
 function fit(
     ::Type{M},
     X::Matrix{<:Real},#{<:FP},
@@ -307,6 +344,7 @@ function fit(
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
     fit!(res0, start=start0, maxiter=1);
+    #
 
     P = PSParms(X, extraparms = length(dist) - 1)
     if !haskey(fitargs, :start)
@@ -605,7 +643,7 @@ m.P._LL
 
 LSurvival._fit!(m);
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
-survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
+survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull())
 """
 
 ;

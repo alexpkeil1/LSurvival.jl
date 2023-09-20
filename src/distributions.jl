@@ -184,21 +184,20 @@ Derivation in lsurv(d::Weibull), setting σ=d.γ=1
 """
 function lpdf(d::Exponential, t)
     # location scale parameterization (Kalbfleisch and Prentice)
-    - d.ρ - t*exp(-d.ρ) 
+    #- d.ρ - t*exp(-d.ρ)
+    lpdf_weibull(d.ρ, 1, t)
 end
 """
 Derivation in lsurv(d::Weibull), setting σ=d.γ=1
 """
 function lsurv(d::Exponential, t)
     # location scale parameterization (Kalbfleisch and Prentice)
-    z = log(t) - d.ρ
-    ret =  -exp(z)
-    ret
+    lsurv_weibull(d.ρ, 1, t)
 end
 
 shape(d::Exponential) = 1.0
 scale(d::Exponential) = d.γ
-params(d::Exponential) = (d.γ)
+params(d::Exponential) = (d.γ,)
 
 
 
