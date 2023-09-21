@@ -869,3 +869,63 @@ sum(residuals(jres, type = "score"), dims = 1)
 
 jres.RL[1]
 jres.RL[2]
+
+
+###################################################################
+# checking parametric survival against R
+###################################################################
+using RCall
+start0 = [1.310030842912028, 0.02682650385621469]
+@rput dat1
+@rput start0
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull", init=start0)
+ret = summary(res)
+"""
+@rget ret
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
+ret = summary(res)
+"""
+@rget ret
+
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="exponential")
+ret = summary(res)
+"""
+@rget ret
+survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=true)
+
+
+
+rng = MersenneTwister(1232)
+datgen = (
+    time = rand(rng, 100),
+    status = rand(rng, [0,1],100),
+    x = rand(rng, [0,1],100)
+)
+@rput datgen
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = datgen, dist="weibull")
+ret = summary(res)
+"""
+survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), verbose=true)
+
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal", init=c(0,0,0))
+ret = summary(res)
+"""
+survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=true, start=[0,0,0], maxiter=1)
+
+@rget ret

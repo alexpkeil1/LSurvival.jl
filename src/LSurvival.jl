@@ -5,6 +5,7 @@ using RecipesBase
 using Reexport
 using Printf
 using Random, LinearAlgebra, Tables
+using Zygote
 #using Distributions
 #import Distributions: Chisq, Normal
 import SpecialFunctions: gamma_inc, erfinv, erf
@@ -75,6 +76,7 @@ export AbstractPH,
 export kaplan_meier,        # interface for estimating cumulative risk from non-parametric estimator
     aalen_johansen,        # interface for estimating cumulative risk from non-parametric competing risk estimator
     coxph,                 # interface for Cox model
+    survreg,                 # interface for parametric survival model
     risk_from_coxphmodels,  # interface for estimating cumulative risk from hazard specific Cox models
     # deprecated
     coxmodel,            # (deprecated) interface for Cox model
@@ -170,6 +172,7 @@ abstract type AbstractSurvDist end
 include("shared_structs.jl")
 include("distributions.jl")
 include("coxmodel.jl")
+include("parsurvival.jl")
 include("residuals.jl")
 include("npsurvival.jl")
 include("data_generators.jl")

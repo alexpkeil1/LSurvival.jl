@@ -34,7 +34,86 @@ using Random, Tables
         x = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
     )
 
+    ################################################
+    ###### priority items ############
+    ################################################
 
+    dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential()))
+
+    # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "exponential")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.442      0.707  3.45 0.00055
+    # x           -1.056      1.000 -1.06 0.29094
+    # 
+    # Scale fixed at 1 
+    # 
+    # Exponential distribution
+    # Loglik(model)= -11.7   Loglik(intercept only)= -12.2
+    #         Chisq= 1.07 on 1 degrees of freedom, p= 0.3 
+    # Number of Newton-Raphson Iterations: 4 
+    
+    # intercept only model
+    sr = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0);
+    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0))
+    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true))
+        # Call:
+    # survreg(formula = Surv(time, status) ~ 1, data = dat1, dist = "weibull")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.001      0.275  7.27 3.6e-13
+    # Log(scale)  -0.597      0.443 -1.35    0.18
+    # 
+    # Scale= 0.551 
+    # 
+    # Weibull distribution
+    # Loglik(model)= -11.4   Loglik(intercept only)= -11.4
+    # Number of Newton-Raphson Iterations: 8 
+    
+
+    println(coxph(@formula(Surv(time,status)~x), dat1))
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull()));
+
+
+    println(coxph(@formula(Surv(enter, exit,status)~x), dat1clust))
+    println(survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5]))
+    println(survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull()))
+
+
+    #   survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "weibull")
+    #                Value Std. Error     z       p
+    #   (Intercept)  2.237      0.330  6.78 1.2e-11
+    #   x           -0.744      0.486 -1.53    0.13
+    #   Log(scale)  -0.785      0.433 -1.81    0.07
+    #   
+    #   Scale= 0.456 
+    #   
+    #   Weibull distribution
+    #   Loglik(model)= -10.3   Loglik(intercept only)= -11.4
+    #           Chisq= 2.22 on 1 degrees of freedom, p= 0.14 
+    #   Number of Newton-Raphson Iterations: 8 
+    
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [2., -.5, -.5]))
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal()))
+
+    # Call:
+    # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "lognormal")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.210      0.404  5.48 4.4e-08
+    # x           -1.268      0.585 -2.17    0.03
+    # Log(scale)  -0.446      0.342 -1.30    0.19
+    # 
+    # Scale= 0.64 
+    # Log Normal distribution
+    # Loglik(model)= -10.5   Loglik(intercept only)= -12.1
+    #         Chisq= 3.26 on 1 degrees of freedom, p= 0.071 
+    # Number of Newton-Raphson Iterations: 5 
+
+    
+    throw("remove me")
+    ################################################
+    ###### rest  of tests ############
+    ################################################
 
 
     id, int, outt, data =
