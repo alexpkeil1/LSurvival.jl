@@ -882,16 +882,18 @@ start0 = [1.310030842912028, 0.02682650385621469]
 @rput start0
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull", init=start0)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
 ret = summary(res)
+ret
 """
 @rget ret
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=true, fitint=false, start=rand(2))
 
-res = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start =start0, fitint=false);
-res = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start =[2.0, log(0.5)], maxiter=100, fitint=false);
+start0w = [2.44235, -1.05605, 0]
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true, start =start0w, fitint=false)
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true, start =[2.5,-1.,0.], fitint=false);
 
-res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=true, start = randn(2), fitint=false);
-coeftable(res)
+res
 
 params(res)
 stderror(res)
@@ -917,19 +919,24 @@ survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbo
 
 
 
-rng = MersenneTwister(1232)
+rng = MersenneTwister()
 datgen = (
-    time = rand(rng, 100),
+    time = [LSurvival.randweibull(rng, .75, 1.2) for i in 1:100],
     status = rand(rng, [0,1],100),
     x = rand(rng, [0,1],100)
 )
 @rput datgen
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ x,data = datgen, dist="exponential")
+res = survreg(Surv(time , status) ~ x,data = datgen, dist="weibull")
 ret = summary(res)
 """
-survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Exponential(), verbose=true)
+fit1 = survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Exponential(), verbose=true)
+fit2 = survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), start=vcat(params(fit1), 0.0), verbose=true)
+
+fit1b = survreg(@formula(Surv(time,status)~1), datgen, dist=LSurvival.Weibull(), start=[2.,0.], verbose=true)
+
+
 
 
 @rput dat1

@@ -40,6 +40,9 @@ using Random, Tables
 
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential()))
+
+    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true))
+
 #=
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "exponential")
     #              Value Std. Error     z       p
@@ -72,7 +75,7 @@ using Random, Tables
 
     #println(coxph(@formula(Surv(time,status)~x), dat1))
     #println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
-    #println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull()));
+    #
 
 
     #println(coxph(@formula(Surv(enter, exit,status)~x), dat1clust))

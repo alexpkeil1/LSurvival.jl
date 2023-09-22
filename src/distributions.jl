@@ -403,7 +403,7 @@ function ddlpdf_weibull(α, ρ, t)
     z = (log(t) - α) / exp(ρ)
     vcat(
         hcat((-exp(z)) / (exp(ρ)^2), exp(-ρ) - (z + 1.0) * exp(z - ρ)),
-        hcat(exp(-ρ) - (z + 1.0) * exp(z - ρ), z - z * exp(z) - z * exp(z)),
+        hcat(exp(-ρ) - (z + 1.0) * exp(z - ρ), z-(z+1)*exp(z)*z),
     )
 end
 

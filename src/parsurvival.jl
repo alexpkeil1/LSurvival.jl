@@ -241,11 +241,29 @@ function lgh!(m::M, θ) where {M<:PSModel}
     m.P._LL[end], m.P._grad, m.P._hess
 end
 
-function setinits(m::M) where {M<:PSModel}
-    startint = m.P.X \ log.(m.R.exit)
-    startscale = std(log.(m.R.exit) .- m.P.X * startint)
-    start0 = vcat(startint, log(startscale))
-    start0[1:length(params(m))]
+function setinits(m::M; verbose=false) where {M<:PSModel}
+    # This function is unfortunately crucial
+    #
+    # Commented text from the "survival" package source code:
+    # A good initial value of the scale turns out to be critical for successful
+    #   iteration, in a surprisingly large number of data sets.
+    # The best way we've found to get one is to fit a model with only the
+    #   mean and the scale.  We don't need to do this in 3 situations:
+    #    1. The only covariate is a mean (this step is then just a duplicate
+    #       of the main fit).
+    #    2. There are no scale parameters to estimate
+    #    3. The user gave initial estimates for the scale
+    # However, for 2 and 3 we still want the loglik for a mean only model
+    #  as a part of the returned object.
+    ly = log.(m.R.exit) #.+ (1.0 .- m.R.y) .* 0.5*median(log.(m.R.exit))
+    startint = m.P.X \ ly
+    startscale = std(ly)* sqrt(pi^2/6.0) 
+    # Commented text from the "survival" package source code:
+   	# We sometimes get into trouble with a small estimate of sigma,
+	#  (the surface isn't SPD), but never with a large one.  Double it.
+    start0 = vcat(startint, log(startscale* 2.0)/2.0)[1:length(params(m))]
+    verbose && println("Starting values: $(start0)")
+    start0
 end
 
 
@@ -287,10 +305,10 @@ function _fit!(
     kwargs...,
 )
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
-    start = !isnothing(start) ? start : setinits(m)
+    start = !isnothing(start) ? start : setinits(m, verbose=verbose)
     parms = deepcopy(start)
     λ = 1.0
-    #λ = 0.1
+    #λ = 0.001
     #
     totiter = 0
     #lgh!(m, parms)
@@ -303,9 +321,12 @@ function _fit!(
             break
         end
         lgh!(m, parms)
+        verbose && println("$parms $(m.P._grad) $(m.P._hess)")
+        verbose && println("$(m.P._LL[end])")
         Q = m.P._grad' * m.P._grad #l2 norm of vector
         if Q > oldQ # gradient has increased, indicating the maximum  was overshot
-            λ *= 0.5  # step-halving
+            stepfacmin = 0.001
+            λ = max(λ*0.5, stepfacmin)  # step-halving
         else
             λ = min(2.0λ, 1.0) # de-halving
         end
@@ -319,7 +340,7 @@ function _fit!(
             throw("Log-likelihood is not finite: check model inputs")
         end
         # newton raphson update
-        verbose ? println(m.P._LL[end]) : true
+        #verbose && println(m.P._LL[end])
     end
     if (totiter == maxiter) && (maxiter > 0)
         @warn "Algorithm did not converge after $totiter iterations: check for collinearity of predictors"
@@ -391,16 +412,16 @@ function fit(
     P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fitint && fit!(res0, start = start0, maxiter = 1)
+    fitint && fit!(res0, start = start0)
     #
 
     P = PSParms(X, extraparms = length(dist) - 1)
-    if !haskey(fitargs, :start)
-        st = zeros(length(P._grad))
-        st[1] = params(res0)[1]
-        st[end] = params(res0)[end]
-        fitargs = (start = st, fitargs...)
-    end
+    #if !haskey(fitargs, :start)
+    #    st = zeros(length(P._grad))
+    #    st[1] = params(res0)[1]
+    #    st[end] = params(res0)[end]
+    #    fitargs = (start = st, fitargs...)
+    #end
     res = M(R, P, dist)
     push!(res.P._LL, res0.P._LL[end])
     return fit!(res; fitargs...)
@@ -446,15 +467,15 @@ function fit(
     P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fitint && fit!(res0, start = start0, maxiter = 1)
+    fitint && fit!(res0, start = start0)
 
     P = PSParms(X, extraparms = length(dist) - 1)
-    if !haskey(fitargs, :start)
-        st = zeros(length(P._grad))
-        st[1] = params(res0)[1]
-        st[end] = params(res0)[end]
-        fitargs = (start = st, fitargs...)
-    end
+    #if !haskey(fitargs, :start)
+    #    st = zeros(length(P._grad))
+    #    st[1] = params(res0)[1]
+    #    st[end] = params(res0)[end]
+    #    fitargs = (start = st, fitargs...)
+    #end
     res = M(R, P, f, dist, false)
 
     push!(res.P._LL, res0.P._LL[end])
