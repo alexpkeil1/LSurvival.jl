@@ -11,6 +11,15 @@
 quantile function for a standard normal distribution
     depends on SpecialFunctions
     https://en.wikipedia.org/wiki/Normal_distribution
+
+    Source code, example:
+
+```julia
+    qstdnorm(p) = sqrt(2) * SpecialFunctions.erfinv(2.0 * p - 1.0)
+    
+    qstdnorm(.975)
+```
+
 """
 qstdnorm(p) = sqrt(2) * erfinv(2.0 * p - 1.0)
 
@@ -19,6 +28,15 @@ qstdnorm(p) = sqrt(2) * erfinv(2.0 * p - 1.0)
 quantile function for a standard normal distribution
     depends on SpecialFunctions
     https://en.wikipedia.org/wiki/Normal_distribution
+    
+Source code, example:
+
+```julia
+    cdfnorm(z) = 0.5 * (1 + SpecialFunctions.erf(z / sqrt(2)))
+    
+    cdfnorm(1.96)
+```
+    
 """
 cdfnorm(z) = 0.5 * (1 + erf(z / sqrt(2)))
 
@@ -27,31 +45,56 @@ cdfnorm(z) = 0.5 * (1 + erf(z / sqrt(2)))
 quantile function for a chi-squared distribution
     depends on SpecialFunctions
     https://en.wikipedia.org/wiki/Chi-squared_distribution
+
+Source code, example:
+
+```julia
+    cdfchisq(df, x) = SpecialFunctions.gamma_inc(df / 2, x / 2, 0)[1]
+
+    cdfchisq(3, 3.45)
+```
+
 """
 cdfchisq(df, x) = gamma_inc(df / 2, x / 2, 0)[1]
 
 
 """
-p-value for a (null) standard normal distribution
+Two-tailed p-value for a (null) standard normal distribution
     depends on SpecialFunctions
     https://en.wikipedia.org/wiki/Normal_distribution
-"""
+
+```julia
+    calcp(z) = 1.0 - SpecialFunctions.erf(abs(z) / sqrt(2))
+
+    calcp(1.96)
+```
+
+    """
 calcp(z) = 1.0 - erf(abs(z) / sqrt(2))
 
 
 """
 Quantile function for the Weibull distribution
 
-    lightweight function used for simulation
+lightweight function used for simulation
 
-        Note that there is no checking that parameters α,ρ are positively bound, and p ∈ (0,1), and errors will be given if this is not the case
+Note that there is no checking that parameters α,ρ are positively bound, and p ∈ (0,1), and errors will be given if this is not the case
 
 Signature:
 
 ```julia        
 qweibull(p::Real,α::Real,ρ::Real)
 ```
-# quantile(Weibull(.75, 1.1), .3) # cross reference the approach in the Distributions package
+
+Source code, example:
+
+```julia
+qweibull(p, α, ρ) = ρ * ((-log1p(-p))^(1 / α))
+
+# cross reference the approach in the Distributions package
+quantile(Distributions.Weibull(.75, 1.1), .3)
+LSurvival.qweibull(0.3, .75, 1.1)
+```
 """
 qweibull(p, α, ρ) = ρ * ((-log1p(-p))^(1 / α))
 
@@ -69,6 +112,19 @@ Signatures:
 randweibull(rng::MersenneTwister,α::Real,ρ::Real)
 randweibull(α::Real,ρ::Real)
 ```
+
+Source code, example:
+
+```julia
+randweibull(rng, α, ρ) = qweibull(rand(rng), α, ρ)
+randweibull(α, ρ) = randweibull(MersenneTwister(), α, ρ)
+
+# cross reference the approach in the Distributions package
+rand(Distributions.Weibull(.75, 1.1))
+randweibull(0.3, .75)
+```
+
+
 """
 randweibull(rng, α, ρ) = qweibull(rand(rng), α, ρ)
 randweibull(α, ρ) = randweibull(MersenneTwister(), α, ρ)
@@ -80,7 +136,9 @@ randweibull(α, ρ) = randweibull(MersenneTwister(), α, ρ)
 
 raw"""
 Mean model parameter gradient function for linear model
-    $f(\theta, X) = \theta X$
+    $\alpha = f(\theta, X) = \theta X$
+    
+dαdθ returns a vector of partial derivatives of $\alpha$ with respect to the vector $\theta$
 """
 function dαdθ(θ, X)
     [x for x in X]
@@ -449,7 +507,7 @@ end
 """
 Log probability distribution function: Exponential distribution
 
-    ```julia
+```julia
     β = [-2, 1.2]
     x = [2,.1]
     ρ = -0.5
@@ -457,7 +515,7 @@ Log probability distribution function: Exponential distribution
     α = dot(β,x)
     d = Exponential()
     lpdf(d, t)
-    ```
+```
     
 """
 function lpdf(d::Exponential, t)
@@ -470,7 +528,7 @@ end
 """
 Log survival function: Exponential distribution
 
-    ```julia
+```julia
     β = [-2, 1.2]
     x = [2,.1]
     ρ = -0.5
@@ -478,7 +536,7 @@ Log survival function: Exponential distribution
     α = dot(β,x)
     d = Exponential()
     lsurv(d, t)
-    ```
+```
 
 """
 function lsurv(d::Exponential, t)
