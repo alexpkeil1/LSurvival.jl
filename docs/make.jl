@@ -7,8 +7,8 @@ push!(LOAD_PATH,"../src/")
 makedocs(;
     format = Documenter.HTML(),
     modules = [LSurvival],
-    sitename = "LSurvival",
-    pages = ["Home" => "index.md"],
+    sitename = "LSurvival: survival analysis for left-truncated, right-censored outcomes",
+    pages = ["Help" => "index.md", "Parametric likelihood functions" => "Likelihood.md"],
     debug = true,
     doctest = true,
     strict = :doctest,

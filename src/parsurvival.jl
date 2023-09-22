@@ -109,7 +109,6 @@ Log likelihood contribution for an observation in a parametric survival model
 ```
 """
 function loglik(d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    # ρ is linear predictor
     ll = enter > 0 ? -lsurv(d, θ, enter, x) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     ll +=
         y == 1 ? lpdf(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
@@ -135,7 +134,6 @@ Gradient contribution for an observation in a parametric survival model
 ```
 """
 function dloglik!(gt, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    # ρ is linear predictor
     gt .= enter > 0 ? -lsurv_gradient(d, θ, enter, x) : gt.*0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     gt .+=
         y == 1 ? lpdf_gradient(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
@@ -161,7 +159,6 @@ Hessian contribution for an observation in a parametric survival model
 ```
 """
 function ddloglik!(he, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    # ρ is linear predictor
     he  .= enter > 0 ? -lsurv_hessian(d, θ, enter, x) : he.*0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     he .+=
         y == 1 ? lpdf_hessian(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
@@ -256,26 +253,27 @@ end
 # Fitting functions
 #####################################################################################################################
 
-"""
-using LSurvival
-dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
-
-X = ones(length(dat1.x),1)
-dist = LSurvival.Weibull()
-P = PSParms(X, extraparms=length(dist)-1)
-P._B
-P._grad
-R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
-m = PSModel(R,P,dist)
-m.P._grad
-
-#parms = vcat(zeros(length(m.P._grad)-1), 1.0)
-parms = [2.001, .551]
-θ = parms
-θ = θ
-
-
-"""
+#"""
+#```julia
+#using LSurvival
+#dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+#
+#X = ones(length(dat1.x),1)
+#dist = LSurvival.Weibull()
+#P = PSParms(X, extraparms=length(dist)-1)
+#P._B
+#P._grad
+#R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
+#m = PSModel(R,P,dist)
+#m.P._grad
+#
+##parms = vcat(zeros(length(m.P._grad)-1), 1.0)
+#parms = [2.001, .551]
+#θ = parms
+#θ = θ
+#```
+#
+#"""
 function _fit!(
     m::PSModel;
     verbose::Bool = false,
@@ -369,42 +367,7 @@ function StatsBase.fit!(
 end
 
 
-"""
-R = LSurvivalResp(enter, exit, y, wts, id)
-P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
-#M = PSModel
-res0 = M(R, P0, dist)
-start0 = LSurvival.setinits(res0)
-start0 = [2.00124, log(0.550543)]
 
-fit!(res0, start=start0, maxiter=1);
-res0.P._LL
-res0.P._grad
-res0.P._hess
-res0.P._B
-
-function grad_wlp(ρ, γ, t)  
-    [(exp((log(t) - ρ) / γ) - 1.0) / γ,
-    (ρ + log(t)*exp((log(t) - ρ) / γ) - γ - log(t) - ρ*exp((log(t) - ρ) / γ)) / (γ^2)]
-end
-function grad_wls(ρ, γ, t)
-    [exp((log(t) - ρ) / γ) / γ,
-    ((log(t) - ρ)*exp((log(t) - ρ) / γ)) / (γ^2)]
-end
-
-ρ = res0.P._B[1]
-γ = exp(res0.P._S[1])
-t = R.exit
-y = R.y
-explicit_gradient = grad_w(1, 1, 1) .* 0.0  
-for (i,t) in enumerate(R.exit)
-    explicit_gradient .+= y[i] > 0 ? grad_wlp(ρ, γ, t) :  grad_wls(ρ, γ, t)  
-end
-explicit_gradient
-res0.P._grad
-res0.P._hess
-
-"""
 function fit(
     ::Type{M},
     X::Matrix{<:Real},#{<:FP},

@@ -229,7 +229,7 @@ using LSurvival
 
  # robust variance
  confint(ft2, type="robust")
-````
+```
 
 
 """
@@ -812,7 +812,7 @@ lgh!(m::M, j, caseidx, risksetidx) where {M<:AbstractPH}
 """
 
 
-DOC__UPDATE_PHPARMS = raw"""
+DOC__UPDATE_PHPARMS = """
  Update the partial likelihood, gradient and Hessian values from a Cox model fit (used during fitting, not generally useful for users).
 
  Uses Breslow's or Efron's partial likelihood.
@@ -830,10 +830,9 @@ _update_PHParms!(
  risksetidxs::Vector{Vector{T}},
  ) where {M<:AbstractPH,I<:Int,T<:Int}
 ```
-
-
 """
-DOC_FIT_PHSURV = raw"""
+
+DOC_FIT_PHSURV = """
   Survival curve estimation using multiple cox models
 
 
