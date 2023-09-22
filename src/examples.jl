@@ -875,6 +875,8 @@ jres.RL[2]
 # checking parametric survival against R
 ###################################################################
 using RCall
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+
 start0 = [1.310030842912028, 0.02682650385621469]
 @rput dat1
 @rput start0
@@ -884,6 +886,16 @@ res = survreg(Surv(time , status) ~ 1,data = dat1, dist="weibull", init=start0)
 ret = summary(res)
 """
 @rget ret
+
+res = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start =start0, fitint=false);
+res = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start =[2.0, log(0.5)], maxiter=100, fitint=false);
+
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=true, start = randn(2), fitint=false);
+coeftable(res)
+
+params(res)
+stderror(res)
+
 
 @rput dat1
 R"""
@@ -914,10 +926,10 @@ datgen = (
 @rput datgen
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ x,data = datgen, dist="weibull")
+res = survreg(Surv(time , status) ~ x,data = datgen, dist="exponential")
 ret = summary(res)
 """
-survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), verbose=true)
+survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Exponential(), verbose=true)
 
 
 @rput dat1

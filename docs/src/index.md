@@ -178,3 +178,7 @@ LSurvivalResp(int, outt, data[:,4], ID.(id))
 ```@autodocs
 Modules = [LSurvival]
 ```
+
+```@contents
+Pages = ["Likelihood.md"]
+```

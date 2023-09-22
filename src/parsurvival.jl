@@ -79,8 +79,8 @@ function PSModel(
     np = length(d)
     P._S = zeros(np - 1)
     r = P.p + np - 1
-    P._grad = fill(0.0, r)
-    P._hess = fill(0.0, r, r)
+    P._grad::Vector{Float64} = fill(0.0, r)
+    P._hess::Matrix{Float64} = fill(0.0, r, r)
     PSModel(R, P, nothing, d, false)
 end
 
@@ -95,13 +95,16 @@ Log likelihood contribution for an observation in a parametric survival model
 
 
  ```julia
-    d = Weibull()
+    d = m.d
+    i = 1
     enter = m.R.enter[i]
     exit = m.R.exit[i]
     y = m.R.y[i]
     wts = m.R.wts[i]
     x = m.P.X[i,:]
     θ=[1,0,.4]
+    
+    m.P._B
 
 ```
 """
@@ -115,49 +118,129 @@ function loglik(d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
     ll
 end
 
+"""
+Gradient contribution for an observation in a parametric survival model
 
-#lpdf(d::Weibull, _theta, t, x)
+
+ ```julia
+    d = m.d
+    i = 1
+    enter = m.R.enter[i]
+    exit = m.R.exit[i]
+    y = m.R.y[i]
+    wts = m.R.wts[i]
+    x = m.P.X[i,:]
+    θ=[1,0,.4]
+
+```
+"""
+function dloglik!(gt, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
+    # ρ is linear predictor
+    gt .= enter > 0 ? -lsurv_gradient(d, θ, enter, x) : gt.*0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    gt .+=
+        y == 1 ? lpdf_gradient(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        lsurv_gradient(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
+    gt .*= wts
+    gt
+end
+
+"""
+Hessian contribution for an observation in a parametric survival model
+
+
+ ```julia
+    d = m.d
+    i = 1
+    enter = m.R.enter[i]
+    exit = m.R.exit[i]
+    y = m.R.y[i]
+    wts = m.R.wts[i]
+    x = m.P.X[i,:]
+    θ=[1,0,.4]
+
+```
+"""
+function ddloglik!(he, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
+    # ρ is linear predictor
+    he  .= enter > 0 ? -lsurv_hessian(d, θ, enter, x) : he.*0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    he .+=
+        y == 1 ? lpdf_hessian(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        lsurv_hessian(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
+        he .*= wts
+    he
+end
+
+
+
+#lpdf(d::Weibull, θ, t, x)
 
 
 # theta includes linear predictor and other parameters
-"""
-i=1
-θ = rand(3)
-#Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx][1])              # scale, linear model
-#LSurvival.lpdf(Distr, m.R.exit[i])
-#t = m.R.exit[i]
-"""
-function ll(m::M, θ) where {M<:PSModel}
+function get_ll(m::M, θ) where {M<:PSModel}
     LL = 0.0
     for i = 1:length(m.R.enter)
-        Distr = name(typeof(m.d))()              # scale, linear model (parameterization changed in Weibull function)
-        LL += loglik(Distr, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
+        LL += loglik(m.d, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
     end
     LL
 end
 
 
-"""
-i=1
-θ = [2.23733, -0.744225, 0.456316]
-_theta = θ
-f(_theta)
-gradient(f, _theta)
-Zygote.hessian(f, _theta)
-Zygote.hessian_reverse(f, _theta)
-y, back = Zygote.pullback(f, _theta)
-back(_theta)
+function get_gradient(m::M, θ) where {M<:PSModel}
+    grad = zeros(length(θ))
+    gt = zeros(length(θ))
+    for i = 1:length(m.R.enter)
+        dloglik!(gt, m.d, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
+        grad += gt
+    end
+    grad
+end
+
+
+function get_hessian(m::M, θ) where {M<:PSModel}
+    hess = zeros(length(θ), length(θ))
+    he = zeros(length(θ), length(θ))
+    for i = 1:length(m.R.enter)
+        ddloglik!(he, m.d, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
+        hess += he
+    end
+    hess
+end
 
 
 """
-function lgh!(m::M, _theta) where {M<:PSModel}
-    #r = [updateparams(m.d, _theta) for i in eachindex(m.R.enter)]
-    newidx = (m.P.p+1):length(_theta)
-    ll = newidx.start <= newidx.stop ? ll_unfixedscale : ll_fixedscale
-    f(x) = ll(m, x)
-    push!(m.P._LL, f(_theta))
-    m.P._grad = gradient(f, _theta)[1]
-    m.P._hess = Zygote.hessian(f, _theta)
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+enter = zeros(length(dat1.time))
+t = dat1.time
+d = dat1.status
+X = hcat(ones(length(dat1.x)), dat1.x)
+wt = ones(length(t))
+
+dist = Exponential()
+P = PSParms(X[:,1:1], extraparms=length(dist)-1)
+P = PSParms(X, extraparms=length(dist)-1)
+P._B
+P._grad
+R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
+m = PSModel(R,P,dist)
+
+λ=1
+θ = rand(2)
+lgh!(m, θ)
+θ .+= inv(-m.P._hess) * m.P._grad * λ
+
+lgh!(m, θ .+ [-.00, 0, 0])
+lgh!(m, θ .+ [-.01, 0.05, 0.05])
+
+m.P._LL
+
+
+
+"""
+function lgh!(m::M, θ) where {M<:PSModel}
+    #r = [updateparams(m.d, θ) for i in eachindex(m.R.enter)]
+    push!(m.P._LL, get_ll(m, θ))
+    m.P._grad .= get_gradient(m,  θ)
+    m.P._hess .= get_hessian(m,  θ)
     m.P._LL[end], m.P._grad, m.P._hess
 end
 
@@ -188,8 +271,8 @@ m.P._grad
 
 #parms = vcat(zeros(length(m.P._grad)-1), 1.0)
 parms = [2.001, .551]
-_theta = parms
-θ = _theta
+θ = parms
+θ = θ
 
 
 """
@@ -209,6 +292,7 @@ function _fit!(
     start = !isnothing(start) ? start : setinits(m)
     parms = deepcopy(start)
     λ = 1.0
+    #λ = 0.1
     #
     totiter = 0
     #lgh!(m, parms)
@@ -230,7 +314,7 @@ function _fit!(
         isnan(m.P._LL[end]) ?
         throw("Log-likelihood is NaN: try different starting values") : true
         if abs(m.P._LL[end]) != Inf
-            parms .+= inv(-m.P._hess) * m.P._grad * λ
+            parms .-= inv(m.P._hess) * m.P._grad * λ
             oldQ = Q
         else
             @debug "Log-likelihood history: $_llhistory $(m.P._LL[1])"
@@ -331,6 +415,7 @@ function fit(
     id::Vector{<:AbstractLSurvivalID} = [ID(i) for i in eachindex(y)],
     wts::Vector{<:Real} = similar(enter, 0),
     offset::Vector{<:Real} = similar(enter, 0),
+    fitint = true,
     fitargs...,
 ) where {M<:PSModel,Y<:Union{Vector{<:Real},BitVector}}
 
@@ -343,7 +428,7 @@ function fit(
     P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fit!(res0, start = start0, maxiter = 1)
+    fitint && fit!(res0, start = start0, maxiter = 1)
     #
 
     P = PSParms(X, extraparms = length(dist) - 1)
@@ -388,6 +473,7 @@ function fit(
     wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
+    fitint=true,
     fitargs...,
 ) where {M<:PSModel}
     f, (y, X) = modelframe(f, data, contrasts, M)
@@ -397,7 +483,7 @@ function fit(
     P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fit!(res0, start = start0)
+    fitint && fit!(res0, start = start0, maxiter = 1)
 
     P = PSParms(X, extraparms = length(dist) - 1)
     if !haskey(fitargs, :start)
@@ -588,21 +674,21 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
         println(io, "Model not yet fitted")
         return nothing
     end
-    ll = loglikelihood(m)
-    llnull = nullloglikelihood(m)
-    chi2 = 2 * (ll - llnull)
+    # Coefficients
     coeftab = coeftable(m, level = level)
-    df = length(coeftab.rownms) - 1
-    #lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
-    #lrtp = 1 - cdf(Chisq(df), chi2)
-    lrtp = 1 - cdfchisq(df, chi2)
     iob = IOBuffer()
     println(iob, coeftab)
+    # Model fit
+    ll = loglikelihood(m)
+#    llnull = nullloglikelihood(m)
+#    df = length(coeftab.rownms) - 1
+#    chi2 = 2 * (ll - llnull)
+#    lrtp = 1 - cdfchisq(df, chi2)
     str = """\nMaximum likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
     str *= String(take!(iob))
-    str *= "Log-likelihood (Intercept only): $(@sprintf("%8g", llnull))\n"
+#    str *= "Log-likelihood (Intercept only): $(@sprintf("%8g", llnull))\n"
     str *= "Log-likelihood (full): $(@sprintf("%8g", ll))\n"
-    str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
+#    str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
     str *= "Newton-Raphson iterations: $(length(m.P._LL)-1)"
     println(io, str)
 end
@@ -612,7 +698,7 @@ Base.show(m::M; kwargs...) where {M<:PSModel} = Base.show(stdout, m; kwargs...)
 
 """
 
-using LSurvival, Zygote, Random, StatsBase, Printf, Tables
+using LSurvival, Random, StatsBase, Printf, Tables
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 enter = zeros(length(dat1.time))
 t = dat1.time
@@ -629,8 +715,13 @@ res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), sta
 #include(expanduser("~/repo/LSurvival.jl/src/distributions.jl"))
 
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+enter = zeros(length(dat1.time))
+t = dat1.time
+d = dat1.status
+X = hcat(ones(length(dat1.x)), dat1.x)
+wt = ones(length(t))
 
-dist = LSurvival.Weibull()
+dist = Weibull()
 P = PSParms(X[:,1:1], extraparms=length(dist)-1)
 P = PSParms(X, extraparms=length(dist)-1)
 P._B

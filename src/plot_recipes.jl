@@ -1,6 +1,11 @@
 """
-using Plots, LSurvival
+Plotting `LSurvivalResp` objects (outcomes in cox models, kaplan meier curves, parametric survival models)
+
+Recipe for plotting time-to-event outcomes
+
 ```julia
+using Plots, LSurvival
+
 dat4 = (
     id = [1, 1, 2, 2, 2, 3, 4, 5, 5, 6],
     enter = [1, 2, 5, 4, 6, 7, 3, 6, 8, 0],
@@ -48,7 +53,8 @@ end
 
 
 """
-Recipe for kaplan meier curve
+Plotting a kaplan meier curve
+
 ```julia
     using Plots, LSurvival
 dat4 = (
@@ -209,6 +215,7 @@ end
 @userplot CoxDX
 """
 ```julia
+
 using Plots, LSurvival
 dat2 = (
     enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],

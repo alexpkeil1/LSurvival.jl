@@ -179,8 +179,8 @@ d = Weibull()
 lpdf(d, vcat(θ,γ), t, x)
 ```
 """
-function lpdf(d::Weibull, _theta, t, x)
-    lpdf_weibull(dot(_theta[1:end-1], x), _theta[end], t)
+function lpdf(d::Weibull, θ, t, x)
+    lpdf_weibull(dot(θ[1:end-1], x), θ[end], t)
 end
 
 """
@@ -208,13 +208,13 @@ Gradient calculation for weibull regression: PDF
 x = [2,.1]
 γ = -0.5
 t = 3.0
-ρ = dot(θ,x)
+#ρ = dot(θ,x)
 d = Weibull()
 lpdf_gradient(d, vcat(θ,γ), t, x)
 ```
 """
 function lpdf_gradient(d::Weibull, θ, t, x)
-    lpdf_weibull(dot(θ[1:end-1], x), θ[end], t)
+    dlpdf_regweibull(θ[1:end-1], θ[end], t, x)
 end
 
 """
@@ -230,8 +230,8 @@ d = Weibull()
 lsurv_gradient(d, vcat(θ,γ), t, x)
 ```
 """
-function lsurv_gradient(d::Weibull, _theta, t, x)
-    dlpdf_regweibull(_theta[1:end-1], _theta[end], t, x)
+function lsurv_gradient(d::Weibull, θ, t, x)
+    dlsurv_regweibull(θ[1:end-1], θ[end], t, x)
 end
 
 
@@ -248,8 +248,8 @@ d = Weibull()
 lpdf_hessian(d, vcat(θ,γ), t, x)
 ```
 """
-function lpdf_hessian(d::Weibull, _theta, t, x)
-    ddlpdf_regweibull(_theta[1:end-1], _theta[end], t, x)
+function lpdf_hessian(d::Weibull, θ, t, x)
+    ddlpdf_regweibull(θ[1:end-1], θ[end], t, x)
 end
 
 """
@@ -265,12 +265,15 @@ lsurv_hessian(d, vcat(θ,γ), t, x)
 ```
 
 """
-function lsurv_hessian(d::Weibull, _theta, t, x)
-    ddlsurv_regweibull(_theta[1:end-1], _theta[end], t, x)
+function lsurv_hessian(d::Weibull, θ, t, x)
+    ddlsurv_regweibull(θ[1:end-1], θ[end], t, x)
 end
 
-"""
+raw"""
 Hessian calculation for Weibull distribution: PDF
+
+    $$f(t;\rho,\beta) = \exp(\gamma)^{-1}\exp(\ln(t)-\rho)/\exp(\gamma))\exp(-\exp((\ln(t)-\rho)/\exp(\gamma)))$$
+    $$\ln\mathfrak{L}(t;\rho,\beta) = -2\gamma + \ln(t)-\rho  -\exp((\ln(t)-\rho)\exp(-\gamma))$$
 
 ```
 θ = [-2, 1.2]
@@ -311,6 +314,13 @@ params(d::Weibull) = (d.ρ, d.γ)
 ################################################
 # underlying distribution functions, Weibull distribution
 ################################################
+#=
+# pg 34 of Kalbfleisch and Prentice
+$$f(t;\rho,\beta) = \exp(\gamma)^{-1}\exp(\ln(t)-\rho)/\exp(\gamma))\exp(-\exp((\ln(t)-\rho)/\exp(\gamma)))$$
+$$\ln\mathfrak{L}(t;\rho,\beta) = -2\gamma + \ln(t)-\rho  -\exp((\ln(t)-\rho)\exp(-\gamma))$$
+
+=#
+
 function lpdf_weibull(ρ, γ, t)
     z = (log(t) - ρ) / exp(γ)
     ret = -γ + z - exp(z) - log(t)
@@ -501,8 +511,8 @@ d = Exponential()
 lpdf_gradient(d, θ, t, x)
 ```
 """
-function lpdf(d::Exponential, _theta, t, x)
-    lpdf_weibull(dot(_theta,x), 0, t)[1:length(_theta)]
+function lpdf(d::Exponential, θ, t, x)
+    lpdf_weibull(dot(θ,x), 0, t)
 end
 
 """
@@ -518,8 +528,8 @@ d = Exponential()
 lsurv(d, θ, t, x)
 ```
 """
-function lsurv(d::Exponential, _theta, t, x)
-    lsurv_weibull(dot(_theta, x), 0, t)[1:length(_theta)]
+function lsurv(d::Exponential, θ, t, x)
+    lsurv_weibull(dot(θ, x), 0, t)
 end
 
 """
@@ -535,8 +545,8 @@ d = Exponential()
 lpdf_gradient(d, θ, t, x)
 ```
 """
-function lpdf_gradient(d::Exponential, _theta, t, x)
-    dlpdf_regweibull(_theta, 0, t, x)[1:length(θ)]
+function lpdf_gradient(d::Exponential, θ, t, x)
+    dlpdf_regweibull(θ, 0, t, x)[1:length(θ)]
 end
 
 """
@@ -552,8 +562,8 @@ d = Exponential()
 lsurv_gradient(d, θ, t, x)
 ```
 """
-function lsurv_gradient(d::Exponential, _theta, t, x)
-    dlsurv_regweibull(_theta, 0, t, x)[1:length(θ)]
+function lsurv_gradient(d::Exponential, θ, t, x)
+    dlsurv_regweibull(θ, 0, t, x)[1:length(θ)]
 end
 
 
@@ -570,8 +580,8 @@ d = Exponential()
 lpdf_hessian(d, θ, t, x)
 ```
 """
-function lpdf_hessian(d::Exponential, _theta, t, x)
-    ddlpdf_regweibull(_theta, 0, t, x)[1:length(θ), 1:length(θ)]
+function lpdf_hessian(d::Exponential, θ, t, x)
+    ddlpdf_regweibull(θ, 0, t, x)[1:length(θ), 1:length(θ)]
 end
 
 """
@@ -587,8 +597,8 @@ lsurv_hessian(d, θ, t, x)
 ```
 
 """
-function lsurv_hessian(d::Exponential, _theta, t, x)
-    ddlsurv_regweibull(_theta, 0, t, x)[1:length(θ), 1:length(θ)]
+function lsurv_hessian(d::Exponential, θ, t, x)
+    ddlsurv_regweibull(θ, 0, t, x)[1:length(θ), 1:length(θ)]
 end
 
 """
@@ -705,8 +715,8 @@ d = Lognormal()
 lpdf(d, vcat(θ,γ), t, x)
 ```
 """
-function lpdf(d::Lognormal, _theta, t, x)
-    lpdf_lognormal(dot(_theta[1:end-1],x), _theta[end], t)
+function lpdf(d::Lognormal, θ, t, x)
+    lpdf_lognormal(dot(θ[1:end-1],x), θ[end], t)
 end
 
 """
@@ -722,8 +732,8 @@ d = Lognormal()
 lsurv(d, vcat(θ,γ), t, x)
 ```
 """
-function lsurv(d::Lognormal, _theta, t, x)
-    lsurv_lognormal(dot(_theta[1:end-1],x), _theta[end], t)
+function lsurv(d::Lognormal, θ, t, x)
+    lsurv_lognormal(dot(θ[1:end-1],x), θ[end], t)
 end
 
 """
@@ -739,8 +749,8 @@ d = Lognormal()
 lpdf_gradient(d, vcat(θ,γ), t, x)
 ```
 """
-function lpdf_gradient(d::Lognormal, _theta, t, x)
-    dlpdf_lognormal(_theta[1:end-1], _theta[end], t, x)
+function lpdf_gradient(d::Lognormal, θ, t, x)
+    dlpdf_reglognormal(θ[1:end-1], θ[end], t, x)
 end
 
 """
@@ -756,8 +766,8 @@ d = Lognormal()
 lsurv_gradient(d, vcat(θ,γ), t, x)
 ```
 """
-function lsurv_gradient(d::Lognormal, _theta, t, x)
-    dlsurv_lognormal(_theta[1:end-1], _theta[end], t, x)
+function lsurv_gradient(d::Lognormal, θ, t, x)
+    dlsurv_reglognormal(θ[1:end-1], θ[end], t, x)
 end
 
 
@@ -774,8 +784,8 @@ d = Lognormal()
 lpdf_hessian(d, vcat(θ,γ), t, x)
 ```
 """
-function lpdf_hessian(d::Lognormal, _theta, t, x)
-    ddlpdf_reglognormal(_theta[1:end-1], _theta[end], t, x)
+function lpdf_hessian(d::Lognormal, θ, t, x)
+    ddlpdf_reglognormal(θ[1:end-1], θ[end], t, x)
 end
 
 """
@@ -791,8 +801,8 @@ lsurv_hessian(d, vcat(θ,γ), t, x)
 ```
 
 """
-function lsurv_hessian(d::Lognormal, _theta, t, x)
-    ddlsurv_reglognormal(_theta[1:end-1], _theta[end], t, x)
+function lsurv_hessian(d::Lognormal, θ, t, x)
+    ddlsurv_reglognormal(θ[1:end-1], θ[end], t, x)
 end
 
 """
@@ -809,7 +819,7 @@ lpdf_hessian(d, t)
 ```
 """
 function lpdf_hessian(d::Lognormal, t)
-    ddlpdf_reglognormal(d.ρ, d.γ, t)
+    ddlpdf_lognormal(d.ρ, d.γ, t)
 end
 
 """
@@ -910,7 +920,7 @@ function dlsurv_reglognormal(θ, γ, t, x)
     dsdθ
 end
 
-function dlpdf_lognormal(θ, γ, t, x)
+function dlpdf_reglognormal(θ, γ, t, x)
     dρ = dρdθ(θ, x)
     df = dlpdf_lognormal(dot(θ, x), γ, t)
     dfdθ = [dρ[j] * df[1] for j = 1:length(θ)]

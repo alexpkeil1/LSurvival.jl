@@ -5,7 +5,7 @@ using RecipesBase
 using Reexport
 using Printf
 using Random, LinearAlgebra, Tables
-using Zygote
+#using Zygote
 #using Distributions
 #import Distributions: Chisq, Normal
 import SpecialFunctions: gamma_inc, erfinv, erf

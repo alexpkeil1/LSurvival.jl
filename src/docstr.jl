@@ -35,7 +35,7 @@ DOC_LSURVRESP = raw"""
 - `id`: person level identifier (must be wrapped in ID() function)
 
 
- ```julia
+```julia
  struct LSurvivalResp{
  E<:AbstractVector,
  X<:AbstractVector,
@@ -53,9 +53,9 @@ DOC_LSURVRESP = raw"""
  id::Vector{I}
  end
 
- ```
+```
 
- ```julia
+```julia
  LSurvivalResp(
     enter::E,
     exit::X,
@@ -69,9 +69,9 @@ DOC_LSURVRESP = raw"""
     W<:Vector,
     I<:AbstractLSurvivalID,
 }
- ```
+```
 
- ```julia
+```julia
  LSurvivalResp(
  enter::E,
  exit::X,
@@ -79,35 +79,35 @@ DOC_LSURVRESP = raw"""
  id::Vector{I},
  ) 
 
- ```
+```
 
- ```julia
+```julia
  LSurvivalResp(
   y::Vector{Y},
   wts::W,
   id::Vector{I},
   ) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvivalID}
- ```
+```
 
- ```julia
+```julia
  LSurvivalResp(
   enter::E,
   exit::X,
   y::Y,
   ) where {E<:Vector,X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
- ```
+```
 
- ```julia
+```julia
  LSurvivalResp(exit::X, y::Y) where {X<:Vector,Y<:Vector}
- ```
+```
 
   # Examples
 
- ```julia
+```julia
   # no late entry
   LSurvivalResp([.5, .6], [1,0])
 
- ```
+```
 
 """
 
@@ -128,7 +128,7 @@ DOC_LSURVCOMPRESP = raw"""
 
   ## Signatures:
 
- ```julia
+```julia
  struct LSurvivalCompResp{
  E<:AbstractVector,
  X<:AbstractVector,
@@ -149,9 +149,9 @@ DOC_LSURVCOMPRESP = raw"""
  eventtypes::V
  eventmatrix::M
  end
- ```
+```
 
- ```julia
+```julia
  LSurvivalCompResp(
  enter::E,
  exit::X,
@@ -159,40 +159,40 @@ DOC_LSURVCOMPRESP = raw"""
  wts::W,
  id::Vector{I}
  )
- ```
+```
 
- ```julia
+```julia
  LSurvivalCompResp(
  enter::E,
  exit::X,
  y::Y,
  id::Vector{I}
  )
- ```
+```
 
- ```julia
+```julia
  LSurvivalCompResp(
  enter::E,
  exit::X,
  y::Y,
  wts::W,
  )
- ```
+```
 
- ```julia
+```julia
  LSurvivalCompResp(
  enter::E,
  exit::X,
  y::Y,
  )
- ```
+```
 
- ```julia
+```julia
  LSurvivalCompResp(
   exit::X,
   y::Y,
   ) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
- ```
+```
 """
 
 DOC_CONFINT = raw"""
@@ -246,7 +246,7 @@ DOC_PHMODEL = raw"""
 
   ## Signatures
 
- ```julia
+```julia
  mutable struct PHModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms} <: AbstractPH
  R::G        # Survival response
  P::L        # parameters
@@ -263,12 +263,12 @@ DOC_PHMODEL = raw"""
  ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
  PHModel(R::G, P::L, ties::String) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
  PHModel(R::G, P::L) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms}
- ```
+```
  Methods: fit, coef, confint, std_err, show
 
  # Example
 
- ```@example
+```@example
  using LSurvival
  using Random
  import LSurvival: _stepcox!, dgm_comprisk
@@ -280,7 +280,7 @@ DOC_PHMODEL = raw"""
  P = PHParms(X)
  mf = PHModel(R,P)
   LSurvival._fit!(mf)
- ```
+```
 """
 
 DOC_PHSURV = raw"""
@@ -481,7 +481,6 @@ using Random
 
 # Risk at x=1, z=0.5
  res3 = risk_from_coxphmodels([ft1, ft2], pred_profile=[1.0, 0.5])
-
 ```
 """
 
@@ -527,7 +526,7 @@ DOC_FIT_ABSTRACPH = raw"""
   - `contrasts` StatsModel style contrasts (dicts) that can be used for variable transformations/indicator variable creation (e.g. https://juliastats.org/StatsModels.jl/stable/contrasts/)
 
   ## Signatures
-  ```julia
+```julia
   fit(::Type{M},
   X::AbstractMatrix,#{<:FP},
   enter::AbstractVector{<:Real},
@@ -538,17 +537,17 @@ DOC_FIT_ABSTRACPH = raw"""
   wts::AbstractVector{<:Real}      = similar(y, 0),
   offset::AbstractVector{<:Real}   = similar(y, 0),
   fitargs...) where {M<:AbstractPH}
-  ```
+```
 
-  ```
+```
  coxph(f::FormulaTerm, data; kwargs...)
-  ```
+```
 
-  ```
+```
   coxph(X, enter, exit, y, args...; kwargs...)
-  ```
+```
 
-  ```julia
+```julia
    using LSurvival, Random
    z,x,t,d, event,wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000);
    enter = zeros(length(t));
@@ -556,13 +555,13 @@ DOC_FIT_ABSTRACPH = raw"""
     m = fit(PHModel, X, enter, t, d, ties="efron")
    m2 = fit(PHModel, X, enter, t, d, ties="breslow")
    coeftable(m)
-  ```
+```
 
  ## Note on use of `id` keyword
 
   `id` is not needed in person-period structure data for standard estimates or confidence intervals
 
-  ```@example
+```@example
   using Random, LSurvival
      id, int, outt, dat =
          LSurvival.dgm(MersenneTwister(123123), 100, 100; afun = LSurvival.int_0)
@@ -576,12 +575,12 @@ DOC_FIT_ABSTRACPH = raw"""
 
      f = @formula(Surv(int, outt,d)~x+z)
      coxph(f, data)
-  ```
+```
 
  # BUT, you must specify `id` to get appropriate robust variance and some other statistics.
 
  Here is an example where the same data are presented in two different ways, which should yield identical statistics when used in Cox model.
-  ```@example
+```@example
  dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -616,11 +615,11 @@ DOC_FIT_ABSTRACPH = raw"""
  stderror(ft2, type="robust")   # robust standard error, based on `id` level dfbeta residuals (CORRECT)
  # once robust SE is calculated, coefficient table uses the robust SE for confidence intervals and test statistics
  ft2   # CORRECT (compare to `ft` object)
-  ```
+```
  
  ## NOTE THE FOLLOWING IS INCORRECT because the `id` keyword is omitted
 
-  ```@example
+```@example
  ft2w = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust)
  bic(ft2w)                          # INCORRECT 
  nobs(ft2w)                         # INCORRECT
@@ -631,7 +630,7 @@ DOC_FIT_ABSTRACPH = raw"""
  
  ft2w # the coefficient table now shows incorrect confidence intervals and test statistics
   
-  ```
+```
 """
 
 DOC_FIT_KMSURV = raw"""
@@ -653,8 +652,6 @@ kaplan_meier(enter::AbstractVector, exit::AbstractVector, y::AbstractVector,
 - censval = 0;  value of the outcome to be considered a censored event
 - keepy = true; keep the outcome vector after fitting (may save memory with large datasets)
 - eps = 0.00000001; deprecated (replaced by atol)
-
-
 
 ```@example
 using LSurvival
@@ -842,17 +839,17 @@ DOC_FIT_PHSURV = raw"""
 
   ## Signatures
 
- ```julia
+```julia
   risk_from_coxphmodels(fitlist::Vector{T}, args...; kwargs...) where {T<:PHModel}
 
   fit(::Type{M}, fitlist::Vector{T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
- ```
+```
 
   ## Optional keywords
 - `coef_vectors` = nothing(default) or vector of coefficient vectors from the cox models [will default to the coefficients from fitlist models]
 - `pred_profile` = nothing(default) or vector of specific predictor values of the same length as the coef_vectors[1]
 
- ```@example
+```@example
  using LSurvival
  using Random
  # event variable is coded 0[referent],1,2
@@ -872,7 +869,7 @@ DOC_FIT_PHSURV = raw"""
  # equivalent
  fit(PHSurv, [ft1,ft2], pred_profile=[mnx,mnz])
  risk_from_coxphmodels([ft1,ft2], pred_profile=[mnx,mnz])
- ```
+```
 """
 
 
@@ -1227,9 +1224,9 @@ DOC_RESIDUALS = raw"""
 
   Signature
 
-  ```julia
+```julia
   residuals(m::M; type = "martingale") where {M<:PHModel}
-  ```
+```
   where type is one of 
 - `martingale`
 - `schoenfeld`
@@ -1243,7 +1240,7 @@ DOC_RESIDUALS = raw"""
 
   ## Martingale residuals: Observed versus expected
   
-  ```@example
+```@example
   # example from https://cran.r-project.org/web/packages/survival/vignettes/validate.pdf
   # by Terry Therneau
 
@@ -1256,9 +1253,9 @@ DOC_RESIDUALS = raw"""
   # Nelson-Aalen type estimator for Breslow partial likelihood
   ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="breslow")
   residuals(ft, type="martingale")
-  ```
+```
 
-  ```@example
+```@example
   dat1 = (
     time = [1,1,6,6,8,9],
     status = [1,0,1,1,0,1],
@@ -1269,12 +1266,12 @@ DOC_RESIDUALS = raw"""
   ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efron")
   residuals(ft, type="martingale")
 
-  ```
+```
   ####################################################################
 
   ## Score residuals: Per observation contribution to score function 
 
-  ```julia
+```julia
   using LSurvival
   dat1 = (
     time = [1,1,6,6,8,9],
@@ -1285,13 +1282,13 @@ DOC_RESIDUALS = raw"""
   S = residuals(ft, type="score")[:]
   ft = coxph(@formula(Surv(time,status)~x),dat1, keepx=true, keepy=true, ties="efron", maxiter=0)
   S = residuals(ft, type="score")[:]
-  ```
+```
 
   ####################################################################
 
   ## Schoenfeld residuals: Per time contribution to score function 
 
-  ```julia
+```julia
   using LSurvival
   dat1 = (
     time = [1,1,6,6,8,9],
@@ -1304,13 +1301,13 @@ DOC_RESIDUALS = raw"""
   X = ft.P.X
   M = residuals(ft, type="martingale")
   S = residuals(ft, type="schoenfeld")[:]
-  ```
+```
 
   ####################################################################
 
   ## dfbeta residuals: influence of individual observations on each parameter
 
-  ```@example
+```@example
   using LSurvival
   dat1 = (
     time = [1,1,6,6,8,9],
@@ -1328,12 +1325,12 @@ DOC_RESIDUALS = raw"""
   robVar = dfbeta'dfbeta
   sqrt(robVar)
 
-  ```
+```
 
   #  using the `id` keyword argument
   #  see help for LSurvival.vcov for what happens when `id` keyword is not used
 
-  ```@example
+```@example
   dat1clust= (
     id = [1,2,3,3,4,4,5,5,6,6],
     enter = [0,0,0,1,0,1,0,1,0,1],
@@ -1354,7 +1351,7 @@ DOC_RESIDUALS = raw"""
   D'D
   vcov(ft, type="robust")
   vcov(ft2, type="robust")
-  ```
+```
 
   ####################################################################
 
@@ -1368,7 +1365,7 @@ $$r_i = \hat\beta - \hat\beta_{(-i)}$$
 
   where $\beta_{(-i)}$ is the maximum partial likelihood estimate of the log-hazard ratio vector obtained from a dataset in which observations belonging to individual `i` are removed
 
-  ```@example
+```@example
   using LSurvival
   dat1 = (
     time = [1,1,6,6,8,9],
@@ -1381,7 +1378,7 @@ $$r_i = \hat\beta - \hat\beta_{(-i)}$$
   residuals(ft, type="jackknife")
 
 
-  ```
+```
 """
 
 DOC_VCOV = raw"""
@@ -1467,7 +1464,7 @@ ft2w
 
 
   Examples: 
-  ```julia-repl   
+```julia-repl   
   using LSurvival
   # simulating discrete survival data for 20 individuals at 10 time points
   id, int, outt, data = LSurvival.dgm(20, 5;afun=LSurvival.int_0);
@@ -1485,7 +1482,7 @@ ft2w
   res = coxmodel(args..., method="efron");
   coxsum = cox_summary(res, alpha=0.05, verbose=true);
     
-  ```
+```
 """
 
 """
@@ -1588,7 +1585,7 @@ ft2w
   1.0 .- exp.(.-cumsum(sdhaz(t)))
 
   Examples: 
-  ```julia-repl   
+```julia-repl   
   using LSurvival, Random
 
   z,x,t,d, event,weights = LSurvival.dgm_comprisk(1000);
@@ -1597,7 +1594,7 @@ ft2w
   times_sd, cumhaz, ci_sd = subdistribution_hazard_cuminc(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   times_aj, surv, ajest, riskset, events = aalen_johansen(zeros(length(t)), t, event, dvalues=[1.0, 2.0]);
   
-  ```
+```
 """
 
 """
