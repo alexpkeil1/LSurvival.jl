@@ -1,6 +1,6 @@
 # Parametric survival models
 ######################################################################
-# Survival model distributions
+# Convenience functions
 ######################################################################
 
 #abstract type AbstractSurvDist end
@@ -14,13 +14,14 @@ function Base.length(d::T) where {T<:AbstractSurvDist}
 end
 
 function name(::Type{T}) where {T}
+    #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
     isempty(T.parameters) ? T : T.name.wrapper
 end
 
 
 
 ##################################################################################################################### 
-# structs
+# model related structs
 #####################################################################################################################
 
 
@@ -61,7 +62,6 @@ function PSParms(X::Union{Nothing,D}; extraparms = 1) where {D<:AbstractMatrix}
     )
 end
 
-
 mutable struct PSModel{G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist} <:
                AbstractPSModel
     R::Union{Nothing,G}        # Survival response
@@ -77,69 +77,65 @@ function PSModel(
     d::D,
 ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist}
     np = length(d)
-    P._S = zeros(np-1)
-    r = P.p + np-1
+    P._S = zeros(np - 1)
+    r = P.p + np - 1
     P._grad = fill(0.0, r)
     P._hess = fill(0.0, r, r)
     PSModel(R, P, nothing, d, false)
 end
 
-params(m::PSModel) = vcat(m.P._B, m.P._S)
+
+##################################################################################################################### 
+# Likelihood functions
+#####################################################################################################################
 
 
 """
 Log likelihood contribution for an observation in a parametric survival model
+
+
+ ```julia
+    d = Weibull()
+    enter = m.R.enter[i]
+    exit = m.R.exit[i]
+    y = m.R.y[i]
+    wts = m.R.wts[i]
+    x = m.P.X[i,:]
+    θ=[1,0,.4]
+
+```
 """
-function loglik(d::D, enter, exit, y, wts) where {D<:AbstractSurvDist}
+function loglik(d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
     # ρ is linear predictor
-    ll = enter > 0 ? -lsurv(d, enter) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    ll = enter > 0 ? -lsurv(d, θ, enter, x) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     ll +=
-        y == 1 ? lpdf(d, exit) : # extra contribution for events plus the log of the Jacobian of the transform on time
-        lsurv(d, exit) # extra contribution for censored (cumulative conditional survival at censoring)
+        y == 1 ? lpdf(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        lsurv(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
     ll *= wts
     ll
 end
 
 
+#lpdf(d::Weibull, _theta, t, x)
 
 
 # theta includes linear predictor and other parameters
 """
 i=1
 θ = rand(3)
-Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx][1])              # scale, linear model
-LSurvival.lpdf(Distr, m.R.exit[i])
-t = m.R.exit[i]
+#Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx][1])              # scale, linear model
+#LSurvival.lpdf(Distr, m.R.exit[i])
+#t = m.R.exit[i]
 """
-function ll_unfixedscale(m::M, θ) where {M<:PSModel}
-    newidx = (m.P.p+1):length(θ)
-    oldidx = 1:m.P.p
-    # put theta into correct parameters
+function ll(m::M, θ) where {M<:PSModel}
     LL = 0.0
     for i = 1:length(m.R.enter)
-        #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
-        #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), exp.(θ[newidx])...) # log scale, exponential mean model
-        #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ[oldidx])), θ[newidx]...)       # scale, exponential mean model
-        #Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), θ[newidx.start])              # scale, linear model
-        Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ[oldidx]), exp(θ[newidx.start]))              # log scale, linear model
-        #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
-        LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
+        Distr = name(typeof(m.d))()              # scale, linear model (parameterization changed in Weibull function)
+        LL += loglik(Distr, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
     end
     LL
 end
 
-
-function ll_fixedscale(m::M, θ) where {M<:PSModel}
-    LL = 0.0
-    for i = 1:length(m.R.enter)
-        #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
-        #Distr = name(typeof(m.d))(exp(-sum(m.P.X[i, :] .* θ)))
-        Distr = name(typeof(m.d))(dot(m.P.X[i:i, :], θ))              # log scale, linear model
-        #d = Weibull(exp(-sum(m.P.X[i,:] .* θ[oldidx])), θ[newidx]...)
-        LL += loglik(Distr, m.R.enter[i], m.R.exit[i], m.R.y[i], m.R.wts[i])
-    end
-    LL
-end
 
 """
 i=1
@@ -166,12 +162,16 @@ function lgh!(m::M, _theta) where {M<:PSModel}
 end
 
 function setinits(m::M) where {M<:PSModel}
-    startint = m.P.X\log.(m.R.exit)
-    startscale = std(log.(m.R.exit) .- m.P.X*startint)
+    startint = m.P.X \ log.(m.R.exit)
+    startscale = std(log.(m.R.exit) .- m.P.X * startint)
     start0 = vcat(startint, log(startscale))
     start0[1:length(params(m))]
 end
 
+
+##################################################################################################################### 
+# Fitting functions
+#####################################################################################################################
 
 """
 using LSurvival
@@ -338,20 +338,20 @@ function fit(
     if size(X, 1) != size(y, 1)
         throw(DimensionMismatch("number of rows in X and y must match"))
     end
-        
+
     R = LSurvivalResp(enter, exit, y, wts, id)
-    P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
+    P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fit!(res0, start=start0, maxiter=1);
+    fit!(res0, start = start0, maxiter = 1)
     #
 
     P = PSParms(X, extraparms = length(dist) - 1)
     if !haskey(fitargs, :start)
-        st=zeros(length(P._grad))
+        st = zeros(length(P._grad))
         st[1] = params(res0)[1]
         st[end] = params(res0)[end]
-        fitargs = (start=st, fitargs...)
+        fitargs = (start = st, fitargs...)
     end
     res = M(R, P, dist)
     push!(res.P._LL, res0.P._LL[end])
@@ -394,17 +394,17 @@ function fit(
 
     R = LSurvivalResp(y, wts, id)
 
-    P0 = PSParms(ones(size(X,1),1), extraparms = length(dist) - 1)
+    P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
-    fit!(res0, start=start0)
+    fit!(res0, start = start0)
 
     P = PSParms(X, extraparms = length(dist) - 1)
     if !haskey(fitargs, :start)
-        st=zeros(length(P._grad))
+        st = zeros(length(P._grad))
         st[1] = params(res0)[1]
         st[end] = params(res0)[end]
-        fitargs = (start=st, fitargs...)
+        fitargs = (start = st, fitargs...)
     end
     res = M(R, P, f, dist, false)
 
@@ -421,6 +421,7 @@ survreg(f::FormulaTerm, data; kwargs...) = fit(PSModel, f, data; kwargs...)
 # summary functions for PSModel objects
 #####################################################################################################################
 
+params(m::M) where {M<:PSModel} = vcat(m.P._B, m.P._S)
 formula(x::M) where {M<:PSModel} = x.formula
 scale(x::M) where {M<:PSModel} = x.P._S
 
@@ -591,7 +592,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
     llnull = nullloglikelihood(m)
     chi2 = 2 * (ll - llnull)
     coeftab = coeftable(m, level = level)
-    df = length(coeftab.rownms)-1
+    df = length(coeftab.rownms) - 1
     #lrtp = 1 - cdf(Distributions.Chisq(df), chi2)
     #lrtp = 1 - cdf(Chisq(df), chi2)
     lrtp = 1 - cdfchisq(df, chi2)
