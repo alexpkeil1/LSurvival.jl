@@ -11,7 +11,6 @@ makedocs(;
     pages = ["Help" => "index.md", "Parametric likelihood functions" => "Likelihood.md"],
     debug = true,
     doctest = true,
-    strict = :doctest,
     source = "src",
     build = "build"
 )

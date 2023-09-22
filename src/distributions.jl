@@ -271,7 +271,6 @@ d = Weibull(α, ρ)
 lpdf_hessian(d, t)
 ```
 """
-
 function lpdf_hessian(d::Weibull, t)
     ddlpdf_weibull(d.α, d.ρ, t)
 end
@@ -294,6 +293,8 @@ function lsurv_hessian(d::Weibull, t)
 end
 
 
+#scalelocation(d::Weibull) = d.ρ
+#location(d::Weibull) = d.α
 shape(d::Weibull) = d.ρ
 scale(d::Weibull) = d.α
 params(d::Weibull) = (d.α, d.ρ)
