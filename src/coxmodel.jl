@@ -188,7 +188,7 @@ function _fit!(
     #
     totiter = 0
     oldQ = floatmax()
-    lastLL = -floatmax()
+    #lastLL = -floatmax()
     ne = length(m.R.eventtimes)
     risksetidxs, caseidxs =
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
@@ -225,13 +225,13 @@ function _fit!(
         isnan(m.P._LL[1]) ?
         throw("Log-partial-likelihood is NaN: try different starting values") : true
         if abs(m.P._LL[1]) != Inf
-            m.P._B .+= inv(-(m.P._hess)) * m.P._grad .* λ # newton raphson step
+            m.P._B .-= inv(m.P._hess) * m.P._grad .* λ # newton raphson step
             oldQ = Q
         else
             @debug "Log-partial-likelihood history: $_llhistory $(m.P._LL[1])"
             throw("Log-partial-likelihood is not finite: check model inputs")
         end
-        lastLL = m.P._LL[1]
+        #lastLL = m.P._LL[1]
         _update_PHParms!(m, ne, caseidxs, risksetidxs)
         push!(_llhistory, m.P._LL[1])
         verbose ? println(m.P._LL[1]) : true
@@ -335,17 +335,18 @@ function fit(
     f::FormulaTerm,
     data;
     ties = "efron",
-    id::AbstractVector{<:AbstractLSurvivalID} = [
-        ID(i) for i in eachindex(getindex(data, 1))
-    ],
-    wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
-    offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
+    id::AbstractVector{<:AbstractLSurvivalID} = ID.(Int[]),
+    wts::AbstractVector{<:Real} = Float64[],
+    offset::AbstractVector{<:Real} = Float64[],
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
     fitargs...,
 ) where {M<:AbstractPH}
     f, (y, X) = modelframe(f, data, contrasts, M)
+    if length(id)==0 
+         id = [ID(i) for i in eachindex(y)]
+    end
     R = LSurvivalResp(y, wts, id)
-    P = PHParms(X)
+    P = PHParms(X[:,:])
     res = M(R, P, f, ties)
     return fit!(res; fitargs...)
 end
@@ -529,6 +530,12 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:A
         res = jackknife_vcov(m)
     else
         res = -inv(m.P._hess)
+        if any(eigen(res).values .< 0.0)
+            @warn("Covariance matrix is not positive semi-definite, model likely not converged")
+            if any(diag(res) .< 0.0) 
+                res = zeros(size(m.P._hess))
+            end
+        end
     end
     res
 end

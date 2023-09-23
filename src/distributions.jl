@@ -138,9 +138,9 @@ raw"""
 Mean model parameter gradient function for linear model
     $\alpha = f(\theta, X) = \theta X$
     
-dαdθ returns a vector of partial derivatives of $\alpha$ with respect to the vector $\theta$
+dαdβ returns a vector of partial derivatives of $\alpha$ with respect to the vector $\theta$
 """
-function dαdθ(θ, X)
+function dαdβ(β, X)
     [x for x in X]
 end
 
@@ -366,33 +366,67 @@ $$f(t;\rho,\beta) = \exp(\gamma)^{-1}\exp(\ln(t)-\rho)/\exp(\gamma))\exp(-\exp((
 $$\ln\mathfrak{L}(t;\rho,\beta) = -2\gamma + \ln(t)-\rho  -\exp((\ln(t)-\rho)\exp(-\gamma))$$
 
 =#
+"""
+α = -1.2
+ρ = 1.8
+t = 4.3
+z = (log(t) - α) * exp(-ρ)
+z - exp(z) - ρ - log(t)
 
+"""
 function lpdf_weibull(α, ρ, t)
-    z = (log(t) - α) / exp(ρ)
-    ret = -ρ + z - exp(z) - log(t)
-    ret
+    # l = -α*exp(-ρ) - exp(- α*exp(-ρ) + log(t)*exp(-ρ)) + log(t)*exp(-ρ) - ρ - log(t)
+    z = (log(t) - α) * exp(-ρ)
+    z - exp(z) - ρ - log(t)
+end
+function lsurv_weibull(α, ρ, t)
+    z = (log(t) - α) * exp(-ρ)
+    -exp(z)
 end
 
-function lsurv_weibull(α, ρ, t)
-    z = (log(t) - α) / exp(ρ)
-    ret = -exp(z)
-    ret
-end
+lpdf_weibull(α::Int, ρ::Float64, t) = lpdf_weibull(Float64(α), ρ::Float64, t)
+lpdf_weibull(α::Float64, ρ::Int, t) = lpdf_weibull(α::Float64, Float64(ρ), t)
+lpdf_weibull(α::Int, ρ::Int, t) = lpdf_weibull(Float64(α), Float64(ρ), t)
+lsurv_weibull(α::Int, ρ::Float64, t) = lsurv_weibull(Float64(α), ρ::Float64, t)
+lsurv_weibull(α::Float64, ρ::Int, t) = lsurv_weibull(α::Float64, Float64(ρ), t)
+lsurv_weibull(α::Int, ρ::Int, t) = lsurv_weibull(Float64(α), Float64(ρ), t)
 
 
 
 ################################################
 # underlying gradients, Weibull distribution
 ################################################
+#=
+α = -1.2
+ρ = 1.8
+t = 4.3
+z = (log(t) - α) * exp(-ρ)
+
+exp(z-ρ) - exp(-ρ)
+# wolfram alpha
+exp(-ρ) * (exp(α*(-exp(-ρ))) * t^(exp(-ρ)) - 1)
+
+expm1(z)*z - 1
+# wolfram alpha
+α*exp(-ρ) - exp(z)*(-z) - exp(-ρ)*log(t) - 1
+=#
+
 function dlpdf_weibull(α, ρ, t)
-    z = (log(t) - α) / exp(ρ)
-    [(exp(z) - 1.0) / exp(ρ), z * exp(z) - z - 1]
+    z = (log(t) - α) * exp(-ρ)
+    [exp(z-ρ) - exp(-ρ), expm1(z)*z - 1]
 end
 
 function dlsurv_weibull(α, ρ, t)
     z = (log(t) - α) / exp(ρ)
-    [exp(z) / exp(ρ), z * exp(z)]
+    [exp(z-ρ), z * exp(z)]
 end
+
+dlpdf_weibull(α::Int, ρ::Float64, t) = dlpdf_weibull(Float64(α), ρ::Float64, t)
+dlpdf_weibull(α::Float64, ρ::Int, t) = dlpdf_weibull(α::Float64, Float64(ρ), t)
+dlpdf_weibull(α::Int, ρ::Int, t) = dlpdf_weibull(Float64(α), Float64(ρ), t)
+dlsurv_weibull(α::Int, ρ::Float64, t) = dlsurv_weibull(Float64(α), ρ::Float64, t)
+dlsurv_weibull(α::Float64, ρ::Int, t) = dlsurv_weibull(α::Float64, Float64(ρ), t)
+dlsurv_weibull(α::Int, ρ::Int, t) = dlsurv_weibull(Float64(α), Float64(ρ), t)
 
 
 ################################################
@@ -402,7 +436,7 @@ end
 function ddlpdf_weibull(α, ρ, t)
     z = (log(t) - α) / exp(ρ)
     vcat(
-        hcat((-exp(z)) / (exp(ρ)^2), exp(-ρ) - (z + 1.0) * exp(z - ρ)),
+        hcat(-exp(z-2ρ), exp(-ρ) - (z + 1.0) * exp(z - ρ)),
         hcat(exp(-ρ) - (z + 1.0) * exp(z - ρ), z-(z+1)*exp(z)*z),
     )
 end
@@ -410,30 +444,37 @@ end
 function ddlsurv_weibull(α, ρ, t)
     z = (log(t) - α) / exp(ρ)
     vcat(
-        hcat(-exp(z - 2ρ), -(z + 1) * exp(z - ρ)),
-        hcat(-(z + 1) * exp(z - ρ), -z * exp(z) - z^2 * exp(z)),
+        hcat(-exp(z-2ρ), -(z + 1.0) * exp(z - ρ)),
+        hcat(-(z + 1.0) * exp(z - ρ), -z*(1.0+z) * exp(z)),
     )
 end
+
+ddlpdf_weibull(α::Int, ρ::Float64, t) = ddlpdf_weibull(Float64(α), ρ::Float64, t)
+ddlpdf_weibull(α::Float64, ρ::Int, t) = ddlpdf_weibull(α::Float64, Float64(ρ), t)
+ddlpdf_weibull(α::Int, ρ::Int, t) = ddlpdf_weibull(Float64(α), Float64(ρ), t)
+ddlsurv_weibull(α::Int, ρ::Float64, t) = ddlsurv_weibull(Float64(α), ρ::Float64, t)
+ddlsurv_weibull(α::Float64, ρ::Int, t) = ddlsurv_weibull(α::Float64, Float64(ρ), t)
+ddlsurv_weibull(α::Int, ρ::Int, t) = ddlsurv_weibull(Float64(α), Float64(ρ), t)
 
 
 ################################################
 # Underlying gradients, Weibull regression
 ################################################
 
-function dlsurv_regweibull(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    df = dlsurv_weibull(dot(θ, x), ρ, t)
-    dfdθ = [dα[j] * df[1] for j = 1:length(θ)]
-    dsdθ = vcat(dfdθ, df[2])
-    dsdθ
+function dlsurv_regweibull(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    df = dlsurv_weibull(dot(β, x), ρ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dsdβ = vcat(dfdβ, df[2])
+    dsdβ
 end
 
-function dlpdf_regweibull(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    df = dlpdf_weibull(dot(θ, x), ρ, t)
-    dfdθ = [dα[j] * df[1] for j = 1:length(θ)]
-    dfdθ = vcat(dfdθ, df[2])
-    dfdθ
+function dlpdf_regweibull(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    df = dlpdf_weibull(dot(β, x), ρ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dfdβ = vcat(dfdβ, df[2])
+    dfdβ
 end
 
 
@@ -441,40 +482,40 @@ end
 # Underlying Hessians, Weibull regression
 ################################################
 
-function ddlpdf_regweibull(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    ddf = ddlpdf_weibull(dot(θ, x), ρ, t)
-    #dfdθ = [dα[j] * df[1] for j in length(θ)]   
-    nb = length(θ)
+function ddlpdf_regweibull(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    ddf = ddlpdf_weibull(dot(β, x), ρ, t)
+    #dfdβ = [dα[j] * df[1] for j in length(β)]   
+    nb = length(β)
     np = nb + length(ρ)
-    ddsdθ = zeros(np, np)
-    ddsdθ[1:nb, np:np] .= ddf[1, 2] .* dα
-    ddsdθ[np:np, 1:nb] .= ddf[2, 1] .* dα'
-    ddsdθ[np, np] = ddf[2, 2]
+    ddsdβ = zeros(np, np)
+    ddsdβ[1:nb, np:np] .= ddf[1, 2] .* dα
+    ddsdβ[np:np, 1:nb] .= ddf[2, 1] .* dα'
+    ddsdβ[np, np] = ddf[2, 2]
     for r = 1:nb
         for c = r:nb
-            ddsdθ[r, c] = ddsdθ[c, r] = ddf[1, 1] * dα[r] * dα[c]
+            ddsdβ[r, c] = ddsdβ[c, r] = ddf[1, 1] * dα[r] * dα[c]
         end
     end
-    ddsdθ
+    ddsdβ
 end
 
-function ddlsurv_regweibull(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    ddf = ddlsurv_weibull(dot(θ, x), ρ, t)
-    #dfdθ = [dα[j] * df[1] for j in length(θ)]   
-    nb = length(θ)
+function ddlsurv_regweibull(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    ddf = ddlsurv_weibull(dot(β, x), ρ, t)
+    #dfdβ = [dα[j] * df[1] for j in length(β)]   
+    nb = length(β)
     np = nb + length(ρ)
-    ddsdθ = zeros(np, np)
-    ddsdθ[1:nb, np:np] .= ddf[1, 2] .* dα
-    ddsdθ[np:np, 1:nb] .= ddf[2, 1] .* dα'
-    ddsdθ[np, np] = ddf[2, 2]
+    ddsdβ = zeros(np, np)
+    ddsdβ[1:nb, np:np] .= ddf[1, 2] .* dα
+    ddsdβ[np:np, 1:nb] .= ddf[2, 1] .* dα'
+    ddsdβ[np, np] = ddf[2, 2]
     for r = 1:nb
         for c = r:nb
-            ddsdθ[r, c] = ddsdθ[c, r] = ddf[1, 1] * dα[r] * dα[c]
+            ddsdβ[r, c] = ddsdβ[c, r] = ddf[1, 1] * dα[r] * dα[c]
         end
     end
-    ddsdθ
+    ddsdβ
 end
 
 
@@ -521,7 +562,7 @@ Log probability distribution function: Exponential distribution
 function lpdf(d::Exponential, t)
     # location scale parameterization (Kalbfleisch and Prentice)
     #- d.α - t*exp(-d.α)
-    lpdf_weibull(d.α, 1, t)
+    lpdf_weibull(d.α, 0.0, t)
 end
 
 
@@ -541,7 +582,7 @@ Log survival function: Exponential distribution
 """
 function lsurv(d::Exponential, t)
     # location scale parameterization (Kalbfleisch and Prentice)
-    lsurv_weibull(d.α, 1, t)
+    lsurv_weibull(d.α, 0.0, t)
 end
 
 """
@@ -947,20 +988,20 @@ end
 ################################################
 
 
-function dlsurv_reglognormal(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    df = dlsurv_lognormal(dot(θ, x), ρ, t)
-    dfdθ = [dα[j] * df[1] for j = 1:length(θ)]
-    dsdθ = vcat(dfdθ, df[2])
-    dsdθ
+function dlsurv_reglognormal(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    df = dlsurv_lognormal(dot(β, x), ρ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dsdβ = vcat(dfdβ, df[2])
+    dsdβ
 end
 
-function dlpdf_reglognormal(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    df = dlpdf_lognormal(dot(θ, x), ρ, t)
-    dfdθ = [dα[j] * df[1] for j = 1:length(θ)]
-    dfdθ = vcat(dfdθ, df[2])
-    dfdθ
+function dlpdf_reglognormal(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    df = dlpdf_lognormal(dot(β, x), ρ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dfdβ = vcat(dfdβ, df[2])
+    dfdβ
 end
 
 
@@ -969,38 +1010,38 @@ end
 ################################################
 # TODO: eliminate boilerplate
 
-function ddlpdf_reglognormal(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    ddf = ddlpdf_lognormal(dot(θ, x), ρ, t)
-    #dfdθ = [dα[j] * df[1] for j in length(θ)]   
-    nb = length(θ)
+function ddlpdf_reglognormal(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    ddf = ddlpdf_lognormal(dot(β, x), ρ, t)
+    #dfdβ = [dα[j] * df[1] for j in length(β)]   
+    nb = length(β)
     np = nb + length(ρ)
-    ddsdθ = zeros(np, np)
-    ddsdθ[1:nb, np:np] .= ddf[1, 2] .* dα
-    ddsdθ[np:np, 1:nb] .= ddf[2, 1] .* dα'
-    ddsdθ[np, np] = ddf[2, 2]
+    ddsdβ = zeros(np, np)
+    ddsdβ[1:nb, np:np] .= ddf[1, 2] .* dα
+    ddsdβ[np:np, 1:nb] .= ddf[2, 1] .* dα'
+    ddsdβ[np, np] = ddf[2, 2]
     for r = 1:nb
         for c = r:nb
-            ddsdθ[r, c] = ddsdθ[c, r] = ddf[1, 1] * dα[r] * dα[c]
+            ddsdβ[r, c] = ddsdβ[c, r] = ddf[1, 1] * dα[r] * dα[c]
         end
     end
-    ddsdθ
+    ddsdβ
 end
 
-function ddlsurv_reglognormal(θ, ρ, t, x)
-    dα = dαdθ(θ, x)
-    ddf = ddlsurv_lognormal(dot(θ, x), ρ, t)
-    #dfdθ = [dα[j] * df[1] for j in length(θ)]   
-    nb = length(θ)
+function ddlsurv_reglognormal(β, ρ, t, x)
+    dα = dαdβ(β, x)
+    ddf = ddlsurv_lognormal(dot(β, x), ρ, t)
+    #dfdβ = [dα[j] * df[1] for j in length(β)]   
+    nb = length(β)
     np = nb + length(ρ)
-    ddsdθ = zeros(np, np)
-    ddsdθ[1:nb, np:np] .= ddf[1, 2] .* dα
-    ddsdθ[np:np, 1:nb] .= ddf[2, 1] .* dα'
-    ddsdθ[np, np] = ddf[2, 2]
+    ddsdβ = zeros(np, np)
+    ddsdβ[1:nb, np:np] .= ddf[1, 2] .* dα
+    ddsdβ[np:np, 1:nb] .= ddf[2, 1] .* dα'
+    ddsdβ[np, np] = ddf[2, 2]
     for r = 1:nb
         for c = r:nb
-            ddsdθ[r, c] = ddsdθ[c, r] = ddf[1, 1] * dα[r] * dα[c]
+            ddsdβ[r, c] = ddsdβ[c, r] = ddf[1, 1] * dα[r] * dα[c]
         end
     end
-    ddsdθ
+    ddsdβ
 end

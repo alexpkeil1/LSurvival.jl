@@ -182,14 +182,24 @@ end
 
 # with regression parameters
 function lpdf_test(θ, ρ, t, x)
-    α =  dot(θ,x)
-    ret = lpdf(LSurvival.Weibull(α,ρ), t)
+    ret = 0.0
+    i = 0
+    for xi in eachrow(x)
+      i+=1
+      α =  dot(θ,xi)
+      ret += lpdf(LSurvival.Weibull(α,ρ), t[i])
+    end
     ret
 end
 
 function lsurv_test(θ, ρ, t, x)
-    α =  dot(θ,x)
-    ret = lsurv(LSurvival.Weibull(α,ρ), t)
+    ret = 0.0
+    i = 0
+    for xi in eachrow(x)
+      i+=1
+      α =  dot(θ,xi)
+      ret += lsurv(LSurvival.Weibull(α,ρ), t[i])
+    end
     ret
 end
 
@@ -203,6 +213,39 @@ shess = Symbolics.hessian(s, [α,ρ], simplify=true)
 Symbolics.build_function(sgrad, α,ρ, t, fname="survgrad_symbol")
 Symbolics.build_function(shess, α,ρ, t, fname="survhess_symbol")
 
+"""
+# confirmation function
+θ = [-0.1, 0.2]
+x = [1.0, -0.25]
+ρ = -1.5
+t = 0.8
+α = dot(θ, x)
+z = (log(t)-α)*exp(-ρ)
+
+# finite difference
+eps = 0.000001
+[(lsurv_weibull(α, ρ, t)-lsurv_weibull(α-eps, ρ, t))/eps,
+(lsurv_weibull(α, ρ, t)-lsurv_weibull(α, ρ-eps, t))/eps]
+
+exp(z-ρ)
+
+
+# analytic
+dlsurv_weibull(α, ρ, t)
+# symbolic
+survgrad_symbol!(zeros(2), α, ρ, t, x)
+"""
+function survgrad_symbol!(ˍ₋out, α, ρ, t, x)
+    begin
+        @inbounds begin
+            ˍ₋out[1] = (/)((exp)((/)((+)((*)(-1, α), (log)(t)), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[2] = (/)((*)((+)((*)(-1, α), (log)(t)), (exp)((/)((+)((+)((*)(-1, α), (*)(ρ, (exp)(ρ))), (log)(t)), (exp)(ρ)))), (exp)((*)(2, ρ)))
+        end
+    end
+    ˍ₋out
+end
+
+
 
 @variables α ρ t;
 f = lpdf_test(α,ρ,t)
@@ -213,7 +256,17 @@ Symbolics.build_function(fgrad, α,ρ, t, fname="pdfgrad_symbol")
 Symbolics.build_function(fhess, α,ρ, t, fname="pdfhess_symbol")
 
 
-@variables θ[1:2] ρ t x[1:2];
+
+@variables θ[1:2] ρ t[1:2] x[1:2,1:2];
+f = lpdf_test(θ, ρ, t, x)
+fgrad = Symbolics.gradient(f, [θ[1], θ[2], ρ], simplify=true)
+fhess = Symbolics.hessian(f, [θ[1], θ[2], ρ], simplify=true)
+
+Symbolics.build_function(fgrad, θ, ρ, t, fname="pdfgrad_symbol")
+Symbolics.build_function(fhess, θ, ρ, t, fname="pdfhess_symbol")
+
+@variables θ[1:2] ρ t[1:2] x[1:2,1:2];
+size(x)
 s = lsurv_test(θ, ρ, t, x)
 sgrad = Symbolics.gradient(s, [θ[1], θ[2], ρ], simplify=true)
 shess = Symbolics.hessian(s, [θ[1], θ[2], ρ], simplify=true)
@@ -222,32 +275,25 @@ Symbolics.build_function(sgrad, θ, ρ, t, fname="survgrad_symbol")
 Symbolics.build_function(shess, θ, ρ, t, fname="survhess_symbol")
 
 
-@variables θ[1:2] ρ t x[1:2];
-f = lpdf_test(θ, ρ, t, x)
-fgrad = Symbolics.gradient(f, [θ[1], θ[2], ρ], simplify=true)
-fhess = Symbolics.hessian(f, [θ[1], θ[2], ρ], simplify=true)
-
-Symbolics.build_function(fgrad, θ, ρ, t, fname="pdfgrad_symbol")
-Symbolics.build_function(fhess, θ, ρ, t, fname="pdfhess_symbol")
 
 """
 # confirmation function
-θ = [-2, 1.2]
-x = [1, 0.1]
-ρ = -0.5
-t = 3.0
-α = dot(θ, x)
+θ = [-0.1, 0.2]
+x = [1.0  -0.25; 1 .25]
+ρ = 1.5
+t = [0.8, .5]
+#α = dot(θ, x)
 
 
-LSurvival.lpdf_gradient(LSurvival.Weibull(), vcat(θ, ρ), t, x)
+LSurvival.lpdf_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lpdf_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:])
 pdfgrad_symbol!(zeros(3), θ, ρ, t, x)
 """
 function pdfgrad_symbol!(ˍ₋out, θ, ρ, t, x)
     begin
         @inbounds begin
-            ˍ₋out[1] = (/)((+)((*)(-1.0, (getindex)(x, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 1))), (exp)(ρ))
-            ˍ₋out[2] = (/)((+)((*)(-1.0, (getindex)(x, 2)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 2))), (exp)(ρ))
-            ˍ₋out[3] = (/)((+)((+)((+)((+)((+)((+)((*)(-1.0, (exp)((*)(2, ρ))), (*)((log)(t), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))))), (*)((*)(-1.0, (log)(t)), (exp)(ρ))), (*)((*)((exp)(ρ), (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)((exp)(ρ), (getindex)(x, 2)), (getindex)(θ, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)), (getindex)(θ, 2))), (exp)((*)(2, ρ)))    
+            ˍ₋out[1] = (/)((+)((+)((+)((*)(-1.0, (getindex)(x, 1, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 1))), (*)(-1.0, (getindex)(x, 2, 1))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 1))), (exp)(ρ))
+            ˍ₋out[2] = (/)((+)((+)((+)((*)(-1.0, (getindex)(x, 1, 2)), (*)(-1.0, (getindex)(x, 2, 2))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 2))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 2))), (exp)(ρ))
+            ˍ₋out[3] = (/)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((*)(-2.0, (exp)((*)(2, ρ))), (*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (log)((getindex)(t, 1)))), (*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (log)((getindex)(t, 2)))), (*)((*)((exp)(ρ), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((exp)(ρ), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1.0, (exp)(ρ)), (log)((getindex)(t, 1)))), (*)((*)(-1.0, (exp)(ρ)), (log)((getindex)(t, 2)))), (*)((*)((exp)(ρ), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((exp)(ρ), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (exp)((*)(2, ρ)))
         end
     end
     ˍ₋out
@@ -255,21 +301,21 @@ end
 
 """
 # confirmation function
-θ = [-2, 1.2]
-x = [1, 0.1]
-ρ = -0.5
-t = 3.0
-α = dot(θ, x)
+θ = [-0.1, 0.2]
+x = [1.0  -0.25; 1 .25]
+ρ = 1.5
+t = [0.8, .5]
+#α = dot(θ, x)
 
-LSurvival.lsurv_gradient(LSurvival.Weibull(), vcat(θ, ρ), t, x)
+LSurvival.lsurv_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lsurv_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:])
 survgrad_symbol!(zeros(3), θ, ρ, t, x)
 """
 function survgrad_symbol!(ˍ₋out, θ, ρ, t, x)
     begin
         @inbounds begin
-            ˍ₋out[1] = (/)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 1)), (exp)(ρ))
-            ˍ₋out[2] = (/)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 2)), (exp)(ρ))
-            ˍ₋out[3] = (/)((*)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (exp)((*)(2, ρ)))        
+            ˍ₋out[1] = (/)((+)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 1))), (exp)(ρ))
+            ˍ₋out[2] = (/)((+)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 2)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 2))), (exp)(ρ))
+            ˍ₋out[3] = (/)((+)((+)((+)((+)((+)((*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (log)((getindex)(t, 1))), (*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (log)((getindex)(t, 2)))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (exp)((*)(2, ρ)))
         end
     end
     ˍ₋out
@@ -286,57 +332,64 @@ fun()
 
 
 """
-# confirmation function
-θ = [-2, 1.2]
-x = [1, .1]
-ρ = -0.5
-t = 3.0
-α = dot(θ, x)
+θ = [-0.1, 0.2]
+x = [1.0  -0.25; 1 .25]
+ρ = 1.5
+t = [0.8, .5]
+#α = dot(θ, x)
 
 
-LSurvival.lpdf_hessian(LSurvival.Weibull(), vcat(θ, ρ), t, x)
+LSurvival.lpdf_hessian(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lpdf_hessian(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:])
 pdfhess_symbol!(zeros(3,3), θ, ρ, t, x)
 """
 function pdfhess_symbol!(ˍ₋out, θ, ρ, t, x)
     begin
         @inbounds begin
-            ˍ₋out[1] = (/)((*)((*)(-1, (^)((getindex)(x, 1), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (^)((exp)(ρ), 2))
-            ˍ₋out[2] = (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(x, 2)), (^)((exp)(ρ), 2))
-            ˍ₋out[3] = (+)((*)((*)(-1, (/)((+)((*)(-1.0, (getindex)(x, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)))
-            ˍ₋out[4] = (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(x, 2)), (^)((exp)(ρ), 2))
-            ˍ₋out[5] = (/)((*)((*)(-1, (^)((getindex)(x, 2), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (^)((exp)(ρ), 2))
-            ˍ₋out[6] = (+)((*)((*)(-1, (/)((+)((*)(-1.0, (getindex)(x, 2)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)))
-            ˍ₋out[7] = (+)((*)((*)(-1, (/)((+)((*)(-1.0, (getindex)(x, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)))
-            ˍ₋out[8] = (+)((*)((*)(-1, (/)((+)((*)(-1.0, (getindex)(x, 2)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)))
-            ˍ₋out[9] = (+)((/)((+)((+)((+)((+)((+)((+)((*)(-2.0, (exp)((*)(2, ρ))), (*)((*)(-1.0, (log)(t)), (exp)(ρ))), (*)((*)((+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)(ρ))), (log)(t)), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))))), (*)((*)((exp)(ρ), (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)((exp)(ρ), (getindex)(x, 2)), (getindex)(θ, 2))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)), (getindex)(θ, 2))), (exp)((*)(2, ρ))), (*)((*)(-2, (/)((+)((+)((+)((+)((+)((+)((*)(-1.0, (exp)((*)(2, ρ))), (*)((log)(t), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))))), (*)((*)(-1.0, (log)(t)), (exp)(ρ))), (*)((*)((exp)(ρ), (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)((exp)(ρ), (getindex)(x, 2)), (getindex)(θ, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)), (getindex)(θ, 2))), (^)((exp)((*)(2, ρ)), 2))), (exp)((*)(2, ρ))))        end
+            ˍ₋out[1] = (/)((+)((/)((*)((*)(-1, (^)((getindex)(x, 1, 1), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (exp)(ρ)), (/)((*)((*)(-1, (^)((getindex)(x, 2, 1), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[2] = (/)((+)((/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (getindex)(x, 1, 2)), (exp)(ρ)), (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1)), (getindex)(x, 2, 2)), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[3] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1))), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(-1.0, (getindex)(x, 1, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 1))), (*)(-1.0, (getindex)(x, 2, 1))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[4] = (/)((+)((/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (getindex)(x, 1, 2)), (exp)(ρ)), (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1)), (getindex)(x, 2, 2)), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[5] = (/)((+)((/)((*)((*)(-1, (^)((getindex)(x, 1, 2), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (exp)(ρ)), (/)((*)((*)(-1, (^)((getindex)(x, 2, 2), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[6] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 2)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 2))), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(-1.0, (getindex)(x, 1, 2)), (*)(-1.0, (getindex)(x, 2, 2))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 2))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[7] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1))), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(-1.0, (getindex)(x, 1, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 1))), (*)(-1.0, (getindex)(x, 2, 1))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[8] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 2)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 2))), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(-1.0, (getindex)(x, 1, 2)), (*)(-1.0, (getindex)(x, 2, 2))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 2))), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[9] = (+)((/)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((*)(-4.0, (exp)((*)(2, ρ))), (*)((*)((exp)(ρ), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((exp)(ρ), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1.0, (exp)(ρ)), (log)((getindex)(t, 1)))), (*)((*)(-1.0, (exp)(ρ)), (log)((getindex)(t, 2)))), (*)((*)((+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (log)((getindex)(t, 1)))), (*)((*)((+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (log)((getindex)(t, 2)))), (*)((*)((exp)(ρ), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((exp)(ρ), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (exp)((*)(2, ρ))), (*)((*)(-2, (/)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((+)((*)(-2.0, (exp)((*)(2, ρ))), (*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (log)((getindex)(t, 1)))), (*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (log)((getindex)(t, 2)))), (*)((*)((exp)(ρ), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((exp)(ρ), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1.0, (exp)(ρ)), (log)((getindex)(t, 1)))), (*)((*)(-1.0, (exp)(ρ)), (log)((getindex)(t, 2)))), (*)((*)((exp)(ρ), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((exp)(ρ), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (^)((exp)((*)(2, ρ)), 2))), (exp)((*)(2, ρ))))
+        end
     end
     ˍ₋out
 end
 
 """
 # confirmation function
-θ = [-2, 1.2]
-x = [1, 0.1]
-ρ = -0.5
-t = 3.0
-α = dot(θ, x)
+θ = [-0.1, 0.2]
+x = [1.0  -0.25; 1 .25]
+ρ = 1.5
+t = [0.8, .5]
+#α = dot(θ, x)
 
+ga = LSurvival.lsurv_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lsurv_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:]) + LSurvival.lpdf_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lpdf_gradient(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:])
+gb = survgrad_symbol!(zeros(3), θ, ρ, t, x) + pdfgrad_symbol!(zeros(3), θ, ρ, t, x)
 
-LSurvival.lsurv_hessian(LSurvival.Weibull(), vcat(θ, ρ), t, x)
-survhess_symbol!(zeros(3,3), θ, ρ, t, x)
+ha = LSurvival.lsurv_hessian(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lsurv_hessian(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:]) + LSurvival.lpdf_hessian(LSurvival.Weibull(), vcat(θ, ρ), t[1], x[1,:]) + LSurvival.lpdf_hessian(LSurvival.Weibull(), vcat(θ, ρ), t[2], x[2,:])
+hb = survhess_symbol!(zeros(3,3), θ, ρ, t, x) + pdfhess_symbol!(zeros(3,3), θ, ρ, t, x)
+
+# newton raphson step
+inv(ha) * ga
+inv(hb) * gb
+
 """
 function survhess_symbol!(ˍ₋out, θ, ρ, t, x)
     begin
         @inbounds begin
-            ˍ₋out[1] = (/)((*)((*)(-1, (^)((getindex)(x, 1), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (^)((exp)(ρ), 2))
-            ˍ₋out[2] = (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(x, 2)), (^)((exp)(ρ), 2))
-            ˍ₋out[3] = (+)((*)((*)(-1, (/)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 1)), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)))
-            ˍ₋out[4] = (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)), (getindex)(x, 2)), (^)((exp)(ρ), 2))
-            ˍ₋out[5] = (/)((*)((*)(-1, (^)((getindex)(x, 2), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (^)((exp)(ρ), 2))
-            ˍ₋out[6] = (+)((*)((*)(-1, (/)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 2)), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)))
-            ˍ₋out[7] = (+)((*)((*)(-1, (/)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 1)), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 1)))
-            ˍ₋out[8] = (+)((*)((*)(-1, (/)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ))), (getindex)(x, 2)), (^)((exp)(ρ), 2))), (exp)(ρ)), (*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (getindex)(x, 2)))
-            ˍ₋out[9] = (+)((/)((*)((*)((+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (^)((exp)(ρ), 2))), (exp)(ρ))), (+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (exp)((*)(2, ρ))), (*)((*)(-2, (/)((*)((+)((+)((*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1)), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(x, 1)), (getindex)(θ, 1))), (*)((*)(-1, (getindex)(x, 2)), (getindex)(θ, 2))), (log)(t)), (exp)(ρ)))), (^)((exp)((*)(2, ρ)), 2))), (exp)((*)(2, ρ))))
+            ˍ₋out[1] = (/)((+)((/)((*)((*)(-1, (^)((getindex)(x, 1, 1), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (exp)(ρ)), (/)((*)((*)(-1, (^)((getindex)(x, 2, 1), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[2] = (/)((+)((/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (getindex)(x, 1, 2)), (exp)(ρ)), (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1)), (getindex)(x, 2, 2)), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[3] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1))), (exp)(ρ)), (*)((*)(-1, (/)((+)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[4] = (/)((+)((/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (getindex)(x, 1, 2)), (exp)(ρ)), (/)((*)((*)((*)(-1, (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1)), (getindex)(x, 2, 2)), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[5] = (/)((+)((/)((*)((*)(-1, (^)((getindex)(x, 1, 2), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (exp)(ρ)), (/)((*)((*)(-1, (^)((getindex)(x, 2, 2), 2)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (exp)(ρ))), (exp)(ρ))
+            ˍ₋out[6] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 2)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 2))), (exp)(ρ)), (*)((*)(-1, (/)((+)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 2)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[7] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 1)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 1))), (exp)(ρ)), (*)((*)(-1, (/)((+)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 1)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[8] = (+)((/)((+)((*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(x, 1, 2)), (*)((*)((*)((*)(-1, (/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)), (exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(x, 2, 2))), (exp)(ρ)), (*)((*)(-1, (/)((+)((*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (getindex)(x, 1, 2)), (*)((exp)((/)((+)((+)((*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1)), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (getindex)(x, 2, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))
+            ˍ₋out[9] = (+)((/)((+)((+)((+)((+)((+)((*)((*)((+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (log)((getindex)(t, 1))), (*)((*)((+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (log)((getindex)(t, 2)))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((*)((*)(-1.0, (+)((/)((+)((*)(ρ, (exp)(ρ)), (exp)(ρ)), (exp)(ρ)), (*)((*)(-1, (/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (^)((exp)(ρ), 2))), (exp)(ρ)))), (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (exp)((*)(2, ρ))), (*)((*)(-2, (/)((+)((+)((+)((+)((+)((*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ))), (log)((getindex)(t, 1))), (*)((exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ))), (log)((getindex)(t, 2)))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 1, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 1, 2))), (log)((getindex)(t, 1))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 1, 2))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)((*)(-1.0, (exp)((/)((+)((+)((+)((*)(ρ, (exp)(ρ)), (*)((*)(-1, (getindex)(θ, 1)), (getindex)(x, 2, 1))), (*)((*)(-1, (getindex)(θ, 2)), (getindex)(x, 2, 2))), (log)((getindex)(t, 2))), (exp)(ρ)))), (getindex)(θ, 2)), (getindex)(x, 2, 2))), (^)((exp)((*)(2, ρ)), 2))), (exp)((*)(2, ρ))))
         end
     end
     ˍ₋out

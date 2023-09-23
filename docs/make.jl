@@ -9,9 +9,14 @@ makedocs(;
     modules = [LSurvival],
     sitename = "LSurvival: survival analysis for left-truncated, right-censored outcomes",
     pages = [
-        "Help" => "index.md", 
-        "Parametric likelihood functions" => "Likelihood.md"
-        ],
+        "Help" => "index.md",
+        "Parametric likelihood functions" => ["details/Likelihood.md"],
+        "Examples" => [
+            "Non-parametric survival analysis" => "examples/nonparametric.md",
+            "Semi-parametric survival analysis with Cox models" => "examples/coxmodel.md",
+            "Parametric survival analysis with AFT models" => "examples/parametric.md",
+            ],
+    ],
     debug = true,
     doctest = true,
     source = "src",

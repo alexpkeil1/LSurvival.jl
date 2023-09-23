@@ -16,6 +16,8 @@ import SpecialFunctions: gamma_inc, erfinv, erf
 using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
 import Base: length, size, popat!, push!
+#using Optim
+import Optim: BFGS, optimize, Options, TwiceDifferentiable, only_fgh!
 
 import StatsBase:
     aic,

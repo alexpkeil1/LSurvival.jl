@@ -167,6 +167,61 @@ Recipe for cox-model based risk curves
     end
 end
 
+# Checking Weibull assumption from kaplan-meier fit
+@userplot LognLogPlot
+"""
+Plotting baseline hazard for a Cox model
+
+```julia
+using Plots, LSurvival
+dat4 = (
+    id = [1, 1, 2, 2, 2, 3, 4, 5, 5, 6],
+    enter = [1, 2, 5, 4, 6, 7, 3, 6, 8, 0],
+    exit = [2, 5, 6, 7, 8, 9, 6, 8, 14, 9],
+    status = [0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+    x = [0.1, 0.1, 1.5, 1.5, 1.5, 0, 0, 0, 0, 3],
+    z = [1, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+    w = [0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
+)
+
+k = kaplan_meier(dat4.enter, dat4.exit, dat4.status)
+
+lognlogplot(k)
+```
+
+
+"""
+@recipe function f(h::LognLogPlot)
+    ft = h.args[1]
+    # global
+    ylabel --> "Ln(-Ln(S(t)))" # --> sets default
+    xlabel --> "Ln(t)"
+    label --> ""       # := over-rides user choices
+    #linecolor --> :black
+    grid --> false
+    maxT = maximum(ft.R.exit)
+    minT = minimum(ft.R.exit)
+    xlim --> (log(minT), log(maxT))
+    ltimes = log.(ft.times)
+    lnl = log.(-log.(ft.surv))
+    X = hcat(ones(length(ltimes)), ltimes)
+    coef = X \ lnl
+    @series begin
+        seriestype := :line
+        markershape := :none
+        ltimes, lnl
+    end
+    @series begin
+        seriestype := :straightline
+        label := ""
+        color := :gray
+        style := :dash
+        [log(minT), log(maxT)], [coef[1] + coef[2]*log(minT), coef[1] + coef[2]*log(maxT)]
+    end
+
+end
+
+
 
 # baseline hazard plot for Cox model
 @userplot BaseHazPlot
@@ -265,7 +320,7 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
 
 ```
 """
-@recipe function f(h::CoxInfluence; type="dfbeta")
+@recipe function f(h::CoxInfluence; type="dfbeta", par=1)
     !issubset([type], ["dfbeta", "dfbetas", "jackknife"]) && throw("type must be 'dfbeta', 'dfbetas' or 'jackknife'")
     ft = h.args[1]
     id = values(ft.R.id)

@@ -882,14 +882,14 @@ start0 = [1.310030842912028, 0.02682650385621469]
 @rput start0
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="exponential")
 ret = summary(res)
 ret
 """
 @rget ret
-res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=true, fitint=false, start=rand(2))
+resexp = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=false, start=rand(2))
 
-start0w = [2.44235, -1.05605, 0]
+start0w = vcat(coef(resexp), 0.0)
 res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true, start =start0w, fitint=false)
 res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true, start =[2.5,-1.,0.], fitint=false);
 
@@ -932,7 +932,7 @@ res = survreg(Surv(time , status) ~ x,data = datgen, dist="weibull")
 ret = summary(res)
 """
 fit1 = survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Exponential(), verbose=true)
-fit2 = survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), start=vcat(params(fit1), 0.0), verbose=true)
+fit2 = survreg(@formula(Surv(time,status)~x), datgen, dist=LSurvival.Weibull(), start=vcat(coef(fit1), .34), verbose=true)
 
 fit1b = survreg(@formula(Surv(time,status)~1), datgen, dist=LSurvival.Weibull(), start=[2.,0.], verbose=true)
 

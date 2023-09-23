@@ -53,7 +53,7 @@ function PSParms(X::Union{Nothing,D}; extraparms = 1) where {D<:AbstractMatrix}
         X,
         fill(0.0, p),
         fill(0.0, n),
-        zeros(Float64, 1),
+        Float64[],
         fill(0.0, r),
         fill(0.0, r, r),
         zeros(extraparms),
@@ -134,9 +134,9 @@ Gradient contribution for an observation in a parametric survival model
 ```
 """
 function dloglik!(gt, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    gt .= enter > 0 ? -lsurv_gradient(d, θ, enter, x) : gt.*0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    gt .= enter > 0 ? -lsurv_gradient(d, θ, enter, x) : gt.*0.0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     gt .+=
-        y == 1 ? lpdf_gradient(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        y > 0 ? lpdf_gradient(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv_gradient(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
     gt .*= wts
     gt
@@ -159,9 +159,9 @@ Hessian contribution for an observation in a parametric survival model
 ```
 """
 function ddloglik!(he, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    he  .= enter > 0 ? -lsurv_hessian(d, θ, enter, x) : he.*0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    he  .= enter > 0 ? -lsurv_hessian(d, θ, enter, x) : he.*0.0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     he .+=
-        y == 1 ? lpdf_hessian(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        y > 0 ? lpdf_hessian(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv_hessian(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
         he .*= wts
     he
@@ -186,6 +186,7 @@ function get_gradient(m::M, θ) where {M<:PSModel}
     grad = zeros(length(θ))
     gt = zeros(length(θ))
     for i = 1:length(m.R.enter)
+        gt .*= 0.0
         dloglik!(gt, m.d, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
         grad += gt
     end
@@ -197,6 +198,7 @@ function get_hessian(m::M, θ) where {M<:PSModel}
     hess = zeros(length(θ), length(θ))
     he = zeros(length(θ), length(θ))
     for i = 1:length(m.R.enter)
+        he .*= 0.0
         ddloglik!(he, m.d, θ, m.R.enter[i], m.R.exit[i], m.R.y[i], m.P.X[i, :], m.R.wts[i])
         hess += he
     end
@@ -292,7 +294,7 @@ end
 #```
 #
 #"""
-function _fit!(
+function old_fit!(
     m::PSModel;
     verbose::Bool = false,
     maxiter::Integer = 500,
@@ -308,19 +310,15 @@ function _fit!(
     start = !isnothing(start) ? start : setinits(m, verbose=verbose)
     parms = deepcopy(start)
     λ = 1.0
-    #λ = 0.001
-    #
     totiter = 0
-    #lgh!(m, parms)
-    m.P._grad .+= 100.0
     oldQ = floatmax()
+    lgh!(m, parms)
     while totiter < maxiter
         totiter += 1
         converged = (maximum(abs.(m.P._grad)) < gtol)
         if converged
             break
         end
-        lgh!(m, parms)
         verbose && println("$parms $(m.P._grad) $(m.P._hess)")
         verbose && println("$(m.P._LL[end])")
         Q = m.P._grad' * m.P._grad #l2 norm of vector
@@ -339,6 +337,7 @@ function _fit!(
             @debug "Log-likelihood history: $_llhistory $(m.P._LL[1])"
             throw("Log-likelihood is not finite: check model inputs")
         end
+        lgh!(m, parms)
         # newton raphson update
         #verbose && println(m.P._LL[end])
     end
@@ -350,9 +349,80 @@ function _fit!(
         @warn "maxiter = 0, model coefficients set to starting values"
     end
     m.fit = true
-    m.P._LL = m.P._LL[2:end]
+    m.P._LL = m.P._LL
     m.P._B .= parms[1:m.P.p]
     m.P._S .= parms[(m.P.p+1):end]
+    m.P.X = keepx ? m.P.X : nothing
+    m.R = keepy ? m.R : nothing
+    m
+end
+
+
+
+function _fit!(
+    m::PSModel;
+    verbose::Bool = false,
+    maxiter::Integer = 500,
+    gtol::Float64 = 1e-8,
+    start = nothing,
+    keepx = true,
+    keepy = true,
+    bootstrap_sample = false,
+    bootstrap_rng = MersenneTwister(),
+    kwargs...,
+)
+    m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
+    #start = nothing
+    # verbose= false
+    start = !isnothing(start) ? start : setinits(m, verbose=verbose)
+    parms = deepcopy(start)
+    
+    
+    function parmupdate!(
+        F,
+        G,
+        H,
+        θ,
+        m;
+    )
+        m.P._LL[end] = isnothing(F) ? m.P._LL[end] : F
+        m.P._grad = isnothing(G) ? m.P._grad : G
+        m.P._hess = isnothing(H) ? m.P._hess : H
+        #
+        LSurvival.lgh!(m, θ)
+        # turn into a minimization problem
+        m.P._B .= θ[1:m.P.p]
+        m.P._S .= θ[(m.P.p+1):end]
+        F = -m.P._LL[end]
+        m.P._grad .*= -1.0
+        m.P._hess .*= -1.0
+        F
+    end
+    
+    fgh! = TwiceDifferentiable(
+        only_fgh!((F, G, H, beta) -> parmupdate!(F, G, H, beta, m)),
+        parms,
+    )
+    LSurvival.lgh!(m, parms)
+    res = optimize(
+        fgh!,
+        parms,
+        BFGS(),
+        Options(
+            store_trace=true,
+            iterations = maxiter,
+            g_tol=gtol
+        )
+        )
+    m.P._grad .*= -1.0
+    m.P._hess .*= -1.0
+
+    !res.g_converged && @warn("Optimizer reports model did not converge")
+
+    m.fit = true
+    m.P._LL = [-rt.value for rt in res.trace]
+    #m.P._B .= parms[1:m.P.p]
+    #m.P._S .= parms[(m.P.p+1):end]
     m.P.X = keepx ? m.P.X : nothing
     m.R = keepy ? m.R : nothing
     m
@@ -381,9 +451,6 @@ function StatsBase.fit!(
         Base.depwarn("`tol` argument is deprecated, use `gtol` instead", :fit!)
         gtol = kwargs[:tol]
     end
-
-    #start = isnothing(start) ? setinits(m) : start
-
     _fit!(m, verbose = verbose, maxiter = maxiter, gtol = gtol, start = start; kwargs...)
 end
 
@@ -423,8 +490,9 @@ function fit(
     #    fitargs = (start = st, fitargs...)
     #end
     res = M(R, P, dist)
-    push!(res.P._LL, res0.P._LL[end])
-    return fit!(res; fitargs...)
+    fit!(res; fitargs...)
+    fitint && pushfirst!(res.P._LL, res0.P._LL[end])
+    return res
 end
 
 function modelframe(
@@ -478,8 +546,9 @@ function fit(
     #end
     res = M(R, P, f, dist, false)
 
-    push!(res.P._LL, res0.P._LL[end])
-    return fit!(res; fitargs...)
+    fit!(res; fitargs...)
+    fitint && pushfirst!(res.P._LL, res0.P._LL[end])
+    return res
 end
 
 survreg(X, enter, exit, y, args...; kwargs...) =
@@ -643,6 +712,12 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:P
         throw("$type not implemented")
     else
         res = -inv(m.P._hess)
+        if any(eigen(res).values .< 0.0)
+            @warn("Covariance matrix is not positive semi-definite, model likely not converged")
+            if any(diag(res) .< 0.0) 
+                res = zeros(size(m.P._hess))
+            end
+        end
     end
     res
 end
@@ -664,16 +739,19 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
     println(iob, coeftab)
     # Model fit
     ll = loglikelihood(m)
-#    llnull = nullloglikelihood(m)
-#    df = length(coeftab.rownms) - 1
-#    chi2 = 2 * (ll - llnull)
-#    lrtp = 1 - cdfchisq(df, chi2)
+    llnull = nullloglikelihood(m)
     str = """\nMaximum likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
     str *= String(take!(iob))
-#    str *= "Log-likelihood (Intercept only): $(@sprintf("%8g", llnull))\n"
+    str *= "$(nameof(typeof(m.d))) distribution\n"
     str *= "Log-likelihood (full): $(@sprintf("%8g", ll))\n"
-#    str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
-    str *= "Newton-Raphson iterations: $(length(m.P._LL)-1)"
+    if ll>llnull
+        df = length(coeftab.rownms) - length(m.d)
+        chi2 = 2 * (ll - llnull)
+        lrtp = 1 - cdfchisq(df, chi2)
+        str *= "Log-likelihood (Intercept only): $(@sprintf("%8g", llnull))\n"
+        str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
+    end
+    str *= "Solver iterations: $(length(m.P._LL)-1)"
     println(io, str)
 end
 
@@ -681,7 +759,6 @@ Base.show(m::M; kwargs...) where {M<:PSModel} = Base.show(stdout, m; kwargs...)
 
 
 """
-
 using LSurvival, Random, StatsBase, Printf, Tables
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 enter = zeros(length(dat1.time))
@@ -708,18 +785,11 @@ wt = ones(length(t))
 dist = Weibull()
 P = PSParms(X[:,1:1], extraparms=length(dist)-1)
 P = PSParms(X, extraparms=length(dist)-1)
-P._B
-P._grad
 R = LSurvivalResp(dat1.time, dat1.status)    # specification with ID only
 m = PSModel(R,P,dist)
-
-m.P._B
-m.P._S
-m.P._LL
 
 LSurvival._fit!(m);
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull())
 """
-
 ;
