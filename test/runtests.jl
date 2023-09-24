@@ -72,7 +72,6 @@ using Random, Tables
 
     println(coxph(@formula(Surv(time,status)~x), dat1))
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
-    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull()));
     #
 
 

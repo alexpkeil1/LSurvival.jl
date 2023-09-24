@@ -121,7 +121,7 @@ $$\begin{aligned}
 =& exp((\mathbf{x'}-\mathbf{x})\beta\exp(-\rho)) \\
 \end{aligned}$$
 
-Which is the inverse of the time ratio, implying that a predictor that proportionally increases the hazard of $Y$ also proportionally decreases the survival time. For the Weibull (and exponential) distribution hazard ratio can be derived from the AFT model by simply exponentiating the negative value of the AFT parameters divided by the model scale parameter (e.g. $\exp(-\beta\exp(-\rho))$, which reduces to $\exp(-\beta)$ in the Exponential model)
+Which is the inverse of the time ratio, implying that a predictor that proportionally increases the hazard of $Y$ also proportionally decreases the survival time. For the Weibull(and exponential) distribution hazard ratio can be derived from the AFT model by simply exponentiating the negative value of the AFT parameters (e.g. $\exp(-\beta)$)
 
 
 ### Exponential distribution

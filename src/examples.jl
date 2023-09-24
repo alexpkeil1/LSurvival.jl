@@ -942,9 +942,24 @@ fit1b = survreg(@formula(Surv(time,status)~1), datgen, dist=LSurvival.Weibull(),
 @rput dat1
 R"""
 library(survival)
-res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal", init=c(0,0,0))
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal")
 ret = summary(res)
 """
-survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=true, start=[0,0,0], maxiter=1)
+lnfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=true, start=rand(3))
+lnfit = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Lognormal(), start=rand(2))
 
 @rget ret
+
+
+    # Call:
+    # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "lognormal")
+    #              Value Std. Error     z       p
+    # (Intercept)  2.210      0.404  5.48 4.4e-08
+    # x           -1.268      0.585 -2.17    0.03
+    # Log(scale)  -0.446      0.342 -1.30    0.19
+    # 
+    # Scale= 0.64 
+    # Log Normal distribution
+    # Loglik(model)= -10.5   Loglik(intercept only)= -12.1
+    #         Chisq= 3.26 on 1 degrees of freedom, p= 0.071 
+    # Number of Newton-Raphson Iterations: 5 
