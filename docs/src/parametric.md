@@ -45,7 +45,7 @@ Solver iterations: 15
 coxfit = coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, ties = "efron", wts = wt, id = ID.(tab.id))
 ```
 
-### Output:
+Output:
 
 ```output
 Maximum partial likelihood estimates (alpha=0.05):
@@ -59,7 +59,8 @@ z2  1.59741   0.10216    1.39718   1.79764   15.64   <1e-99
 Partial log-likelihood (null): -2460.82
 Partial log-likelihood (fitted): -2314.18
 LRT p-value (X^2=293.28, df=3): 0
-Newton-Raphson iterations: 6```
+Newton-Raphson iterations: 6
+```
 
 ## Comparing estimates with a Cox model
 Because the Weibull accelarated failure time (AFT) model is also a proportional hazards model, we can convert the AFT model parameters to hazard ratios to compare.
@@ -70,7 +71,8 @@ aftparms = coef(weibullfit)[2:end]
 parmhrs = - aftparms ./ scale
 hcat(coef(coxfit), parmhrs)
 ```
-### Output:
+
+Output:
 The first column is ln(HR) estimate from a Cox model, and the second is from the Weibull model
 
 ```output
@@ -89,6 +91,7 @@ The first column is ln(HR) estimate from a Cox model, and the second is from the
 ```
 expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Exponential())
 ```
+
 Output:
 
 ```output
@@ -110,6 +113,7 @@ Solver iterations: 14
 
 
 ### Log-normal
+
 ```julia
 ## note this model runs into convergence issues in these data
     #expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Lognormal())
@@ -118,6 +122,7 @@ Solver iterations: 14
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
     lognormalfit = survreg(@formula(Surv( time, status)~x), dat1, dist=LSurvival.Lognormal())
 ```
+
 ```output
 Maximum likelihood estimates (alpha=0.05):
 ─────────────────────────────────────────────────────────────────────
