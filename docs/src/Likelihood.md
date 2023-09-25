@@ -116,9 +116,9 @@ So that a unit change in the predictor leads to a relative change in the surviva
 Under the Weibull distribution, the hazard ratio is given as
 
 $$\begin{aligned} 
-\frac{h_{\mathbf x}(t|\lambda,\gamma)}{h_{\mathbf x'}(t|\lambda,\gamma)} =&\frac{\exp(\alpha_{\mathbf x})^{exp(-\rho)}}{\exp(\alpha_{\mathbf x'})^{exp(-\rho)}} \\
+\frac{h_{\mathbf x}(t|\lambda,\gamma)}{h_{\mathbf x'}(t|\lambda,\gamma)} =&\frac{\exp(\alpha_{\mathbf x})^{exp(-\rho)}}{\exp(\alpha_{\mathbf x})^{exp(-\rho)}} \\
 =&\frac{\exp( -\mathbf{x}\beta\exp(-\rho))}{\exp( -\mathbf{x'}\beta\exp(-\rho))} \\
-=& \exp((\mathbf{x'}-\mathbf{x})\beta\exp(-\rho)) \\
+=& exp((\mathbf{x'}-\mathbf{x})\beta\exp(-\rho)) \\
 \end{aligned}$$
 
 Which is the inverse of the time ratio, implying that a predictor that proportionally increases the hazard of $Y$ also proportionally decreases the survival time. For the Weibull (and exponential) distribution hazard ratio can be derived from the AFT model by simply exponentiating the negative value of the AFT parameters divided by the model scale parameter (e.g. $\exp(-\beta\exp(-\rho))$, which reduces to $\exp(-\beta)$ in the Exponential model)
@@ -149,9 +149,49 @@ $$\begin{aligned}
 
 
 
+### Gamma distribution
+(not yet implemented)
+
+$$\begin{aligned} 
+f(t|\lambda,k)=& \frac{\lambda(\lambda t)^{k-1}exp(\lambda t)}{\Gamma(k)}
+\end{aligned}$$
+
+
+
 ### Log-normal distribution
 
 $$\begin{aligned} 
-f(t)=&(2\pi)^{-1/2}\gamma t^{-1} \exp\bigg(\frac{-\gamma^2(\ln(\lambda t))^2}{2}   \bigg) \\
-S(t) =& 1 - \Phi\big(\gamma \ln(\lambda t)\big)
+f(t|\lambda,\gamma)=&(2\pi)^{-1/2}\gamma t^{-1} \exp\bigg(\frac{-\gamma^2(\ln(\lambda t))^2}{2}   \bigg) \\
+S(t|\lambda,\gamma) =& 1 - \Phi\big(\gamma \ln(\lambda t)\big)
 \end{aligned}$$
+
+
+### Generalized Gamma distribution
+(not yet implemented)
+
+Limiting cases:
+
+- Log-normal (as $k\rightarrow \infty$)
+- Weibull ($k=1$)
+- Exponential ($\gamma=k=1$)
+
+$$\begin{aligned} 
+f(t|\lambda,\gamma,k)=& \frac{\lambda\gamma(\lambda t)^{\gamma k-1}exp\big[-(\lambda t)^\gamma \big]}{\Gamma(k)}
+\end{aligned}$$
+
+
+### Log-logistic distribution
+(not yet implemented)
+
+$$\begin{aligned} 
+f(t|\lambda,\gamma)=&\lambda\gamma(\lambda t)^{\gamma-1} (1 + (\lambda t)^\gamma )^{-2} \\
+S(t|\lambda,\gamma)=&\frac{1}{1+(\lambda t)^\gamma}
+\end{aligned}$$
+
+### Generalized Gamma distribution
+(not yet implemented)
+(not yet implemented)
+
+Limiting cases:
+
+- all other approaches
