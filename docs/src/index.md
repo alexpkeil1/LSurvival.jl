@@ -15,20 +15,20 @@ Capabilities include estimators for
 - Kaplan-Meier non-parametric conditional risk functions
 - Aalen-Johansen non-parametric cause-specific unconditional risk functions
 - Cox proportional hazards model (Efron's or Breslow's methods for ties)
+- Parametric survival models
 
 Convenience functions enable:
-- Non-parametric bootstrapping, cluster-bootstrapping
+- Non-parametric bootstrapping, cluster-bootstrapping, jackknife
 - Estimating baseline hazards from a Cox Model
 - Estimating cause-specific risk from an exhaustive set of Cox models for competing risk outcomes
 - Simple simulation of competing and non-competing survival events
-- Cluster robust variance estimation (without bootstrapping)
 - Martingale, score, Schoenfeld, and dfbeta residuals
-- Cluster robust variance estimation
-
+- Cluster robust variance estimation (Cox models)
 
 Plans to include:
-- Parametric survival models
+- Parametric survival models: more distributions
 - Stratification in Cox models
+- Parametric survival model diagnostics
 
 The package has been tuned to follow the "survival" package from R in terms of specific estimators/results.
 
@@ -77,6 +77,7 @@ kaplan_meier(int, outt, d)
 
 
 ### Competing event analysis: Aalen-Johansen and Cox-model-based estimators of the cumulative risk/survival
+
 ```julia
 # Aalen-Johansen estimator: marginal cause-specific risks
 res_aj = aalen_johansen(enter, t, event; wts = wt);
@@ -103,17 +104,25 @@ id, int, outt, data = dgm(MersenneTwister(), 1000, 10; regimefun = int_0)
 LSurvivalResp(int, outt, data[:,4], ID.(id))
 ```
 
-## Index of functions
+# Index of functions
 
 ```@index
 ```
 
-## Function help 
+# Function help 
 
 ```@autodocs
 Modules = [LSurvival]
 ```
 
+# Implementation details and further help
+
 ```@contents
-Pages = ["Likelihood.md"]
+Pages = [
+    "Likelihood.md",
+    "nonparametric.md",
+    "coxmodel.md",
+    "parametric.md",
+    ]
+    Depth = 3
 ```

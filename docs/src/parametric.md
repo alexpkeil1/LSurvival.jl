@@ -1,8 +1,8 @@
-# Parametric survival/risk estimation with plotting
+# Parametric survival/risk estimation with Weibull AFT models
 
 ## Weibull accelerated failure time model
 ```julia
-cd("docs/src/examples/fig/")
+cd("docs/src/fig/")
 using Random, LSurvival, Distributions, LinearAlgebra, Plots
 
 # generate some data under a discrete hazards model
@@ -18,8 +18,7 @@ tab = (id=id, in = int, out = out, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3], wts=wt) 
 weibullfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Weibull())
 ```
 
-
-### Output:
+Output:
 
 ```output
 Maximum likelihood estimates (alpha=0.05):
@@ -39,7 +38,9 @@ LRT p-value (X^2=267.23, df=3): 0
 Solver iterations: 15
 ```
 
-## Compare with cox model estimate
+## Comparing Weibull AFT and Cox model results
+
+For the Weibull distribution, AFT model and Cox model results can be compared directly by converting AFT estimates to hazard ratios
 
 ```julia
 coxfit = coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, ties = "efron", wts = wt, id = ID.(tab.id))
@@ -62,8 +63,7 @@ LRT p-value (X^2=293.28, df=3): 0
 Newton-Raphson iterations: 6
 ```
 
-## Comparing estimates with a Cox model
-Because the Weibull accelarated failure time (AFT) model is also a proportional hazards model, we can convert the AFT model parameters to hazard ratios to compare.
+Convert the AFT model parameters to hazard ratios to compare (note that this conversion is not possible for all parametric survival distributions).
 
 ```julia
 scale = exp(weibullfit.P._S[1])
@@ -88,6 +88,7 @@ The first column is ln(HR) estimate from a Cox model, and the second is from the
 
 
 ### Exponential
+
 ```
 expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Exponential())
 ```
@@ -115,7 +116,7 @@ Solver iterations: 14
 ### Log-normal
 
 ```julia
-## note this model runs into convergence issues in these data
+# note this model runs into convergence issues in these data
     #expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Lognormal())
 
 # Here are results from a simpler model

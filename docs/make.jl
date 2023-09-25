@@ -10,7 +10,7 @@ makedocs(;
     sitename = "LSurvival: survival analysis for left-truncated, right-censored outcomes",
     pages = [
         "Help" => "index.md",
-        "Parametric likelihood functions" => ["Likelihood.md"],
+        "Details" =>["Likelihood functions" => "Likelihood.md"],
         "Examples" => [
             "Non-parametric survival analysis" => "nonparametric.md",
             "Semi-parametric survival analysis with Cox models" => "coxmodel.md",

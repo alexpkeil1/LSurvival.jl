@@ -1,7 +1,9 @@
-# Non-parametric survival/risk estimation with plotting
+# Non-parametric survival/risk estimation: Kaplan-Meier and Aalen-Johansen
+
+## Kaplan-Meier estimator of the cumulative risk/survival
 
 ```julia
-cd("docs/src/examples/fig/")
+cd("docs/src/fig/")
 using Random, LSurvival, Distributions, LinearAlgebra, Plots
 
 # generate some data under a discrete hazards model
@@ -15,6 +17,8 @@ wt = rand(MersenneTwister(1212), length(d)) # random weights just to demonstrate
 # Kaplan-Meier curve
 mfit = kaplan_meier(int, out, d, wts = wt, id = ID.(id))
 ```
+
+
 Output:
 
 ```outputa
@@ -41,16 +45,14 @@ Kaplan-Meier Survival
 Number of events:  43.7388
 Number of unique event times:       15
 ```
-
-## Plot survival curve
-# Kaplan-Meier estimator of the cumulative risk/survival
+### Plotting the survival curve
 ```julia
 plot(mfit)
 savefig("km.svg")
 ```
 ![Kaplan-Meier](fig/km.svg)
 
-# Checking whether marginal distribution of the outcome comports with a parametric Weibull or Exponential model
+### Checking whether marginal distribution of the outcome comports with a parametric Weibull or Exponential model
  - a straight line implies Weibull
  - a flat line implies Exponential (a special case of Weibull)
 ```julia
@@ -60,7 +62,7 @@ savefig("lognlog.svg")
 ![Is-it-Weibull](fig/lognlog.svg)
 
 
-# Competing event analysis: Aalen-Johansen estimator of cumulative risk
+## Competing event analysis: Aalen-Johansen estimator of cumulative risk
 ```julia
 using Random, LSurvival, Distributions, LinearAlgebra
 
@@ -109,7 +111,7 @@ Number of events (j=2.0):  58.4336
 Number of unique event times:      106
 ```
 
-## Aalen-Johansen plot: marginal cause-specific risks
+### Plotting marginal cause-specific risks
 ```julia
 plot(res_aj)
 savefig("aj.svg")

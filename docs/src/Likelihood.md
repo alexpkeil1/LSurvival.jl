@@ -17,7 +17,7 @@ Parametric survival models in `LSurvival` are parameterized as accelerated failu
 - Function $S(t)=Pr(T>t)$: survival function evaluated at $T=t$, where $S(0)= 1$
 - Function $\mathscr{L} \equiv\mathscr{L}(t,e,y;\theta)$: likelihood function for observed data under a parametric distribution with parameters $\theta$
 
-## Likelihood for survival data
+## Likelihoods for survival data subject to right censoring and left truncation
 
 We then have that the likelihood for i.i.d. data decomposes as
  
@@ -190,8 +190,18 @@ S(t|\lambda,\gamma)=&\frac{1}{1+(\lambda t)^\gamma}
 
 ### Generalized Gamma distribution
 (not yet implemented)
-(not yet implemented)
 
 Limiting cases:
 
 - all other approaches
+
+## Semi-parametric partial likelihoods
+Documentation in progress
+
+### Efron's partial likelihood
+This is the default in coxph
+
+### Breslow's partial likelihood
+
+## Time-varying covariates
+Documentation in progress
