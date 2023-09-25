@@ -19,6 +19,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Documenter = "0.20 - 0.30, 1"
+Optim = "1"
 RecipesBase = "^1"
 Reexport = "^1"
 SpecialFunctions = "2"
