@@ -47,7 +47,11 @@ $$\begin{aligned}
  =& \frac{S(t_{i1})}{S(e_{ij}= e_i)} \times \frac{f(t_{i2}=t_i)^{y_{i2}=y_i}}{S(e_{i2}=t_{i1})} =  \frac{f(t_i)}{{S(e_i)}}
 \end{aligned}$$
 
-Which is exactly the likelihood we would observe if there were only one observation for this individual. Similar derivations can be made for censored individuals. This phenomena allows that, for example, covariates may differ across person-periods (time-varying covariates), and the general approach to likelihoods to survival data can readily accomodate this. The `LSurvival` module takes this general approach to defining the likelihood (and also the partial likelihood in Cox models) and so allows the estimation of effects of time-varying exposures as well as accomodating left truncation and right censoring. 
+Which is exactly the likelihood we would observe if there were only one observation for this individual. Similar derivations can be made for censored individuals. This phenomena allows that, for example, covariates may differ across person-periods (time-varying covariates), and the general approach to likelihoods for left-truncated, right-censored survival data can readily accomodate this. The `LSurvival` module takes this general approach to defining the likelihood (and also the partial likelihood in Cox models) and so allows the estimation of effects of time-varying exposures as well as accomodating left truncation and right censoring. 
+
+One example of person-period data is shown below. Each circle represents a censoring event, which can occur because an individual survives to the end-of-follow-up, is lost-to-follow-up (individual level) or because they have a person-period that they survive until the end of (period or record level). 
+![Person-period plot](fig/ppplot.svg)
+
 
 ## Parametric likelihoods
 
@@ -88,7 +92,7 @@ h(t|\alpha, \rho) =& f(t|\alpha, \rho)/S(t|\alpha,\rho)\\
 =&  z -\exp(z) -\rho -\ln(t) - (-\exp(z)) \\
 =& z -\rho -\ln(t) \\
 =& \ln(t)\exp(-\rho)-\alpha{}\exp(-\rho) -\rho -\ln(t) \\
-h(t|\alpha, \rho) =&\frac{\exp(\alpha)^{\exp(-\rho)}t^{\exp(-\rho)}}{t\exp(\rho)} \\
+h(t|\alpha, \rho) =&\frac{\exp(\alpha)^{\exp(-\rho)}t^{\exp(-\rho)-1}}{\exp(\rho)} \\
 \end{aligned}$$
 
 
@@ -121,7 +125,7 @@ $$\begin{aligned}
 =& exp((\mathbf{x'}-\mathbf{x})\beta\exp(-\rho)) \\
 \end{aligned}$$
 
-Which is the inverse of the time ratio, implying that a predictor that proportionally increases the hazard of $Y$ also proportionally decreases the survival time. For the Weibull (and exponential) distribution hazard ratio can be derived from the AFT model by simply exponentiating the negative value of the AFT parameters divided by the model scale parameter (e.g. $\exp(-\beta\exp(-\rho))$, which reduces to $\exp(-\beta)$ in the Exponential model)
+Which is proportional to the inverse of the time ratio, meaning that a predictor that proportionally increases the hazard of $Y$ also proportionally decreases the survival time. For the Weibull (and exponential) distribution hazard ratio can be derived from the AFT model by simply exponentiating the negative value of the AFT parameters divided by the model scale parameter (e.g. $\exp(-\beta\exp(-\rho))$, which reduces to $\exp(-\beta)$ in the Exponential model)
 
 
 ### Exponential distribution
@@ -152,10 +156,15 @@ $$\begin{aligned}
 ### Gamma distribution
 (not yet implemented)
 
-$$\begin{aligned} 
-f(t|\lambda,k)=& \frac{\lambda(\lambda t)^{k-1}exp(\lambda t)}{\Gamma(k)}
-\end{aligned}$$
+Define $I_k(s)$ as the incomplete gamma integral given by
 
+$$I_k(s) = \frac{\int_o^s x^{k-1}\exp(-x)dx}{\Gamma(k)}$$
+
+Then Gamma distribution can be parameterized as
+$$\begin{aligned} 
+f(t|\lambda,k)=& \frac{\lambda(\lambda t)^{k-1}exp(\lambda t)}{\Gamma(k)}\\
+S(t|\lambda,k)=& 1-I_k(\lambda t)
+\end{aligned}$$
 
 
 ### Log-normal distribution
