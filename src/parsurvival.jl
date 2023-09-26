@@ -4,19 +4,21 @@
 ######################################################################
 
 #abstract type AbstractSurvDist end
-
+#=
 function copydist(d::T, args...) where {T<:AbstractSurvDist}
     typeof(d)(args...)
-end
-
-function Base.length(d::T) where {T<:AbstractSurvDist}
-    length(fieldnames(T))
 end
 
 function name(::Type{T}) where {T}
     #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
     isempty(T.parameters) ? T : T.name.wrapper
 end
+
+=#
+function Base.length(d::T) where {T<:AbstractSurvDist}
+    length(fieldnames(T))
+end
+
 
 
 
@@ -294,6 +296,11 @@ end
 #```
 #
 #"""
+
+#=
+# Newton raphson algorithm for parametric survival models depending on analytic gradients and Hessians
+# Never got this to work for some reason - the steps were always way too big for any model with a scale parameter
+# but Hessian and gradient never failed any checks
 function old_fit!(
     m::PSModel;
     verbose::Bool = false,
@@ -356,7 +363,7 @@ function old_fit!(
     m.R = keepy ? m.R : nothing
     m
 end
-
+=#
 
 
 function _fit!(
@@ -436,20 +443,8 @@ function StatsBase.fit!(
     start = nothing,
     kwargs...,
 )
-    if haskey(kwargs, :maxIter)
-        Base.depwarn("'maxIter' argument is deprecated, use 'maxiter' instead", :fit!)
-        maxiter = kwargs[:maxIter]
-    end
-    if haskey(kwargs, :convTol)
-        Base.depwarn("'convTol' argument is deprecated, use `gtol` instead", :fit!)
-        gtol = kwargs[:convTol]
-    end
-    if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy, :getbasehaz))
+    if !issubset(keys(kwargs), (:keepx, :keepy, :bootstrap_sample, :bootstrap_rng))
         throw(ArgumentError("unsupported keyword argument in: $(kwargs...)"))
-    end
-    if haskey(kwargs, :tol)
-        Base.depwarn("`tol` argument is deprecated, use `gtol` instead", :fit!)
-        gtol = kwargs[:tol]
     end
     _fit!(m, verbose = verbose, maxiter = maxiter, gtol = gtol, start = start; kwargs...)
 end
@@ -576,7 +571,8 @@ end
 
 function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:PSModel}
     mwarn(m)
-    β = vcat(coef(m), scale(m))
+    #β = vcat(coef(m), scale(m))
+    β = params(m)
     std_err = stderror(m)
     #zcrit = quantile.(Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
     zcrit = qstdnorm.([(1 - level) / 2, 1 - (1 - level) / 2])
@@ -591,10 +587,6 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:PSModel}
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = vcat(coefnames(m), ["log(Scale)" for i = 1:length(scale(m))])
     rown = typeof(rown) <: AbstractVector ? rown : [rown]
-    if length(m.P._grad) > length(m.P._B)
-        #println("Scale parameter")
-        true
-    end
     StatsBase.CoefTable(op, head, rown, pcol, zcol)
 end
 
@@ -602,7 +594,7 @@ end
 
 function StatsBase.confint(m::M; level::Float64 = 0.95, kwargs...) where {M<:PSModel}
     mwarn(m)
-    beta = coef(m)
+    beta = params(m)
     std_err = stderror(m; kwargs...) # can have type="robust"
     z = beta ./ std_err
     #zcrit = quantile.(Distributions.Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])

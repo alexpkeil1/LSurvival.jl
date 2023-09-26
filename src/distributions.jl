@@ -129,6 +129,16 @@ randweibull(0.3, .75)
 randweibull(rng, α, ρ) = qweibull(rand(rng), α, ρ)
 randweibull(α, ρ) = randweibull(MersenneTwister(), α, ρ)
 
+
+
+
+######################################################################
+# Common functions for all survival distributions
+######################################################################
+
+location(d::D) where {D<:AbstractSurvDist} = shape(d)
+
+
 ######################################################################
 # Distributions used in parametric survival models
 ######################################################################
@@ -150,8 +160,8 @@ end
 # Weibull distribution 
 ##############################
 struct Weibull{T<:Real} <: AbstractSurvDist
-    α::T   # scale: linear effects on this parameter
-    ρ::T   # shape
+    α::T   # shape: linear effects on this parameter
+    ρ::T   # scale
 end
 
 function Weibull(α::T, ρ::T) where {T<:Int}
@@ -353,8 +363,9 @@ end
 
 #scalelocation(d::Weibull) = d.ρ
 #location(d::Weibull) = d.α
-shape(d::Weibull) = d.ρ
-scale(d::Weibull) = d.α
+logscale(d::Weibull) = d.ρ
+scale(d::Weibull) = exp(logscale(d))
+shape(d::Weibull) = d.α
 params(d::Weibull) = (d.α, d.ρ)
 
 ################################################
@@ -526,7 +537,7 @@ end
 ##############################
 
 mutable struct Exponential{T<:Real} <: AbstractSurvDist
-    α::T   # scale (Weibull shape is 1.0)
+    α::T   # shape (Weibull log-scale is 0.0)
 end
 
 function Exponential(α::T) where {T<:Int}
@@ -722,9 +733,11 @@ function lsurv_hessian(d::Exponential, t)
     ddlsurv_weibull(d.α, 0.0, t)[1:1, 1:1]
 end
 
-shape(d::Exponential) = 1.0
-scale(d::Exponential) = d.ρ
-params(d::Exponential) = (d.ρ,)
+
+logscale(d::Exponential) = 0.0
+scale(d::Exponential) = exp(logscale(d))
+shape(d::Exponential) = d.α
+params(d::Exponential) = (d.α,)
 
 
 
@@ -732,8 +745,8 @@ params(d::Exponential) = (d.ρ,)
 # Lognormal
 ##################
 struct Lognormal{T<:Real} <: AbstractSurvDist
-    α::T   # scale: linear effects on this parameter
-    ρ::T   # shape
+    α::T   # shape: linear effects on this parameter
+    ρ::T   # log-scale
 end
 
 function Lognormal(α::T, ρ::T) where {T<:Int}
@@ -917,10 +930,11 @@ end
 
 
 
-shape(d::Lognormal) = d.ρ
-scale(d::Lognormal) = d.α
-params(d::Lognormal) = (d.α, d.ρ)
 
+logscale(d::Lognormal) = d.ρ
+scale(d::Lognormal) = exp(logscale(d))
+shape(d::Lognormal) = d.α
+params(d::Lognormal) = (d.α, d.ρ)
 
 ################################################
 # underlying distribution functions, Log-normal distribution

@@ -39,7 +39,8 @@ using Random, Tables
     ################################################
 
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
-    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential()))
+    expfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
+    println(expfit)
 
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "exponential")
     #              Value Std. Error     z       p
@@ -56,7 +57,8 @@ using Random, Tables
     # intercept only model
     sr = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0);
     println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0))
-    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true))
+
+
         # Call:
     # survreg(formula = Surv(time, status) ~ 1, data = dat1, dist = "weibull")
     #              Value Std. Error     z       p
@@ -69,15 +71,73 @@ using Random, Tables
     # Loglik(model)= -11.4   Loglik(intercept only)= -11.4
     # Number of Newton-Raphson Iterations: 8 
     
-
+    ft = survreg(@formula(Surv(time,status) ~ x), dat1, contrasts = Dict(:x => CategoricalTerm))
+    ftint = survreg(@formula(Surv(time,status) ~ 1), dat1, contrasts = Dict(:x => CategoricalTerm))
     println(coxph(@formula(Surv(time,status)~x), dat1))
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
     #
+    # test: confint
+    confint(ft)
+    lrtest(ft, ftint)
+    aic(ft)
+    aicc(ft)
+    bic(ft)
+    nulldeviance(ft)
+    
+    # test: fitted returns predictions
+    @test length(fitted(ft)) = length(dat1.x)
+
+    X = hcat(ones(length(dat1.x)), dat1.x)
+
+    res1 = survreg(X, zeros(length(dat1.time)), dat1.time, dat1.status, dist=LSurvival.Weibull())
+    res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), id=ID.(1:6))
+    @test all(isapprox.(params(res1), params(res2)))
+
+    dof(ft)
+    # test ID returns proper nobs in clustered data
+    @test nobs(res1) == nobs(res2)
+    # test clustered data also have larger covariate matrix
+    @test size(modelmatrix(res1),1) < size(modelmatrix(res2),1)
+    @test length(response(res1)) < length(response(res2))
+    # test: weights get set to 1.0
+    @test isapprox(sum(weights(res1)), length(dat1.time))
+
+    res1.fit = false
+    show(res1)
+
+    # tests: do basic distributions return expected values
+    @test !isnothing(LSurvival.randweibull(0.1, 0.2))
+    @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1)
+    @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1)
+    @test LSurvival.Weibull(1.0,1) == LSurvival.Weibull(1, 1.0)
+    @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1.0)
+    @test lpdf(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
+    @test lpdf_weibull(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
+    @test lsurv(LSurvival.Weibull(1.0,1), 1) == lsurv(LSurvival.Weibull(1.0,1.0), 1.0)
+    @test LSurvival.lpdf_hessian(LSurvival.Weibull(1,1), 1) == LSurvival.ddlpdf_weibull(1, 1, 1.0)
+    @test LSurvival.ddlpdf_weibull(1, 1, 1.0) == LSurvival.ddlpdf_weibull(1, 1.0, 1.0)
+    @test LSurvival.ddlpdf_weibull(1, 1.0, 1.0) == LSurvival.ddlpdf_weibull(1.0, 1.0, 1.0)
+    @test LSurvival.ddlpdf_weibull(1.0, 1, 1.0) == LSurvival.ddlpdf_weibull(1.0, 1.0, 1.0)
+    @test lpdf(LSurvival.Weibull(1,0), 2.0) == lpdf(LSurvival.Exponential(1.0), 2.0)
+    @test lsurv(LSurvival.Weibull(1,0), 2.0) == lsurv(LSurvival.Exponential(1.0), 2.0)
+    @test LSurvival.ddlpdf_weibull(1,0, 1)[1:1,1:1] == LSurvival.lpdf_hessian(LSurvival.Exponential(1.0), 1.0)
+    @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1)
+    @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1)
+    @test LSurvival.Lognormal(1.0,1) == LSurvival.Lognormal(1, 1.0)
+    @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1.0)
+    lpdf(LSurvival.Lognormal(1,1), 2.0)
+    lsurv(LSurvival.Lognormal(1,1), 2.0)
+    @test LSurvival.lpdf_hessian(LSurvival.Lognormal(1,1), 1) == LSurvival.ddlpdf_lognormal(1, 1, 1.0)
+    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,2], 1, .1) == LSurvival.dlpdf_reglognormal(1, 1, 1.0, .1)
+    params(LSurvival.Lognormal(1,1))
 
 
     println(coxph(@formula(Surv(enter, exit,status)~x), dat1clust))
-    println(survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5]))
-    println(survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull()))
+    ftclust = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5])
+    print(ftclust)
+    # test: person time splits with survreg
+    @test all(isapprox.(params(ft), params(ftclust)))
+
 
 
     #   survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "weibull")

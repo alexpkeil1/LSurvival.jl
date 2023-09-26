@@ -111,6 +111,7 @@ export aic,
     logpartiallikelihood,
     lrtest, # re-exported
     modelmatrix,
+    modelresponse,
     length,
     scale,
     shape,
