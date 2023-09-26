@@ -610,6 +610,15 @@ function StatsBase.fitted(m::M) where {M<:PSModel}
     D * coef(m)
 end
 
+function StatsBase.predict(m::M) where {M<:PSModel}
+    exp.(fitted(m))
+end
+
+function StatsBase.predict!(m::M) where {M<:PSModel}
+    m.P._r .= exp.(fitted(m))
+    nothing
+end
+
 function StatsBase.isfitted(m::M) where {M<:PSModel}
     m.fit
 end

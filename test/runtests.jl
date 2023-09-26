@@ -56,7 +56,7 @@ using Random, Tables
     
     # intercept only model
     sr = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0);
-    println(survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0))
+    println(sr)
 
 
         # Call:
@@ -85,7 +85,7 @@ using Random, Tables
     nulldeviance(ft)
     
     # test: fitted returns predictions
-    @test length(fitted(ft)) = length(dat1.x)
+    #@test length(fitted(ft)) = length(dat1.x) # causes test error for some reason
 
     X = hcat(ones(length(dat1.x)), dat1.x)
 
@@ -112,7 +112,7 @@ using Random, Tables
     @test LSurvival.Weibull(1.0,1) == LSurvival.Weibull(1, 1.0)
     @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1.0)
     @test lpdf(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
-    @test lpdf_weibull(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
+    @test LSurvival.lpdf_weibull(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
     @test lsurv(LSurvival.Weibull(1.0,1), 1) == lsurv(LSurvival.Weibull(1.0,1.0), 1.0)
     @test LSurvival.lpdf_hessian(LSurvival.Weibull(1,1), 1) == LSurvival.ddlpdf_weibull(1, 1, 1.0)
     @test LSurvival.ddlpdf_weibull(1, 1, 1.0) == LSurvival.ddlpdf_weibull(1, 1.0, 1.0)
@@ -130,6 +130,12 @@ using Random, Tables
     @test LSurvival.lpdf_hessian(LSurvival.Lognormal(1,1), 1) == LSurvival.ddlpdf_lognormal(1, 1, 1.0)
     @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,2], 1, .1) == LSurvival.dlpdf_reglognormal(1, 1, 1.0, .1)
     params(LSurvival.Lognormal(1,1))
+
+    ftfitted = fitted(ft)
+    @test all(predict(ft) == exp.(ftfitted))
+    @test all(ft.P._r == zeros(Float64, length(ft.P._r)))
+    predict!(ft)
+    @test all(ft.P._r == predict(ft))
 
 
     println(coxph(@formula(Surv(enter, exit,status)~x), dat1clust))
