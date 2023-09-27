@@ -169,49 +169,29 @@ end
 =#
 # function for testing only
 
-# marginal only
-function lpdf_test(α,ρ,t)
-    ret = lpdf(LSurvival.Weibull(α,ρ), t)
-    ret
-end
-
-function lsurv_test(α,ρ,t)
-    ret = lsurv(LSurvival.Weibull(α,ρ), t)
-    ret
-end
-
-# with regression parameters
-function lpdf_test(θ, ρ, t, x)
-    ret = 0.0
-    i = 0
-    for xi in eachrow(x)
-      i+=1
-      α =  dot(θ,xi)
-      ret += lpdf(LSurvival.Weibull(α,ρ), t[i])
-    end
-    ret
-end
-
-function lsurv_test(θ, ρ, t, x)
-    ret = 0.0
-    i = 0
-    for xi in eachrow(x)
-      i+=1
-      α =  dot(θ,xi)
-      ret += lsurv(LSurvival.Weibull(α,ρ), t[i])
-    end
-    ret
+function lpdf_gengamma(α, ρ, κ, t)
+    # l = -α*exp(-ρ) - exp(- α*exp(-ρ) + log(t)*exp(-ρ)) + log(t)*exp(-ρ) - ρ - log(t)
+    z = (log(t) - α) * exp(-ρ)
+    z*exp(κ) -exp(z)-ρ - log(t) - loggamma(exp(κ))
 end
 
 
 
-@variables α ρ t;
-s = lsurv_test(α,ρ,t)
-sgrad = Symbolics.gradient(s, [α,ρ], simplify=true)
-shess = Symbolics.hessian(s, [α,ρ], simplify=true)
+function lsurv_gengamma(α, ρ, κ, t)
+    z = (log(t) - α) * exp(-ρ)
+    p, _ = SpecialFunctions.gamma_inc_cf(κ, exp(z), 0)
+    log1p(-p)
+end
 
-Symbolics.build_function(sgrad, α,ρ, t, fname="survgrad_symbol")
-Symbolics.build_function(shess, α,ρ, t, fname="survhess_symbol")
+
+include("/Users/keilap/temp/gi.jl")
+@variables α ρ κ t;
+s = lpdf_gengamma(α,ρ,κ,t)
+sgrad = Symbolics.gradient(s, [α,ρ,κ], simplify=true)
+shess = Symbolics.hessian(s, [α,ρ,κ], simplify=true)
+
+Symbolics.build_function(sgrad, α,ρ,κ, t, fname="survgrad_symbol")
+Symbolics.build_function(shess, α,ρ,κ, t, fname="survhess_symbol")
 
 """
 # confirmation function

@@ -8,7 +8,7 @@ using Random, LinearAlgebra, Tables
 #using Zygote
 #using Distributions
 #import Distributions: Chisq, Normal
-import SpecialFunctions: gamma_inc, erfinv, erf
+import SpecialFunctions: gamma_inc, erfinv, erf, gamma, loggamma, digamma
 #using SpecialFunctions
 @reexport using StatsModels # ModelFrame, modelframe
 #
@@ -17,7 +17,7 @@ using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
 import Base: length, size, popat!, push!
 #using Optim
-import Optim: BFGS, optimize, Options, TwiceDifferentiable, only_fgh!
+import Optim: BFGS, optimize, Options, OnceDifferentiable, TwiceDifferentiable, only_fgh!, LineSearches, InitialHagerZhang
 
 import StatsBase:
     aic,

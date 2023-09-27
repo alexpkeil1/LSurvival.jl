@@ -37,8 +37,25 @@ using Random, Tables
     ################################################
     ###### priority items ############
     ################################################
+    rng = MersenneTwister(121)
+    n = 1000
+    x = rand(rng, [0,1], n)
+    wtab = (
+      t = [LSurvival.randweibull(rng, exp(1), exp((1-x[i]))) for i in 1:n],
+      d = rand(rng, [0,1], n),
+      x = x
+    )
+    gammafit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.Gamma(), maxiter=1000, verbose=false)
+    println(gammafit)
 
-    dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+    gammafit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.GGamma(), maxiter=1000, verbose=false)
+    println(gammafit)
+    lnfit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.Lognormal(), maxiter=1000, verbose=false)
+    println(lnfit)
+    wfit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.Weibull(), maxiter=1000, verbose=false)
+    println(wfit)
+    wfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), maxiter=100)
+    println(wfit)
     expfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
     println(expfit)
 
@@ -93,6 +110,14 @@ using Random, Tables
     res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), id=ID.(1:6))
     @test all(isapprox.(params(res1), params(res2)))
 
+    res1 = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal())
+    res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Lognormal(), id=ID.(dat1clust.id))
+    @test all(isapprox.(params(res1), params(res2)))
+
+    res1 = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Gamma())
+    res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Gamma(), id=ID.(dat1clust.id))
+    @test all(isapprox.(params(res1), params(res2)))
+
     dof(ft)
     # test ID returns proper nobs in clustered data
     @test nobs(res1) == nobs(res2)
@@ -127,6 +152,10 @@ using Random, Tables
     @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1)
     @test LSurvival.Lognormal(1.0,1) == LSurvival.Lognormal(1, 1.0)
     @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1.0)
+    @test LSurvival.Gamma(1,1) == LSurvival.Gamma(1.0, 1)
+    @test LSurvival.Gamma(1,1) == LSurvival.Gamma(1.0, 1)
+    @test LSurvival.Gamma(1.0,1) == LSurvival.Gamma(1, 1.0)
+    @test LSurvival.Gamma(1,1) == LSurvival.Gamma(1.0, 1.0)
     lpdf(LSurvival.Lognormal(1,1), 2.0)
     lsurv(LSurvival.Lognormal(1,1), 2.0)
     @test LSurvival.lpdf_hessian(LSurvival.Lognormal(1,1), 1) == LSurvival.ddlpdf_lognormal(1, 1, 1.0)
@@ -193,6 +222,7 @@ using Random, Tables
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
     wt ./= (sum(wt) / length(wt))
+    
 
     function jfun(int, outt, d, X, wt, i)
         i == 1 && println("Deprecated method")
@@ -399,6 +429,12 @@ using Random, Tables
 
 
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000)
+
+    Xp = hcat(ones(length(d)))
+    m = survreg(Xp, zeros(length(d)), t, d, dist=LSurvival.GGamma())
+    print(m)
+
+
     print(kaplan_meier(t, d))
     print(aalen_johansen(t, event))
     # running through some deprecated functions

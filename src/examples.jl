@@ -945,7 +945,16 @@ library(survival)
 res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal")
 ret = summary(res)
 """
-lnfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=true, start=rand(3))
+lnfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=false)
+
+
+@rput dat1
+R"""
+library(survival)
+res = survreg(Surv(time , status) ~ x,data = dat1, dist="lognormal")
+ret = summary(res)
+"""
+lnfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), verbose=false)
 lnfit = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Lognormal(), start=rand(2))
 
 @rget ret

@@ -33,7 +33,7 @@ Note here that covariates are not time-varying, but that person-period data stru
  632 │   100    0.103      0.0      1      0      0.0      1.0
  633 │   100    0.103      0.0      2      1      0.0      1.0
  634 │   100    0.103      0.0      3      2      1.0      1.0
-  ```
+```
 
 Note use of the `id` argument to specify that multiple observations come from the same individual. This is important in the case of robust-variance estimation, jackknifing, bootstrapping, and influence-based residuals like `dfbeta` residuals. It will have no impact on the default output (confirm by fitting this model with and without the statement, and also compare influence plots below)!
 ```julia

@@ -57,14 +57,25 @@ One example of person-period data is shown below. Each circle represents a censo
 
 Multiple parametric model forms are available in the `LSurvival` module. Here, we derive the specific parameterizations used in the module, which uses the location-scale characterization of regression models (also used in the `survival` package in `R`).
 
+The distributions used here can be parameterized in several ways, and the parameterizations in `LSurvival` generally follow the "location-scale" parameterization. This parameterization allows that covariates are assumed to act in linear combinations on the natural log of the survival time, and a scale parameter (or parameters) influence the error distribution around that linear combination. In symbols, these models are of the form
+
+$$\ln(t_i) = \mathbf{X_i\beta} + \epsilon_i$$
+
+Where $\epsilon_i$ is an error term with a distribution determined by the assumed distribution of the survival times.
+
+Traditional parameterizations (e.g. from the `Distributions` package) and their mapping to the location-scale parameterization are given below. Some distributions that are not yet implemented are included.
+
 ### Weibull distribution
-The Weibull distribution can be parameterized as: (Kalbfleisch and Prentice, sec 2.2)
+Implemented as `LSurvival.Weibull()`
+
+
+The Weibull distribution can be parameterized as: 
 $$\begin{aligned} 
 f(t|\lambda,\gamma)=&\lambda\gamma(\lambda t)^{\gamma-1}\exp(-(\lambda t)^{\gamma}) \\
 S(t|\lambda,\gamma) =& \exp(-(\lambda t)^{\gamma})
 \end{aligned}$$
 
-This can be re-parameterized in terms of a 'location-scale' parameterization for modeling of the natural-log of the survival times.
+This can be re-parameterized in terms of a 'location-scale' parameterization for modeling of the natural-log of the survival times. 
 
 #### Derivation:
 
@@ -129,6 +140,8 @@ Which is proportional to the inverse of the time ratio, meaning that a predictor
 
 
 ### Exponential distribution
+Implemented as `LSurvival.Exponential()`
+
 This is a special case of the Weibull log-likelihood in which $\gamma=1$ (or, equivalently $\rho=0$)
 
 $$\begin{aligned} 
@@ -153,64 +166,98 @@ $$\begin{aligned}
 
 
 
-### Gamma distribution
-(not yet implemented)
-
-Define $I_k(s)$ as the incomplete gamma integral given by
-
-$$I_k(s) = \frac{\int_o^s x^{k-1}\exp(-x)dx}{\Gamma(k)}$$
-
-Then Gamma distribution can be parameterized as
-$$\begin{aligned} 
-f(t|\lambda,k)=& \frac{\lambda(\lambda t)^{k-1}exp(\lambda t)}{\Gamma(k)}\\
-S(t|\lambda,k)=& 1-I_k(\lambda t)
-\end{aligned}$$
-
 
 ### Log-normal distribution
+Implemented as `LSurvival.Lognormal()`
+
+Let $\gamma = \exp(-\rho), \lambda = \exp(-\alpha), z=\frac{\ln(t)-\alpha}{exp(\rho)}$ and using $t=\exp(\ln(t))$, we have that
 
 $$\begin{aligned} 
 f(t|\lambda,\gamma)=&(2\pi)^{-1/2}\gamma t^{-1} \exp\bigg(\frac{-\gamma^2(\ln(\lambda t))^2}{2}   \bigg) \\
-S(t|\lambda,\gamma) =& 1 - \Phi\big(\gamma \ln(\lambda t)\big)
+f(t|\alpha,\rho)=&(2\pi)^{-1/2}\exp(-\rho) \exp(\ln(t))^{-1} \exp\bigg(\frac{-\exp(-\rho)^2(\ln(\exp(-\alpha) \exp(\ln(t))))^2}{2}   \bigg) \\
+=&(2\pi)^{-1/2} \exp\big(-z^2/2 - \ln(t) - \rho \big) \\
+\\
+\\
+S(t|\lambda,\gamma) =& 1 - \Phi\big(\gamma \ln(\lambda t)\big)\\
+S(t|\alpha,\rho) =& 1 - \Phi\big(z\big)
 \end{aligned}$$
 
 
 ### Generalized Gamma distribution
-(not yet implemented)
+Implemented as `LSurvival.GGamma()`
 
 Limiting cases:
 
-- Log-normal (as $k\rightarrow \infty$)
 - Weibull ($k=1$)
+- Gamma ($\gamma=1$)
+- Log-normal (as $k\rightarrow \infty$)
 - Exponential ($\gamma=k=1$)
 
+Let $\gamma = \exp(-\rho), \lambda = \exp(-\alpha), k=\exp(\kappa), z=\frac{\ln(t)-\alpha}{exp(\rho)}$ and using $t=\exp(\ln(t))$, we have that
+
 $$\begin{aligned} 
-f(t|\lambda,\gamma,k)=& \frac{\lambda\gamma(\lambda t)^{\gamma k-1}exp\big[-(\lambda t)^\gamma \big]}{\Gamma(k)}
+\\
+f(t|\lambda,\gamma,k)=&\frac{\gamma\lambda(\lambda t)^{\gamma k - 1}\exp(-(\lambda t)^\gamma)}{\Gamma(k)}\\
+f(t|\alpha,\rho,\kappa)=&\frac{\exp(-\rho)\exp(-\alpha)(\exp(-\alpha) \exp(\ln(t)))^{\exp(-\rho) \exp(\kappa) - 1}\exp(-(\exp(-\alpha) \exp(\ln(t)))^{\exp(-\rho)})}{\Gamma(\exp(\kappa))}\\
+=&\frac{\exp(-\alpha)\exp((\ln(t)-\alpha)(\exp(-\rho) \exp(\kappa) - 1))-\rho)\exp(- \exp((\ln(t)-\alpha)\exp(-\rho))))}{\Gamma(\exp(\kappa))}\\
+=&\frac{\exp(z \exp(\kappa)-\alpha - \ln(t)+\alpha-\rho-\exp(z))}{\Gamma(\exp(\kappa))}\\
+\ln f(t|\alpha,\rho,\kappa)=&z\exp(\kappa)-\exp(z)-\rho -\ln(t) - \ln\Gamma(\exp(\kappa))\\
 \end{aligned}$$
+
+and
+
+$$\begin{aligned} 
+S(t|\lambda,\gamma,k)=&1-I(k,(\lambda t)^\gamma)\\
+S(t|\alpha,\rho,\kappa)=&1-I( \exp(\kappa),\exp(\ln(t)-\alpha)^{\exp(-\rho)})\\
+\ln S(t|\alpha,\rho,\kappa)=&\ln(1-I(\exp(\kappa)), \exp(z))\\
+\end{aligned}$$
+
+Where we define $I(k,s)$ as the upper incomplete gamma function ratio given by
+
+$$I_k(s) = \frac{\int_o^s t^{k-1}\exp(-t)dt}{\Gamma(k)}$$
+
+(see `gamma_inc` function from SpecialFunctions.jl)
+
+
+### Gamma distribution
+(not yet implemented)
+
+
+Let $\gamma = \exp(-\rho), \lambda = \exp(-\alpha), k=\exp(\kappa), z=\frac{\ln(t)-\alpha}{exp(\rho)}$ and using $t=\exp(\ln(t))$, we have that
+
+Then Gamma distribution can be parameterized as
+$$\begin{aligned} 
+f(t|\lambda,k)=& \frac{\lambda(\lambda t)^{k-1}exp(\lambda t)}{\Gamma(k)}\\
+\ln f(t|\alpha,\kappa)=&\ln(t)(\exp(\kappa)-1)-\alpha\exp(\kappa)-\exp(\ln(t)-\alpha)  - \ln\Gamma(\exp(\kappa))\\
+\\
+S(t|\lambda,k)=& 1-I(k,\lambda t)\\
+\ln S(t|\alpha,\kappa)=&\ln(1-I(\exp(\kappa)), \exp(\ln(t)-\alpha))\\
+\end{aligned}$$
+ 
+
+
+Where we define $I(k,s)$ as the upper incomplete gamma function ratio given by
+
+$$I(k,s) = \frac{\int_o^s t^{k-1}\exp(-t)dt}{\Gamma(k)}$$
+
+(see `gamma_inc` function from SpecialFunctions.jl)
 
 
 ### Log-logistic distribution
 (not yet implemented)
 
-$$\begin{aligned} 
-f(t|\lambda,\gamma)=&\lambda\gamma(\lambda t)^{\gamma-1} (1 + (\lambda t)^\gamma )^{-2} \\
-S(t|\lambda,\gamma)=&\frac{1}{1+(\lambda t)^\gamma}
-\end{aligned}$$
-
-### Generalized Gamma distribution
-(not yet implemented)
-
-Limiting cases:
-
-- all other approaches
 
 ## Semi-parametric partial likelihoods
-Documentation in progress
+In the Cox model, the partial-likelihoods are used in place of the likelihood function. These models are are modeled directly in terms of hazard ratios, allowing that the baseline hazard can be an arbitrary distribution. The Cox models implemented here are semi-parametric because they include a combination of parametric (hazard ratios) and non-parametric (baseline hazard) components. Cox's original likelihood is used here, and, in place of tied survival times, two different options are implemented for addressing ties.
 
 ### Efron's partial likelihood
 This is the default in coxph
+Documentation in progress
+
 
 ### Breslow's partial likelihood
+Documentation in progress
+
 
 ## Time-varying covariates
 Documentation in progress

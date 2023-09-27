@@ -79,7 +79,7 @@ function PSModel(
     d::D,
 ) where {G<:LSurvivalResp,L<:AbstractLSurvivalParms,D<:AbstractSurvDist}
     np = length(d)
-    P._S = zeros(np - 1)
+    P._S = zeros(np - 1) # Gen gamma, this will have length 2, Expon: 0
     r = P.p + np - 1
     P._grad::Vector{Float64} = fill(0.0, r)
     P._hess::Matrix{Float64} = fill(0.0, r, r)
@@ -136,7 +136,7 @@ Gradient contribution for an observation in a parametric survival model
 ```
 """
 function dloglik!(gt, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    gt .= enter > 0 ? -lsurv_gradient(d, θ, enter, x) : gt.*0.0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    gt .= enter > 0 ? -lsurv_gradient(d, θ, enter, x) : gt .* 0.0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     gt .+=
         y > 0 ? lpdf_gradient(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv_gradient(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
@@ -161,11 +161,11 @@ Hessian contribution for an observation in a parametric survival model
 ```
 """
 function ddloglik!(he, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
-    he  .= enter > 0 ? -lsurv_hessian(d, θ, enter, x) : he.*0.0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    he .= enter > 0 ? -lsurv_hessian(d, θ, enter, x) : he .* 0.0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
     he .+=
         y > 0 ? lpdf_hessian(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv_hessian(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
-        he .*= wts
+    he .*= wts
     he
 end
 
@@ -240,12 +240,19 @@ m.P._LL
 function lgh!(m::M, θ) where {M<:PSModel}
     #r = [updateparams(m.d, θ) for i in eachindex(m.R.enter)]
     push!(m.P._LL, get_ll(m, θ))
-    m.P._grad .= get_gradient(m,  θ)
-    m.P._hess .= get_hessian(m,  θ)
+    m.P._grad .= get_gradient(m, θ)
+    m.P._hess .= get_hessian(m, θ)
     m.P._LL[end], m.P._grad, m.P._hess
 end
 
-function setinits(m::M; verbose=false) where {M<:PSModel}
+function lonly!(m::M, θ) where {M<:PSModel}
+    #r = [updateparams(m.d, θ) for i in eachindex(m.R.enter)]
+    push!(m.P._LL, get_ll(m, θ))
+    m.P._LL[end]
+end
+
+
+function setinits(m::M; verbose = false) where {M<:PSModel}
     # This function is unfortunately crucial
     #
     # Commented text from the "survival" package source code:
@@ -261,11 +268,13 @@ function setinits(m::M; verbose=false) where {M<:PSModel}
     #  as a part of the returned object.
     ly = log.(m.R.exit) #.+ (1.0 .- m.R.y) .* 0.5*median(log.(m.R.exit))
     startint = m.P.X \ ly
-    startscale = std(ly)* sqrt(pi^2/6.0) 
+    startscale = std(ly) * sqrt(pi^2 / 6.0)
     # Commented text from the "survival" package source code:
-   	# We sometimes get into trouble with a small estimate of sigma,
-	#  (the surface isn't SPD), but never with a large one.  Double it.
-    start0 = vcat(startint, log(startscale* 2.0)/2.0)[1:length(params(m))]
+    # We sometimes get into trouble with a small estimate of sigma,
+    #  (the surface isn't SPD), but never with a large one.  Double it.
+    # my comment: final starting points refer to exp(κ) where that equals 1 in the limit of the Weibull model, 
+    # but it seems to do better with values closer to zero, which places it somewhere closer to the exponential
+    start0 = vcat(startint, log(startscale * 2.0) / 2.0, -10.0 .* ones(2))[1:length(params(m))]
     verbose && println("Starting values: $(start0)")
     start0
 end
@@ -365,7 +374,6 @@ function old_fit!(
 end
 =#
 
-
 function _fit!(
     m::PSModel;
     verbose::Bool = false,
@@ -381,22 +389,18 @@ function _fit!(
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
     #start = nothing
     # verbose= false
-    start = !isnothing(start) ? start : setinits(m, verbose=verbose)
+    start = !isnothing(start) ? start : setinits(m, verbose = verbose)
     parms = deepcopy(start)
-    
-    
-    function parmupdate!(
-        F,
-        G,
-        H,
-        θ,
-        m;
-    )
+
+    nohess = issubset(["$(nameof(typeof(m.d)))"], ["GGamma", "Gamma"])
+    updatefun! = nohess ? lonly! : lgh!
+
+    function parmupdate!(F, G, H, θ, m;)
         m.P._LL[end] = isnothing(F) ? m.P._LL[end] : F
         m.P._grad = isnothing(G) ? m.P._grad : G
         m.P._hess = isnothing(H) ? m.P._hess : H
         #
-        LSurvival.lgh!(m, θ)
+        updatefun!(m, θ)
         # turn into a minimization problem
         m.P._B .= θ[1:m.P.p]
         m.P._S .= θ[(m.P.p+1):end]
@@ -405,26 +409,49 @@ function _fit!(
         m.P._hess .*= -1.0
         F
     end
-    
-    fgh! = TwiceDifferentiable(
-        only_fgh!((F, G, H, beta) -> parmupdate!(F, G, H, beta, m)),
-        parms,
-    )
-    LSurvival.lgh!(m, parms)
+
+    if nohess
+        f(beta) = parmupdate!(nothing, nothing, nothing, beta, m)
+        fgh! = TwiceDifferentiable(
+            f,
+            parms
+        )
+    else
+        fgh! = TwiceDifferentiable(
+            only_fgh!((F, G, H, beta) -> parmupdate!(F, G, H, beta, m)),
+            parms,
+        )
+    end
+    updatefun!(m, parms)
     res = optimize(
         fgh!,
         parms,
-        BFGS(),
+        BFGS(
+            linesearch = nohess ? LineSearches.BackTracking(order=2) :  LineSearches.HagerZhang(),
+            alphaguess = nohess ? LineSearches.InitialQuadratic() : LineSearches.InitialStatic(scaled=false)
+        ),
         Options(
-            store_trace=true,
+            store_trace = true,
             iterations = maxiter,
-            g_tol=gtol
-        )
-        )
+            g_tol = gtol,
+            show_trace = verbose,
+            extended_trace = true,
+        ),
+    )
     m.P._grad .*= -1.0
     m.P._hess .*= -1.0
-
-    !res.g_converged && @warn("Optimizer reports model did not converge")
+    if nohess
+        verbose && println(res)
+        G = -res.trace[end].metadata["g(x)"]
+        H = inv(-res.trace[end].metadata["~inv(H)"])
+        verbose && println("Using BFGS estimate of Hessian $H")
+        m.P._hess .= H
+        m.P._grad = G
+    end
+    maxiter == 0 && @warn("maxiter=0: no fitting done")
+    !(res.f_converged || res.g_converged || res.x_converged ) &&
+        maxiter > 0 &&
+        @warn("Optimizer reports model did not converge. Gradient: $(m.P._grad)")
 
     m.fit = true
     m.P._LL = [-rt.value for rt in res.trace]
@@ -438,7 +465,7 @@ end
 function StatsBase.fit!(
     m::PSModel;
     verbose::Bool = false,
-    maxiter::Integer = 500,
+    maxiter::Integer = 1000,
     gtol::Float64 = 1e-8,
     start = nothing,
     kwargs...,
@@ -520,7 +547,7 @@ function fit(
     wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
-    fitint=true,
+    fitint = true,
     fitargs...,
 ) where {M<:PSModel}
     f, (y, X) = modelframe(f, data, contrasts, M)
@@ -585,7 +612,10 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:PSModel}
     pcol = 6
     zcol = 5
     #rown = ["b$i" for i = 1:size(op)[1]]
-    rown = vcat(coefnames(m), ["log(Scale)" for i = 1:length(scale(m))])
+    parmnames = ["$f" for f in fieldnames(typeof(m.d))]
+    parmnames = replace.(parmnames, "ρ" => "log(scale)")
+
+    rown = vcat(coefnames(m), [parmnames[i+1] for i = 1:length(scale(m))])
     rown = typeof(rown) <: AbstractVector ? rown : [rown]
     StatsBase.CoefTable(op, head, rown, pcol, zcol)
 end
@@ -714,8 +744,10 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:P
     else
         res = -inv(m.P._hess)
         if any(eigen(res).values .< 0.0)
-            @warn("Covariance matrix is not positive semi-definite, model likely not converged")
-            if any(diag(res) .< 0.0) 
+            @warn(
+                "Covariance matrix is not positive semi-definite, model likely not converged"
+            )
+            if any(diag(res) .< 0.0)
                 res = zeros(size(m.P._hess))
             end
         end
@@ -745,7 +777,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
     str *= String(take!(iob))
     str *= "$(nameof(typeof(m.d))) distribution\n"
     str *= "Log-likelihood (full): $(@sprintf("%8g", ll))\n"
-    if ll>llnull
+    if ll > llnull
         df = length(coeftab.rownms) - length(m.d)
         chi2 = 2 * (ll - llnull)
         lrtp = 1 - cdfchisq(df, chi2)
@@ -792,5 +824,4 @@ m = PSModel(R,P,dist)
 LSurvival._fit!(m);
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull())
-"""
-;
+""";

@@ -176,10 +176,6 @@ function Weibull(α::R, ρ::T) where {R<:Float64,T<:Int}
     Weibull(α, Float64(ρ))
 end
 
-function Weibull(v::Vector{R}) where {R<:Real}
-    Weibull(v[1], v[2])
-end
-
 function Weibull()
     Weibull(ones(Float64, 2)...)
 end
@@ -1058,4 +1054,440 @@ function ddlsurv_reglognormal(β, ρ, t, x)
         end
     end
     ddsdβ
+end
+
+
+##############################
+# Generalized Gamma distribution 
+##############################
+struct GGamma{T<:Real} <: AbstractSurvDist
+    α::T   # shape: linear effects on this parameter
+    ρ::T   # scale
+    κ::T
+end
+
+function GGamma(α::T, ρ::T, κ::T) where {T<:Int}
+    GGamma(Float64(α), Float64(ρ), Float64(κ))
+end
+
+function GGamma(α::T, ρ::T, κ::R) where {R<:Float64,T<:Int}
+    GGamma(Float64(α), Float64(ρ), κ)
+end
+
+function GGamma(α::T, ρ::R, κ::T) where {T<:Int,R<:Float64}
+    GGamma(Float64(α), ρ, Float64(κ))
+end
+
+function GGamma(α::R, ρ::T, κ::T) where {R<:Float64,T<:Int}
+    GGamma(α, Float64(ρ), Float64(κ))
+end
+
+function GGamma()
+    GGamma(ones(Float64, 3)...)
+end
+
+# Methods for GGamma
+"""
+log probability distribution function, generalized gamma distribution
+
+Location scale representation (Klein Moeschberger ch 12)
+
+"""
+function lpdf(d::GGamma, t)
+    # location, log(scale) representation (Klein Moeschberger ch 12)
+    lpdf_gengamma(d.α, d.ρ, d.κ, t)
+end
+
+"""
+log probability distribution function, generalized gamma distribution
+
+Location scale representation (Klein Moeschberger ch 12)
+"""
+function lsurv(d::GGamma, t)
+    # location, log(scale) representation (Klein Moeschberger ch 12, modified from Wikipedia page 
+    lsurv_gengamma(d.α, d.ρ, d.κ, t)
+end
+
+"""
+log probability distribution for generalized gamma regression
+
+"""
+function lpdf(d::GGamma, θ, t, x)
+    lpdf_gengamma(dot(θ[1:end-2],x), θ[end-1], θ[end], t)
+end
+
+"""
+log survival distribution for generalized gamma regression
+"""
+function lsurv(d::GGamma, θ, t, x)
+    lsurv_gengamma(dot(θ[1:end-2],x), θ[end-1], θ[end], t)
+end
+
+"""
+log probability distribution gradient for generalized gamma regression
+    analytic gradient
+"""
+function lpdf_gradient(d::GGamma, θ, t, x)
+    dlpdf_reggengamma(θ[1:end-2], θ[end-1], θ[end], t, x)
+end
+
+"""
+log survival distribution gradient for generalized gamma regression
+    uses finite differences
+"""
+function lsurv_gradient(d::GGamma, θ, t, x)
+    dlsurv_reggengamma(θ[1:end-2], θ[end-1], θ[end], t, x)
+end
+
+
+"""
+Hessian calculation for generalized gamma regression: PDF
+
+    placeholder function: returns nothing
+"""
+function lpdf_hessian(d::GGamma, θ, t, x)
+    ddlpdf_reggengamma(θ[1:end-2], θ[end-1], θ[end], t, x)
+end
+
+"""
+Hessian calculation for generalized gamma regression: Survival
+
+    placeholder function: returns nothing
+"""
+function lsurv_hessian(d::GGamma, θ, t, x)
+    ddlsurv_reggengamma(θ[1:end-2], θ[end-1], θ[end], t, x)
+end
+
+"""
+Hessian calculation for generalized gamma distribution: PDF
+
+placeholder function: returns nothing
+"""
+function lpdf_hessian(d::GGamma, t)
+    ddlpdf_gengamma(d.α, d.ρ, d.κ, t)
+end
+
+"""
+Hessian calculation for generalized gamma distribution: Survival
+
+    placeholder function: returns nothing
+"""
+function lsurv_hessian(d::GGamma, t)
+    ddlsurv_gengamma(d.α, d.ρ, d.κ, t)
+end
+
+
+logscale(d::GGamma) = d.ρ
+scale(d::GGamma) = exp(logscale(d))
+shape(d::GGamma) = d.α
+params(d::GGamma) = (d.α, d.ρ, d.κ)
+
+################################################
+# underlying distribution functions, generalized gamma distribution
+################################################
+function lpdf_gengamma(α, ρ, κ, t)
+    z = (log(t) - α) * exp(-ρ)
+    z * exp(κ) - exp(z) - ρ - log(t) - loggamma(exp(κ))
+end
+
+function lsurv_gengamma(α, ρ, κ, t)
+    z = (log(t) - α) * exp(-ρ)
+    pkz, _ = gamma_inc(exp(κ), exp(z))
+    log1p(-pkz)
+end
+
+################################################
+# Underlying gradient, generalized gamma distribution
+################################################
+
+"""
+α=0.1
+ρ =-1.2
+κ=1.9
+t = 2.0
+
+exp((log(t) - α)*exp(-ρ) - ρ) - exp(κ - ρ)
+(α - log(t))*exp(κ - ρ) + (log(t) - α)*exp((log(t) - α)*exp(-ρ) - ρ) - 1
+(log(t) - α)*exp(κ - ρ) - exp(κ)*SpecialFunctions.digamma(exp(κ))
+"""
+function dlpdf_gengamma(α, ρ, κ, t)
+    z = (log(t) - α) * exp(-ρ)
+
+    [exp(z - ρ) - exp(κ - ρ),
+    z * (exp(z) - exp(κ)) - 1.0,
+    (z - digamma(exp(κ)))*exp(κ)
+    ]
+end
+
+
+"""
+α=0.1
+ρ =-1.2
+κ=1.9
+t = 2.0
+dlsurv_gengamma(α, ρ, κ, t; fd = 1e-14)
+"""
+function dlsurv_gengamma(α, ρ, κ, t; fd = 1e-14)
+    fdr = abs.([α,ρ,κ].*fd)
+    dirs = [-1.0, 1.0]
+    [
+    diff(lsurv_gengamma.(α.+fdr[1]/2.0.*dirs, ρ, κ, t))[1]/fdr[1],
+    diff(lsurv_gengamma.(α, ρ.+fdr[2]/2.0.*dirs, κ, t))[1]/fdr[2],
+    diff(lsurv_gengamma.(α, ρ, κ.+fdr[3]/2.0.*dirs, t))[1]/fdr[3]
+    ]
+end
+
+################################################
+# Underlying Hessians, gengamma distribution
+################################################
+
+
+function ddlpdf_gengamma(α, ρ, κ, t)
+    nothing
+end
+
+function ddlsurv_gengamma(α, ρ, κ, t)
+    nothing
+end
+
+
+################################################
+# Underlying gradient, gengamma regression
+################################################
+
+
+function dlsurv_reggengamma(β, ρ, κ, t, x)
+    dα = dαdβ(β, x)
+    df = dlsurv_gengamma(dot(β, x), ρ, κ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dsdβ = vcat(dfdβ, df[2:3])
+    dsdβ
+end
+
+function dlpdf_reggengamma(β, ρ, κ, t, x)
+    dα = dαdβ(β, x)
+    df = dlpdf_gengamma(dot(β, x), ρ, κ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dfdβ = vcat(dfdβ, df[2:3])
+    dfdβ
+end
+
+
+################################################
+# Underlying Hessians, gengamma regression
+################################################
+# TODO: eliminate boilerplate
+
+function ddlpdf_reggengamma(β, ρ, κ, t, x)
+    nothing
+end
+
+function ddlsurv_reggengamma(β, ρ, κ, t, x)
+    nothing
+end
+
+##############################
+# Gamma distribution 
+##############################
+struct Gamma{T<:Real} <: AbstractSurvDist
+    α::T   # shape: linear effects on this parameter
+    κ::T
+end
+
+function Gamma(α::T, κ::T) where {T<:Int}
+    Gamma(Float64(α), Float64(κ))
+end
+
+function Gamma(α::T, κ::R) where {R<:Float64,T<:Int}
+    Gamma(Float64(α), κ)
+end
+
+function Gamma(α::R, κ::T) where {R<:Float64,T<:Int}
+    Gamma(α,  Float64(κ))
+end
+
+function Gamma()
+    Gamma(ones(Float64, 2)...)
+end
+
+# Methods for Gamma
+"""
+log probability distribution function, Gamma distribution
+
+Location scale representation (Klein Moeschberger ch 12)
+
+"""
+function lpdf(d::Gamma, t)
+    # location, log(scale) representation (Klein Moeschberger ch 12)
+    lpdf_gamma(d.α, d.κ, t)
+end
+
+"""
+log probability distribution function, Gamma distribution
+
+Location scale representation (Klein Moeschberger ch 12)
+"""
+function lsurv(d::Gamma, t)
+    lsurv_gamma(d.α, d.κ, t)
+end
+
+"""
+log probability distribution for Gamma regression
+
+"""
+function lpdf(d::Gamma, θ, t, x)
+    lpdf_gamma(dot(θ[1:end-1],x), θ[end], t)
+end
+
+"""
+log survival distribution for Gamma regression
+"""
+function lsurv(d::Gamma, θ, t, x)
+    lsurv_gamma(dot(θ[1:end-1],x), θ[end], t)
+end
+
+"""
+log probability distribution gradient for Gamma regression
+    analytic gradient
+"""
+function lpdf_gradient(d::Gamma, θ, t, x)
+    dlpdf_reggamma(θ[1:end-1], θ[end], t, x)
+end
+
+"""
+log survival distribution gradient for Gamma regression
+    uses finite differences
+"""
+function lsurv_gradient(d::Gamma, θ, t, x)
+    dlsurv_reggamma(θ[1:end-1], θ[end], t, x)
+end
+
+
+"""
+Hessian calculation for Gamma regression: PDF
+
+    placeholder function: returns nothing
+"""
+function lpdf_hessian(d::Gamma, θ, t, x)
+    ddlpdf_reggamma(θ[1:end-1], θ[end], t, x)
+end
+
+"""
+Hessian calculation for Gamma regression: Survival
+
+    placeholder function: returns nothing
+"""
+function lsurv_hessian(d::Gamma, θ, t, x)
+    ddlsurv_reggamma(θ[1:end-1], θ[end], t, x)
+end
+
+"""
+Hessian calculation for Gamma distribution: PDF
+
+placeholder function: returns nothing
+"""
+function lpdf_hessian(d::Gamma, t)
+    ddlpdf_gamma(d.α, d.κ, t)
+end
+
+"""
+Hessian calculation for Gamma distribution: Survival
+
+    placeholder function: returns nothing
+"""
+function lsurv_hessian(d::Gamma, t)
+    ddlsurv_gamma(d.α, d.κ, t)
+end
+
+
+logscale(d::Gamma) = 0.0
+scale(d::Gamma) = exp(logscale(d))
+shape(d::Gamma) = d.α
+params(d::Gamma) = (d.α, d.κ)
+
+################################################
+# underlying distribution functions, Gamma distribution
+################################################
+function lpdf_gamma(α, κ, t)
+    zs = (log(t) - α)
+    zs * exp(κ) - exp(zs) - log(t) - loggamma(exp(κ))
+end
+
+function lsurv_gamma(α, κ, t)
+    zs = (log(t) - α)
+    pkz, _ = gamma_inc(exp(κ), exp(zs))
+    log1p(-pkz)
+end
+
+################################################
+# Underlying gradient, Gamma distribution
+################################################
+
+
+function dlpdf_gamma(α, κ, t)
+    z = (log(t) - α)
+
+    [exp(z) - exp(κ),
+    (z - digamma(exp(κ)))*exp(κ)
+    ]
+end
+
+
+
+function dlsurv_gamma(α, κ, t; fd = 1e-14)
+    fdr = abs.([α, κ].*fd)
+    dirs = [-1.0, 1.0]
+    [
+    diff(lsurv_gamma.(α.+fdr[1]/2.0.*dirs, κ, t))[1]/fdr[1],
+    diff(lsurv_gamma.(α, κ.+fdr[2]/2.0.*dirs, t))[1]/fdr[2]
+    ]
+end
+
+################################################
+# Underlying Hessians, gamma distribution
+################################################
+
+
+function ddlpdf_gamma(α, κ, t)
+    nothing
+end
+
+function ddlsurv_gamma(α, κ, t)
+    nothing
+end
+
+
+################################################
+# Underlying gradient, gamma regression
+################################################
+
+
+function dlsurv_reggamma(β, κ, t, x)
+    dα = dαdβ(β, x)
+    df = dlsurv_gamma(dot(β, x), κ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dsdβ = vcat(dfdβ, df[2:3])
+    dsdβ
+end
+
+function dlpdf_reggamma(β, κ, t, x)
+    dα = dαdβ(β, x)
+    df = dlpdf_gamma(dot(β, x), κ, t)
+    dfdβ = [dα[j] * df[1] for j = 1:length(β)]
+    dfdβ = vcat(dfdβ, df[2:3])
+    dfdβ
+end
+
+
+################################################
+# Underlying Hessians, gamma regression
+################################################
+# TODO: eliminate boilerplate
+
+function ddlpdf_reggamma(β, κ, t, x)
+    nothing
+end
+
+function ddlsurv_reggamma(β, κ, t, x)
+    nothing
 end
