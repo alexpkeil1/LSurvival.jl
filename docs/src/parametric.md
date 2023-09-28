@@ -89,36 +89,53 @@ using Plots
 aftdist(weibullfit, label="X=0, Z1=0, Z2=0", title="Weibull distribution")
 # for specific covariate levels, include a 1.0 for the intercept
 aftdist!(weibullfit, covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1", npoints=300)
-savefig("survdist_pdf.svg")
+savefig("weibull_pdf.svg")
 ```
-![Weibull-density](fig/survdist_pdf.svg)
+![Weibull-density](fig/weibull_pdf.svg)
 
 
 ## Visualizing the distributions, survival distribution
 ```julia
-using Plots
-
 aftdist(weibullfit, type="surv", label="X=0, Z1=0, Z2=0", title="Weibull distribution")
 # for specific covariate levels, include a 1.0 for the intercept
 aftdist!(weibullfit, type="surv", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
-savefig("survdist_surv.svg")
+savefig("weibull_surv.svg")
 ```
-![Weibull-survival](fig/survdist_surv.svg)
+![Weibull-survival](fig/weibull_surv.svg)
+
+## Visualizing the distributions, hazard function
+```julia
+aftdist(weibullfit, type="haz", label="X=0, Z1=0, Z2=0", title="Weibull distribution")
+# for specific covariate levels, include a 1.0 for the intercept
+aftdist!(weibullfit, type="haz", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1", npoints=300)
+savefig("weibull_haz.svg")
+```
+![Weibull-haz](fig/weibull_haz.svg)
+
+## Visualizing the distributions, risk function
+```julia
+aftdist(weibullfit, type="risk", label="X=0, Z1=0, Z2=0", title="Weibull distribution")
+# for specific covariate levels, include a 1.0 for the intercept
+aftdist!(weibullfit, type="risk", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1", npoints=300)
+savefig("weibull_risk.svg")
+```
+![Weibull-risk](fig/weibull_risk.svg)
+
 
 ## Other distributions
 
 
 ### Exponential
-Note that the exponential fit looks a lot like the Weibull fit. The log-scale parameter in the Weibull fit is close to zero. When it is exactly zero, then the Weibull distribution and exponential distribution are identical.
+Note that the exponential fit assumes a constant hazard.
 
 ```julia
 expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Exponential())
-aftdist(expfit, type="surv", label="X=0, Z1=0, Z2=0", title="Exponential distribution")
+aftdist(expfit, type="haz", label="X=0, Z1=0, Z2=0", title="Exponential distribution")
 # for specific covariate levels, include a 1.0 for the intercept
-aftdist!(expfit, type="surv", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
-savefig("exponential.svg")
+aftdist!(expfit, type="haz", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
+savefig("exponential_haz.svg")
 ```
-![exponential](fig/exponential.svg)
+![exponential](fig/exponential_haz.svg)
 
 Output:
 
@@ -149,11 +166,11 @@ Solver iterations: 14
 # Here are results from a simpler model
 dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
 lognormalfit = survreg(@formula(Surv( time, status)~x), dat1, dist=LSurvival.Lognormal())
-aftdist(lognormalfit, label="X=0", title="Log-normal distribution")
-aftdist!(lognormalfit, covlevels=[1.0], color="red", label="X=1")
-savefig("lognormal_pdf.svg")
+aftdist(lognormalfit, type="haz", label="X=0", title="Log-normal distribution")
+aftdist!(lognormalfit, type="haz", covlevels=[1.0], color="red", label="X=1")
+savefig("lognormal_haz.svg")
 ```
-![log-normal](fig/lognormal_pdf.svg)
+![log-normal](fig/lognormal_haz.svg)
 
 ```output
 Maximum likelihood estimates (alpha=0.05):
@@ -175,12 +192,12 @@ Solver iterations: 9
 ### Gamma
 ```julia
 gammafit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Gamma())
-aftdist(gammafit, type="surv", label="X=0, Z1=0, Z2=0", title="Gamma distribution")
+aftdist(gammafit, type="haz", label="X=0, Z1=0, Z2=0", title="Gamma distribution")
 # for specific covariate levels, include a 1.0 for the intercept
-aftdist!(gammafit, type="surv", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
-savefig("gamma.svg")
+aftdist!(gammafit, type="haz", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
+savefig("gamma_haz.svg")
 ```
-![gamma](fig/gamma.svg)
+![gamma](fig/gamma_haz.svg)
 
 
 
@@ -221,11 +238,11 @@ ggammafit2 = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=
     )
 
 ggammafit2 = survreg(@formula(Surv(t, d)~x), wtab, dist=LSurvival.GGamma())
-aftdist(ggammafit2, label="X=0", title="Generalized gamma distribution")
-aftdist!(ggammafit2, covlevels=[1.0], color="red", label="X=1")
-savefig("gengamma_pdf.svg")
+aftdist(ggammafit2, type="haz", label="X=0", title="Generalized gamma distribution")
+aftdist!(ggammafit2, type="haz", covlevels=[1.0], color="red", label="X=1")
+savefig("gengamma_haz.svg")
 ```
-![generalized-gamma](fig/gengamma_pdf.svg)
+![generalized-gamma](fig/gengamma_haz.svg)
 
 ```output
 ┌ Warning: Optimizer reports model did not converge. Gradient: [-0.30185255746883194, -92.76305273476676, -12.51874622578631]

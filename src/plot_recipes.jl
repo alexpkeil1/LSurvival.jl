@@ -368,8 +368,21 @@ dat2 = (
 )
 fte = survreg(@formula(Surv(enter, exit, status)~x), dat2)
 
+# density function
 aftdist(fte, label="X=0")
 aftdist!(fte, covlevels=[1.0, 2.0], color="red", label="X=1")
+
+# Survival function
+aftdist(fte, type="surv", label="X=0")
+aftdist!(fte, type="surv", covlevels=[1.0, 2.0], color="red", label="X=1")
+
+# hazard function
+aftdist(fte, type="haz", label="X=0")
+aftdist!(fte, type="haz", covlevels=[1.0, 2.0], color="red", label="X=1")
+
+# Cumulative incidence/risk function
+aftdist(fte, type="risk", label="X=0")
+aftdist!(fte, type="risk", covlevels=[1.0, 2.0], color="red", label="X=1")
 
 ```
 """
@@ -389,14 +402,22 @@ aftdist!(fte, covlevels=[1.0, 2.0], color="red", label="X=1")
     end
     plotdist = name(typeof(dist))(sum(coefs .* covlevels), ft.P._S...)
     times = range(timeminmax[1], timeminmax[2], npoints)
-    if type == "pdf"
+    if type[1:3] == "pdf"
         dist = [exp(lpdf(plotdist, t)) for t in times]
         ylab --> "Density"
-    elseif type == "surv"
+    elseif type[1:3] == "sur"
         dist = [exp(lsurv(plotdist, t)) for t in times]
         ylab --> "Survival"
+    elseif type[1:3] == "ris"
+        dist = 1 .- [exp(lsurv(plotdist, t)) for t in times]
+        ylab --> "Risk"
+    elseif type[1:3] == "haz"
+        S = [exp(lsurv(plotdist, t)) for t in times]
+        f = [exp(lpdf(plotdist, t)) for t in times]
+        dist = f ./ S
+        ylab --> "Hazard"
     else
-        throw("Type must either be 'surv' or 'pdf'")
+        throw("Type must either be 'surv', 'risk', 'haz' or 'pdf'")
     end
     xlab --> "Time"
     grid --> false
