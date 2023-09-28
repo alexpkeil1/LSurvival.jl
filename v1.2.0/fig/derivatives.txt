@@ -1,0 +1,32 @@
+
+\begin{align*}
+\ln\mathcal{L}_i =& {y_i}\ln f(t_i) + (1-y_i)\ln S(t_i) - \ln S(e_i)\\
+\frac{\partial\ln\mathcal{L}_i}{\partial\alpha} =& \frac{\partial{y_i}\ln f(t_i)}{\partial\alpha} + \frac{\partial(1-y_i)\ln S(t_i)}{\partial\alpha} - I(e_i>0)\frac{\partial\ln S(e_i)}{\partial\alpha}\\
+\frac{\partial{y_i}\ln f(t_i)}{\partial\alpha} =& {y_i}\frac{\partial\ln f(t_i)}{\partial\alpha} + \ln f(t_i)\frac{\partial{y_i}}{\partial\alpha} \\
+ =& {y_i}\frac{\partial\ln f(t_i)}{\partial\alpha} \\
+\frac{\partial{y_i}\ln S(t_i)}{\partial\alpha} =& {(1-y_i)}\frac{\partial\ln S(t_i)}{\partial\alpha}  \\
+\\
+\frac{\partial\ln\mathcal{L}}{\partial \alpha} =& \sum_i \bigg({y_i}\frac{\partial\ln f(t_i)}{\partial\alpha} + {(1-y_i)}\frac{\partial\ln S(t_i)}{\partial\alpha} - I(e_i>0)\frac{\partial\ln S(e_i)}{\partial\alpha}\bigg)\\
+\frac{\partial\ln\mathcal{L}}{\partial \rho} =& \sum_i \bigg({y_i}\frac{\partial\ln f(t_i)}{\partial\rho} + {(1-y_i)}\frac{\partial\ln S(t_i)}{\partial\rho} - I(e_i>0)\frac{\partial\ln S(e_i)}{\partial\rho}\bigg)\\
+\nabla\ln\mathcal{L} =& \Bigg[
+  \frac{\partial\ln\mathcal{L}}{\partial \alpha}, 
+  \frac{\partial\ln\mathcal{L}}{\partial \rho} 
+\Bigg]
+\\
+\nabla\equiv \nabla\ln\mathcal{L} =& \Bigg[
+  \sum_i \bigg({y_i}\frac{\partial\ln f(t_i)}{\partial\alpha} + {(1-y_i)}\frac{\partial\ln S(t_i)}{\partial\alpha} - I(e_i>0)\frac{\partial\ln S(e_i)}{\partial\alpha}\bigg), 
+  \sum_i \bigg({y_i}\frac{\partial\ln f(t_i)}{\partial\rho} + {(1-y_i)}\frac{\partial\ln S(t_i)}{\partial\rho} - I(e_i>0)\frac{\partial\ln S(e_i)}{\partial\rho}\bigg) 
+\Bigg]
+\\\\
+H\equiv H\ln\mathcal{L} =&
+\begin{bmatrix}
+  \frac{\partial^2\ln\mathcal{L}}{\partial \alpha^2}&    \frac{\partial^2\ln\mathcal{L}}{\partial \alpha\partial \rho}\\
+  \frac{\partial^2\ln\mathcal{L}}{\partial \rho \partial \alpha} &    \frac{\partial^2\ln\mathcal{L}}{\partial \alpha^2}\\
+\end{bmatrix}
+\\
+\frac{\partial^2\ln\mathcal{L}}{\partial \alpha\partial\rho} =& \sum_i \bigg({y_i}\frac{\partial^2\ln f(t_i)}{\partial\alpha\partial\rho} + {(1-y_i)}\frac{\partial^2\ln S(t_i)}{\partial\alpha\partial\rho} - I(e_i>0)\frac{\partial^2\ln S(e_i)}{\partial\alpha\partial\rho}\bigg)
+\\\\\\
+\mbox{Define } \theta &= (\alpha, \rho)\\
+\theta_{j+1} =& \theta_j - H^{-1}\nabla \mbox{~~~~~ (Newton-Raphson step)}
+\end{align*}
+

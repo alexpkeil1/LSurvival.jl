@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Parametric survival analysis with AFT models · LSurvival: survival analysis for left-truncated, right-censored outcomes</title><meta name="title" content="Parametric survival analysis with AFT models · LSurvival: survival analysis for left-truncated, right-censored outcomes"/><meta property="og:title" content="Parametric survival analysis with AFT models · LSurvival: survival analysis for left-truncated, right-censored outcomes"/><meta property="twitter:title" content="Parametric survival analysis with AFT models · LSurvival: survival analysis for left-truncated, right-censored outcomes"/><meta name="description" content="Documentation for LSurvival: survival analysis for left-truncated, right-censored outcomes."/><meta property="og:description" content="Documentation for LSurvival: survival analysis for left-truncated, right-censored outcomes."/><meta property="twitter:description" content="Documentation for LSurvival: survival analysis for left-truncated, right-censored outcomes."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">LSurvival: survival analysis for left-truncated, right-censored outcomes</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Help</a></li><li><span class="tocitem">Details</span><ul><li><a class="tocitem" href="../Likelihood/">Likelihood functions</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../nonparametric/">Non-parametric survival analysis</a></li><li><a class="tocitem" href="../coxmodel/">Semi-parametric survival analysis with Cox models</a></li><li class="is-active"><a class="tocitem" href>Parametric survival analysis with AFT models</a><ul class="internal"><li><a class="tocitem" href="#Weibull-accelerated-failure-time-model"><span>Weibull accelerated failure time model</span></a></li><li><a class="tocitem" href="#Comparing-Weibull-AFT-and-Cox-model-results"><span>Comparing Weibull AFT and Cox model results</span></a></li><li><a class="tocitem" href="#Other-distributions"><span>Other distributions</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Parametric survival analysis with AFT models</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Parametric survival analysis with AFT models</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/alexpkeil1/LSurvival.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/alexpkeil1/LSurvival.jl/blob/main/docs/src/parametric.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Parametric-survival/risk-estimation-with-Weibull-AFT-models"><a class="docs-heading-anchor" href="#Parametric-survival/risk-estimation-with-Weibull-AFT-models">Parametric survival/risk estimation with Weibull AFT models</a><a id="Parametric-survival/risk-estimation-with-Weibull-AFT-models-1"></a><a class="docs-heading-anchor-permalink" href="#Parametric-survival/risk-estimation-with-Weibull-AFT-models" title="Permalink"></a></h1><h2 id="Weibull-accelerated-failure-time-model"><a class="docs-heading-anchor" href="#Weibull-accelerated-failure-time-model">Weibull accelerated failure time model</a><a id="Weibull-accelerated-failure-time-model-1"></a><a class="docs-heading-anchor-permalink" href="#Weibull-accelerated-failure-time-model" title="Permalink"></a></h2><pre><code class="language-julia hljs">cd(&quot;docs/src/fig/&quot;)
+using Random, LSurvival, Distributions, LinearAlgebra, Plots
+
+# generate some data under a discrete hazards model
+ id, int, out, data = LSurvival.dgm(MersenneTwister(1212), 1000, 20)
+
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
+wt = rand(MersenneTwister(1212), length(d)) # random weights just to demonstrate usage
+
+
+# Fit a Cox model with `Tables.jl` and `StatsAPI.@formula` interface (similar to GLM.jl)
+tab = (id=id, in = int, out = out, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3], wts=wt) # can also be a DataFrame from DataFrames.jl
+weibullfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Weibull())</code></pre><p>Output:</p><pre><code class="language-output hljs">Maximum likelihood estimates (alpha=0.05):
+────────────────────────────────────────────────────────────────────────
+                   Est     StdErr        LCI        UCI       Z  P(&gt;|Z|)
+────────────────────────────────────────────────────────────────────────
+(Intercept)   2.92482   0.0808023   2.76645    3.08319    36.20   &lt;1e-99
+x            -1.50998   0.135432   -1.77543   -1.24454   -11.15   &lt;1e-99
+z1           -0.072211  0.106681   -0.281301   0.136879   -0.68   0.4985
+z2           -1.08864   0.0906976  -1.2664    -0.910874  -12.00   &lt;1e-99
+log(Scale)   -0.223338  0.0368294  -0.295522  -0.151153   -6.06   &lt;1e-08
+────────────────────────────────────────────────────────────────────────
+Weibull distribution
+Log-likelihood (full): -1222.58
+Log-likelihood (Intercept only):  -1356.2
+LRT p-value (X^2=267.23, df=3): 0
+Solver iterations: 15</code></pre><h2 id="Comparing-Weibull-AFT-and-Cox-model-results"><a class="docs-heading-anchor" href="#Comparing-Weibull-AFT-and-Cox-model-results">Comparing Weibull AFT and Cox model results</a><a id="Comparing-Weibull-AFT-and-Cox-model-results-1"></a><a class="docs-heading-anchor-permalink" href="#Comparing-Weibull-AFT-and-Cox-model-results" title="Permalink"></a></h2><p>For the Weibull distribution, AFT model and Cox model results can be compared directly by converting AFT estimates to hazard ratios</p><pre><code class="language-julia hljs">coxfit = coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, ties = &quot;efron&quot;, wts = wt, id = ID.(tab.id))</code></pre><p>Output:</p><pre><code class="language-output hljs">Maximum partial likelihood estimates (alpha=0.05):
+───────────────────────────────────────────────────────────
+      ln(HR)    StdErr        LCI       UCI      Z  P(&gt;|Z|)
+───────────────────────────────────────────────────────────
+x   1.78123   0.181734   1.42504   2.13742    9.80   &lt;1e-99
+z1  0.109247  0.133533  -0.152473  0.370968   0.82   0.4133
+z2  1.59741   0.10216    1.39718   1.79764   15.64   &lt;1e-99
+───────────────────────────────────────────────────────────
+Partial log-likelihood (null): -2460.82
+Partial log-likelihood (fitted): -2314.18
+LRT p-value (X^2=293.28, df=3): 0
+Newton-Raphson iterations: 6</code></pre><p>Convert the AFT model parameters to hazard ratios to compare (note that this conversion is not possible for all parametric survival distributions).</p><pre><code class="language-julia hljs">scale = exp(weibullfit.P._S[1])
+aftparms = coef(weibullfit)[2:end]
+parmhrs = - aftparms ./ scale
+hcat(coef(coxfit), parmhrs)</code></pre><p>Output: The first column is ln(HR) estimate from a Cox model, and the second is from the Weibull model</p><pre><code class="language-output hljs">3×2 Matrix{Float64}:
+ 1.78123   1.88785
+ 0.109247  0.0902812
+ 1.59741   1.36106</code></pre><h2 id="Other-distributions"><a class="docs-heading-anchor" href="#Other-distributions">Other distributions</a><a id="Other-distributions-1"></a><a class="docs-heading-anchor-permalink" href="#Other-distributions" title="Permalink"></a></h2><h3 id="Exponential"><a class="docs-heading-anchor" href="#Exponential">Exponential</a><a id="Exponential-1"></a><a class="docs-heading-anchor-permalink" href="#Exponential" title="Permalink"></a></h3><pre><code class="nohighlight hljs">expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Exponential())</code></pre><p>Output:</p><pre><code class="language-output hljs">Maximum likelihood estimates (alpha=0.05):
+──────────────────────────────────────────────────────────────────────
+                   Est    StdErr        LCI       UCI       Z  P(&gt;|Z|)
+──────────────────────────────────────────────────────────────────────
+(Intercept)   2.95353   0.100392   2.75677    3.15029   29.42   &lt;1e-99
+x            -1.55072   0.16808   -1.88015   -1.22129   -9.23   &lt;1e-99
+z1           -0.082459  0.133349  -0.343818   0.1789    -0.62   0.5363
+z2           -1.36337   0.101441  -1.5622    -1.16455  -13.44   &lt;1e-99
+──────────────────────────────────────────────────────────────────────
+Exponential distribution
+Log-likelihood (full): -1239.09
+Log-likelihood (Intercept only):  -1359.4
+LRT p-value (X^2=240.61, df=3): 0
+Solver iterations: 14</code></pre><h3 id="Log-normal"><a class="docs-heading-anchor" href="#Log-normal">Log-normal</a><a id="Log-normal-1"></a><a class="docs-heading-anchor-permalink" href="#Log-normal" title="Permalink"></a></h3><pre><code class="language-julia hljs"># note this model runs into convergence issues in these data
+    #expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Lognormal())
+
+# Here are results from a simpler model
+    dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+    lognormalfit = survreg(@formula(Surv( time, status)~x), dat1, dist=LSurvival.Lognormal())</code></pre><pre><code class="language-output hljs">Maximum likelihood estimates (alpha=0.05):
+─────────────────────────────────────────────────────────────────────
+                   Est    StdErr       LCI        UCI      Z  P(&gt;|Z|)
+─────────────────────────────────────────────────────────────────────
+(Intercept)   2.20995   0.40358    1.41895   3.00095    5.48   &lt;1e-07
+x            -1.26752   0.585011  -2.41412  -0.120918  -2.17   0.0303
+log(Scale)   -0.445615  0.342319  -1.11655   0.225318  -1.30   0.1930
+─────────────────────────────────────────────────────────────────────
+Lognormal distribution
+Log-likelihood (full): -10.4662
+Log-likelihood (Intercept only): -12.9106
+LRT p-value (X^2=4.89, df=2): 0.086774
+Solver iterations: 9</code></pre><h3 id="Gamma"><a class="docs-heading-anchor" href="#Gamma">Gamma</a><a id="Gamma-1"></a><a class="docs-heading-anchor-permalink" href="#Gamma" title="Permalink"></a></h3><p>In progress</p><h3 id="Generalized-gamma"><a class="docs-heading-anchor" href="#Generalized-gamma">Generalized gamma</a><a id="Generalized-gamma-1"></a><a class="docs-heading-anchor-permalink" href="#Generalized-gamma" title="Permalink"></a></h3><p>In progress</p><h3 id="Log-logistic"><a class="docs-heading-anchor" href="#Log-logistic">Log-logistic</a><a id="Log-logistic-1"></a><a class="docs-heading-anchor-permalink" href="#Log-logistic" title="Permalink"></a></h3><p>In progress</p><h3 id="Gompertz"><a class="docs-heading-anchor" href="#Gompertz">Gompertz</a><a id="Gompertz-1"></a><a class="docs-heading-anchor-permalink" href="#Gompertz" title="Permalink"></a></h3><p>In progress</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../coxmodel/">« Semi-parametric survival analysis with Cox models</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.0.1 on <span class="colophon-date" title="Thursday 28 September 2023 04:11">Thursday 28 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
