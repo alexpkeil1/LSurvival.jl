@@ -117,7 +117,7 @@ Solver iterations: 14
 
 ```julia
 # note this model runs into convergence issues in these data
-    #expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Lognormal())
+    #lognormalfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Lognormal())
 
 # Here are results from a simpler model
     dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
@@ -142,10 +142,101 @@ Solver iterations: 9
 
 
 ### Gamma
-In progress
+```julia
+gammafit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Gamma())
+```
+
+```output
+Maximum likelihood estimates (alpha=0.05):
+─────────────────────────────────────────────────────────────────────────
+                    Est     StdErr        LCI        UCI       Z  P(>|Z|)
+─────────────────────────────────────────────────────────────────────────
+(Intercept)   2.43748    0.0743159   2.29182    2.58313    32.80   <1e-99
+x            -1.49903    0.134053   -1.76176   -1.23629   -11.18   <1e-99
+z1           -0.0770725  0.137475   -0.346519   0.192374   -0.56   0.5751
+z2           -1.12406    0.0256118  -1.17425   -1.07386   -43.89   <1e-99
+κ             0.410826   0.0436605   0.325253   0.496399    9.41   <1e-99
+─────────────────────────────────────────────────────────────────────────
+Gamma distribution
+Log-likelihood (full): -1219.09
+Log-likelihood (Intercept only): -1352.33
+LRT p-value (X^2=266.48, df=3): 0
+Solver iterations: 21
+```
 
 ### Generalized gamma
-In progress
+```julia
+ggammafit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.GGamma())
+#ggammafit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.GGamma(), verbose=true) #see convergence issue
+ggammafit2 = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.GGamma(), start=zeros(6))
+#simpler fit
+    rng = MersenneTwister(121)
+    n = 1000
+    x = rand(rng, [0,1], n)
+    wtab = (
+      t = [LSurvival.randweibull(rng, exp(1), exp((1-x[i]))) for i in 1:n],
+      d = rand(rng, [0,1], n),
+      x = x
+    )
+
+ggammafit2 = survreg(@formula(Surv(t, d)~x), wtab, dist=LSurvival.GGamma())
+```
+
+```output
+┌ Warning: Optimizer reports model did not converge. Gradient: [-0.30185255746883194, -92.76305273476676, -12.51874622578631]
+└ @ LSurvival ~/.julia/packages/LSurvival/LckPM/src/parsurvival.jl:454
+
+Maximum likelihood estimates (alpha=0.05):
+─────────────────────────────────────────────────────────────────────────
+                    Est     StdErr        LCI        UCI       Z  P(>|Z|)
+─────────────────────────────────────────────────────────────────────────
+(Intercept)   1.63286    0.315163    1.01516    2.25057     5.18   <1e-06
+x            -1.48364    0.0659245  -1.61285   -1.35443   -22.51   <1e-99
+z1           -0.0823059  0.250621   -0.573515   0.408903   -0.33   0.7426
+z2           -1.17402    0.144571   -1.45737   -0.890661   -8.12   <1e-15
+log(scale)    0.268056   0.0312804   0.206748   0.329365    8.57   <1e-99
+κ             0.872033   0.20311     0.473946   1.27012     4.29   <1e-04
+─────────────────────────────────────────────────────────────────────────
+GGamma distribution
+Log-likelihood (full): -1217.97
+Log-likelihood (Intercept only): -1327.99
+LRT p-value (X^2=220.05, df=3): 0
+Solver iterations: 41
+
+# fit 2: note stderr column
+Maximum likelihood estimates (alpha=0.05):
+────────────────────────────────────────────────────────────────────────
+                    Est    StdErr        LCI        UCI       Z  P(>|Z|)
+────────────────────────────────────────────────────────────────────────
+(Intercept)   1.63286    0.705252   0.250596   3.01513     2.32   0.0206
+x            -1.48364    0.145726  -1.76926   -1.19803   -10.18   <1e-99
+z1           -0.0823059  0.114052  -0.305845   0.141233   -0.72   0.4705
+z2           -1.17402    0.102888  -1.37567   -0.972358  -11.41   <1e-99
+log(scale)    0.268056   0.189051  -0.102477   0.638589    1.42   0.1562
+κ             0.872033   0.334477   0.216471   1.5276      2.61   0.0091
+────────────────────────────────────────────────────────────────────────
+GGamma distribution
+Log-likelihood (full): -1217.97
+Log-likelihood (Intercept only): -1327.99
+LRT p-value (X^2=220.05, df=3): 0
+Solver iterations: 46
+
+# fit 3: simpler data (no convergence issues)
+Maximum likelihood estimates (alpha=0.05):
+──────────────────────────────────────────────────────────────────────────
+                   Est      StdErr        LCI        UCI        Z  P(>|Z|)
+──────────────────────────────────────────────────────────────────────────
+(Intercept)   1.4276    0.00738963   1.41311    1.44208    193.19   <1e-99
+x            -0.981762  0.0278233   -1.03629   -0.927229   -35.29   <1e-99
+log(scale)   -1.35909   0.0099205   -1.37853   -1.33965   -137.00   <1e-99
+κ            -0.481034  0.0338139   -0.547308  -0.41476    -14.23   <1e-99
+──────────────────────────────────────────────────────────────────────────
+GGamma distribution
+Log-likelihood (full): -745.685
+Log-likelihood (Intercept only): -963.049
+LRT p-value (X^2=434.73, df=1): 0
+Solver iterations: 66
+```
 
 ### Log-logistic
 In progress

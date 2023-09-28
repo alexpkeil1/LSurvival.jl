@@ -36,6 +36,7 @@ Note here that covariates are not time-varying, but that person-period data stru
 ```
 
 Note use of the `id` argument to specify that multiple observations come from the same individual. This is important in the case of robust-variance estimation, jackknifing, bootstrapping, and influence-based residuals like `dfbeta` residuals. It will have no impact on the default output (confirm by fitting this model with and without the statement, and also compare influence plots below)!
+
 ```julia
 mfit = coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, ties = "efron", wts = wt, id = ID.(tab.id))
 ```
@@ -58,6 +59,7 @@ Newton-Raphson iterations: 6
 ```
 
 ## Plotting survival outcomes (person-period plot)
+
 ```julia
 plot(mfit.R)
 savefig("ppplot.svg")
@@ -68,6 +70,7 @@ savefig("ppplot.svg")
 ## Estimating baseline hazards
 
 Baseline hazards (at referent levels of covariates) are esitmated by default in coxph.
+
 ```julia
 mfit.bh
 basehazplot(mfit)
@@ -76,6 +79,7 @@ savefig("basehaz.svg")
 ![Baseline hazard](fig/basehaz.svg)
 
 ## Model fit: Schoenfeld residuals
+
 ```julia
 residuals(mfit, type="schoenfeld")
 coxdx(mfit)
@@ -85,6 +89,7 @@ savefig("schoenfeld.svg")
 
 ## Influence: Jackknife/dfbeta residuals
 These will be on the individual level
+
 ```julia
 residuals(mfit, type="dfbeta")
 residuals(mfit, type="jackknife")
@@ -126,7 +131,7 @@ show(df)
   998 │  0.3136   1.8464   0.6908  0.0133034       2.0   1.118
   999 │  3.7132   3.7309   1.0     0.0106726       0.0   1.2687
  1000 │  0.9304   3.3816   1.0     0.0104032       0.0   0.4498
- ```
+```
 
 ### Fitting cause-specific Cox models for competing event types
 
@@ -137,6 +142,7 @@ fit2 = coxph(@formula(Surv(enter, t, event==2)~x+z), df[n2idx,:], wts=df.wt[n2id
 ```
 
 Fit, cause 1:
+
 ```output
 Maximum partial likelihood estimates (alpha=0.05):
 ────────────────────────────────────────────────────────────
@@ -153,6 +159,7 @@ Newton-Raphson iterations: 4
 ```
 
 Fit, cause 2:
+
 ```output
 Maximum partial likelihood estimates (alpha=0.05):
 ────────────────────────────────────────────────────────────
