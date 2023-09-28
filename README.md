@@ -9,7 +9,7 @@ These are some survival analysis functions that I was hoping to find in Julia an
 
 This module handles:
 - Cox proportional hazards model with Efron's method or Breslow's method for ties
-- Parametric accelerated failure time models
+- Parametric accelerated failure time (AFT) models
 - Non-parametric survival function estimation via Kaplan-Meier
 - Non-parametric survival function estimation under competing risks via Aalen-Johansen estimator
 - Late entry/left trunctation and right censoring (all estimators)
@@ -17,6 +17,8 @@ This module handles:
 - Cumulative incidence estimation from a set of Cox models
 - Cox model residuals (Martingale, score, Schoenfeld, dfbeta)
 - Robust variance estimation
+- Bootstrap and jackknife methods for Cox models and AFT models
+- Plot recipes for diagnostics and visualizations
 
 Add this package via Julia's package manager:
 

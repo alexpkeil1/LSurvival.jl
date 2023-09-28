@@ -216,7 +216,8 @@ lognlogplot(k)
         label := ""
         color := :gray
         style := :dash
-        [log(minT), log(maxT)], [coef[1] + coef[2]*log(minT), coef[1] + coef[2]*log(maxT)]
+        [log(minT), log(maxT)],
+        [coef[1] + coef[2] * log(minT), coef[1] + coef[2] * log(maxT)]
     end
 
 end
@@ -284,9 +285,9 @@ coxdx(fte)
 
 ```
 """
-@recipe function f(h::CoxDX; par=1)
+@recipe function f(h::CoxDX; par = 1)
     ft = h.args[1]
-    time = ft.bh[:,1]
+    time = ft.bh[:, 1]
     nms = coefnames(ft)
     xlab --> "Time"
     ylab --> "Schoenfeld residual"
@@ -299,7 +300,7 @@ coxdx(fte)
         label --> nms[par]
         markesize --> 2
         markeralpha --> 0.5
-        time, res[:,par]
+        time, res[:, par]
     end
 end
 
@@ -320,8 +321,9 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
 
 ```
 """
-@recipe function f(h::CoxInfluence; type="dfbeta", par=1)
-    !issubset([type], ["dfbeta", "dfbetas", "jackknife"]) && throw("type must be 'dfbeta', 'dfbetas' or 'jackknife'")
+@recipe function f(h::CoxInfluence; type = "dfbeta", par = 1)
+    !issubset([type], ["dfbeta", "dfbetas", "jackknife"]) &&
+        throw("type must be 'dfbeta', 'dfbetas' or 'jackknife'")
     ft = h.args[1]
     id = values(ft.R.id)
     nms = coefnames(ft)
@@ -337,7 +339,7 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
         label --> type
         markesize --> 2
         markeralpha --> 0.5
-        id, res[:,par]
+        id, res[:, par]
     end
     @series begin
         seriestype := :hline
@@ -347,3 +349,61 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
     end
 end
 
+
+
+@userplot AFTdist
+"""
+```julia
+function name(::Type{T}) where {T}
+    #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
+    isempty(T.parameters) ? T : T.name.wrapper
+end
+
+using Plots, LSurvival
+dat2 = (
+    enter = [1, 2, 5, 2, 1, 7, 3, 4, 8, 8],
+    exit = [2, 3, 6, 7, 8, 9, 9, 9, 14, 17],
+    status = [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+    x = [1, 0, 0, 1, 0, 1, 1, 1, 0, 0],
+)
+fte = survreg(@formula(Surv(enter, exit, status)~x), dat2)
+
+aftdist(fte, label="X=0")
+aftdist!(fte, covlevels=[1.0, 2.0], color="red", label="X=1")
+
+```
+"""
+@recipe function f(h::AFTdist; type = "pdf", covlevels = nothing, npoints = 100)
+    ft = h.args[1]
+    coefs = coef(ft)
+    id = values(ft.R.id)
+    timeminmax = extrema(vcat(ft.R.origin, ft.R.eventtimes))
+    dist = ft.d
+    if isnothing(covlevels)
+        covlevels = vcat(ones(1), zeros(length(coefs) - 1))
+    else
+        if length(covlevels) == (length(coefs) - 1)
+            covlevels = vcat(1.0, covlevels)
+        end
+        @assert length(covlevels) == length(coefs)
+    end
+    plotdist = name(typeof(dist))(sum(coefs .* covlevels), ft.P._S...)
+    times = range(timeminmax[1], timeminmax[2], npoints)
+    if type == "pdf"
+        dist = [exp(lpdf(plotdist, t)) for t in times]
+        ylab --> "Density"
+    elseif type == "surv"
+        dist = [exp(lsurv(plotdist, t)) for t in times]
+        ylab --> "Survival"
+    else
+        throw("Type must either be 'surv' or 'pdf'")
+    end
+    xlab --> "Time"
+    grid --> false
+    @series begin
+        seriestype := :path
+        color --> :black
+        label --> ""
+        times, dist
+    end
+end

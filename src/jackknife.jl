@@ -57,6 +57,15 @@ function popat!(P::T, idxi, idxj) where {T<:PHParms}
     Pi
 end
 
+function popat!(P::T, idxi, idxj) where {T<:PSParms}
+    Pi = PSParms(P.X[idxi, :], P._B, P._r[idxi], P._LL, P._grad, P._hess, P._S, 1, P.p)
+    P.X = P.X[idxj, :]
+    P._r = P._r[idxj]
+    P.n -= length(idxi)
+    Pi
+end
+
+
 function push(Ri::T, Rj::T) where {T<:LSurvivalResp}
     LSurvivalResp(
         vcat(Ri.enter, Rj.enter),
@@ -81,7 +90,7 @@ function push(Ri::T, Rj::T) where {T<:LSurvivalCompResp}
     )
 end
 
-function push!(Pi::T, Pj::T) where {T<:PHParms}
+function push!(Pi::T, Pj::T) where {T<:AbstractLSurvivalParms}
     Pj.X = vcat(Pi.X, Pj.X)
     Pj._r = vcat(Pi._r, Pj._r)
     Pj.n += 1
@@ -118,8 +127,40 @@ function jackknife(m::M; kwargs...) where {M<:PHModel}
     coefs
 end
 
+function jackknife(m::M; kwargs...) where {M<:PSModel}
+    uid = unique(m.R.id)
+    par = zeros(length(uid), length(params(m)))
+    R = deepcopy(m.R)
+    P = deepcopy(m.P)
+    for i in eachindex(uid)
+        Ri, Rj, idxi, idxj = pop(m.R)
+        Pi = popat!(m.P, idxi, idxj)
+        mi = PSModel(
+            Rj,
+            m.P,
+            m.formula,
+            m.d,
+            false,
+        )
+        fit!(mi; kwargs...)
+        par[i, :] = params(mi)
+        m.R = push(Ri, Rj)
+        push!(Pi, m.P)
+    end
+    m.R, m.P = R, P
+    par
+end
+
 
 function jackknife_vcov(m::M) where {M<:PHModel}
+    N = nobs(m)
+    #comparing estimate with jackknife estimate with bootstrap mean
+    jk = jackknife(m)
+    covjk = cov(jk, corrected = false) .* (N - 1)
+    covjk
+end
+
+function jackknife_vcov(m::M) where {M<:PSModel}
     N = nobs(m)
     #comparing estimate with jackknife estimate with bootstrap mean
     jk = jackknife(m)

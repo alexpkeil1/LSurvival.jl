@@ -82,16 +82,43 @@ The first column is ln(HR) estimate from a Cox model, and the second is from the
  1.59741   1.36106
 ```
 
+## Visualizing the distributions, probability density
+```julia
+using Plots
 
+aftdist(weibullfit, label="X=0, Z1=0, Z2=0", title="Weibull distribution")
+# for specific covariate levels, include a 1.0 for the intercept
+aftdist!(weibullfit, covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1", npoints=300)
+savefig("survdist_pdf.svg")
+```
+![Weibull-density](fig/survdist_pdf.svg)
+
+
+## Visualizing the distributions, survival distribution
+```julia
+using Plots
+
+aftdist(weibullfit, type="surv", label="X=0, Z1=0, Z2=0", title="Weibull distribution")
+# for specific covariate levels, include a 1.0 for the intercept
+aftdist!(weibullfit, type="surv", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
+savefig("survdist_surv.svg")
+```
+![Weibull-survival](fig/survdist_surv.svg)
 
 ## Other distributions
 
 
 ### Exponential
+Note that the exponential fit looks a lot like the Weibull fit. The log-scale parameter in the Weibull fit is close to zero. When it is exactly zero, then the Weibull distribution and exponential distribution are identical.
 
-```
+```julia
 expfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Exponential())
+aftdist(expfit, type="surv", label="X=0, Z1=0, Z2=0", title="Exponential distribution")
+# for specific covariate levels, include a 1.0 for the intercept
+aftdist!(expfit, type="surv", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
+savefig("exponential.svg")
 ```
+![exponential](fig/exponential.svg)
 
 Output:
 
@@ -120,9 +147,13 @@ Solver iterations: 14
     #lognormalfit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Lognormal())
 
 # Here are results from a simpler model
-    dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
-    lognormalfit = survreg(@formula(Surv( time, status)~x), dat1, dist=LSurvival.Lognormal())
+dat1 = (time = [1, 1, 6, 6, 8, 9], status = [1, 0, 1, 1, 0, 1], x = [1, 1, 1, 0, 0, 0])
+lognormalfit = survreg(@formula(Surv( time, status)~x), dat1, dist=LSurvival.Lognormal())
+aftdist(lognormalfit, label="X=0", title="Log-normal distribution")
+aftdist!(lognormalfit, covlevels=[1.0], color="red", label="X=1")
+savefig("lognormal_pdf.svg")
 ```
+![log-normal](fig/lognormal_pdf.svg)
 
 ```output
 Maximum likelihood estimates (alpha=0.05):
@@ -144,7 +175,14 @@ Solver iterations: 9
 ### Gamma
 ```julia
 gammafit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.Gamma())
+aftdist(gammafit, type="surv", label="X=0, Z1=0, Z2=0", title="Gamma distribution")
+# for specific covariate levels, include a 1.0 for the intercept
+aftdist!(gammafit, type="surv", covlevels=[1.0, 1.0, 1.0, 1.0], color="red", label="X=1, Z1=1, Z2=1")
+savefig("gamma.svg")
 ```
+![gamma](fig/gamma.svg)
+
+
 
 ```output
 Maximum likelihood estimates (alpha=0.05):
@@ -164,6 +202,9 @@ LRT p-value (X^2=266.48, df=3): 0
 Solver iterations: 21
 ```
 
+Notes: analytic gradients and Hessian matrixes are not available for this distribution, so the solver uses finite differencing, which can make this model considerably slower to fit than alternative models.
+
+
 ### Generalized gamma
 ```julia
 ggammafit = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=LSurvival.GGamma())
@@ -180,7 +221,11 @@ ggammafit2 = survreg(@formula(Surv(in, out, d)~x+z1+z2), tab, wts=tab.wts, dist=
     )
 
 ggammafit2 = survreg(@formula(Surv(t, d)~x), wtab, dist=LSurvival.GGamma())
+aftdist(ggammafit2, label="X=0", title="Generalized gamma distribution")
+aftdist!(ggammafit2, covlevels=[1.0], color="red", label="X=1")
+savefig("gengamma_pdf.svg")
 ```
+![generalized-gamma](fig/gengamma_pdf.svg)
 
 ```output
 ┌ Warning: Optimizer reports model did not converge. Gradient: [-0.30185255746883194, -92.76305273476676, -12.51874622578631]
@@ -237,6 +282,8 @@ Log-likelihood (Intercept only): -963.049
 LRT p-value (X^2=434.73, df=1): 0
 Solver iterations: 66
 ```
+
+Notes: analytic gradients and Hessian matrixes are not available for this distribution, so the solver uses finite differencing, which can make this model considerably slower to fit than alternative models.
 
 ### Log-logistic
 In progress

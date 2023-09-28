@@ -92,6 +92,11 @@ using Random, Tables
     ftint = survreg(@formula(Surv(time,status) ~ 1), dat1, contrasts = Dict(:x => CategoricalTerm))
     println(coxph(@formula(Surv(time,status)~x), dat1))
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
+    # test, jackknife
+    S = vcov(ft, type = "jackknife")
+    @test !any(isnothing(S))
+
+
     #
     # test: confint
     confint(ft)
@@ -502,14 +507,24 @@ using Random, Tables
         keepx = true,
         keepy = true,
     )
+    ftparm = fit(
+        PSModel,
+        X,
+        enter,
+        t,
+        (event .== 1),
+        dist=LSurvival.Weibull()
+    )
     # TEST: does the length function work?
     @test length(ft1.R.id) == 100
 
     # TEST: does single bootstrap return an unfitted model?
     @test !(bootstrap(MersenneTwister(123), ft1)).fit
+    @test !(bootstrap(MersenneTwister(123), ftparm)).fit
 
     # TEST: does multi bootstrap return intended length of results
     @test size(bootstrap(MersenneTwister(123), ft1, 3)) == (3, length(coef(ft1)))
+    @test size(bootstrap(MersenneTwister(123), ftparm, 3)) == (3, length(params(ftparm)))
 
 
     # TEST: do updated methods give the same answer as deprecated methods

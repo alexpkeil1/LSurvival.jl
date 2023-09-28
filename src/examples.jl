@@ -4,7 +4,8 @@
 # you may need to install some additional packages
 # import Pkg; Pkg.add("RCall")
 
-using LSurvival, LinearAlgebra, RCall, BenchmarkTools, Random
+using LSurvival, LinearAlgebra, RCall, Random
+using BenchmarkTools # conflicts: LSurvival.params and BenchmarkTools.params
 using Plots
 
 ###################################################################
@@ -887,16 +888,8 @@ ret = summary(res)
 ret
 """
 @rget ret
-resexp = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential(), verbose=false, start=rand(2))
+resexp = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
 
-start0w = vcat(coef(resexp), 0.0)
-res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true, start =start0w, fitint=false)
-res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), verbose=true, start =[2.5,-1.,0.], fitint=false);
-
-res
-
-params(res)
-stderror(res)
 
 
 @rput dat1
@@ -906,6 +899,13 @@ res = survreg(Surv(time , status) ~ x,data = dat1, dist="weibull")
 ret = summary(res)
 """
 @rget ret
+
+res = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull());
+res
+
+params(res)
+stderror(res)
+stderror(res, type="jackknife")
 
 
 @rput dat1
@@ -972,3 +972,21 @@ lnfit = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Lognormal(),
     # Loglik(model)= -10.5   Loglik(intercept only)= -12.1
     #         Chisq= 3.26 on 1 degrees of freedom, p= 0.071 
     # Number of Newton-Raphson Iterations: 5 
+
+##################################################################
+# bootstrapping a parametric survival model
+##################################################################
+rng = MersenneTwister(121)
+n = 1000
+x = rand(rng, [0,1], n)
+wtab = (
+  t = [LSurvival.randweibull(rng, exp(1), exp((1-x[i]))) for i in 1:n],
+  d = rand(rng, [0,1], n),
+  x = x
+)
+res = survreg(@formula(Surv(t,d)~x), wtab)
+
+bs = bootstrap(res, 200)
+stderror(res)
+sqrt.(sum((bs .- sum(bs, dims=1)./200).^2, dims=1)/200)
+    

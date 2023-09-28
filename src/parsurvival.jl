@@ -8,13 +8,13 @@
 function copydist(d::T, args...) where {T<:AbstractSurvDist}
     typeof(d)(args...)
 end
-
+=#
 function name(::Type{T}) where {T}
     #https://stackoverflow.com/questions/70043313/get-simple-name-of-type-in-julia
     isempty(T.parameters) ? T : T.name.wrapper
 end
 
-=#
+
 function Base.length(d::T) where {T<:AbstractSurvDist}
     length(fieldnames(T))
 end
@@ -739,8 +739,8 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:P
         #res = robust_vcov(m)
         throw("$type not implemented")
     elseif type == "jackknife"
-        #res = jackknife_vcov(m)
-        throw("$type not implemented")
+        res = jackknife_vcov(m)
+        #throw("$type not implemented")
     else
         res = -inv(m.P._hess)
         if any(eigen(res).values .< 0.0)
