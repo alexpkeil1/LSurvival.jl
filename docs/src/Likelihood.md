@@ -116,7 +116,7 @@ z \sim D
 \end{aligned}$$
 
 
-Where the location parameter is given as $\alpha = \mathbf{x}\beta$ and the scale parmameter $\sigma=\exp(\rho)$ describes the magnitude of the error terms, whose distribution is $D$ (e.g. in the case of the Weibull distribution for $t$ (given $\mathbf X$), $D$ is the extreme value distribution). Here, the association between covariates $\mathbf{X}$ and the time-to-event outcome is characterized in terms of linear effects on the location parameter $\alpha$. Further details and interpretive assistance can be found in Kalbfleisch and Prentice.
+Where the location parameter is given as $\alpha = \mathbf{x}\beta$ and the scale parmameter $\sigma=\exp(\rho)$ describes the magnitude of the error terms, whose distribution is $D$ (e.g. in the case of the Weibull distribution for $t$ (given $\mathbf X$), $D$ is the extreme value distribution). Here, the association between covariates $\mathbf{X}$ and the time-to-event outcome is characterized in terms of linear effects on the location parameter $\alpha$. Further details and interpretive assistance can be found in Kalbfleisch and Prentice.[^kf]
 
 Under this model, we note that the ratio of predicted times under $\mathbf{X=x}$ and $\mathbf{X=x'}$, denoted by $T_{\mathbf x}$ and $T_{\mathbf x'}$, respectively, is given as
 
@@ -214,10 +214,10 @@ S(t|\alpha,\rho,\kappa)=&1-I( \exp(\kappa),\exp(\ln(t)-\alpha)^{\exp(-\rho)})\\
 
 Where we define $I(k,s)$ as the upper incomplete gamma function ratio given by
 
-$$I_k(s) = \frac{\int_o^s t^{k-1}\exp(-t)dt}{\Gamma(k)}$$
+$$I(k,s) = \frac{\int_o^s t^{k-1}\exp(-t)dt}{\Gamma(k)}$$
 
-(see `gamma_inc` function from SpecialFunctions.jl)
 
+(see [`gamma_inc`](https://specialfunctions.juliamath.org/stable/functions_list/#SpecialFunctions.gamma_inc) function from [`SpecialFunctions.jl`](https://github.com/JuliaMath/SpecialFunctions.jl))
 
 ### Gamma distribution
 Implemented as `LSurvival.Gamma()`
@@ -240,7 +240,7 @@ Where we define $I(k,s)$ as the upper incomplete gamma function ratio given by
 
 $$I(k,s) = \frac{\int_o^s t^{k-1}\exp(-t)dt}{\Gamma(k)}$$
 
-(see `gamma_inc` function from SpecialFunctions.jl)
+(see [`gamma_inc`](https://specialfunctions.juliamath.org/stable/functions_list/#SpecialFunctions.gamma_inc) function from [`SpecialFunctions.jl`](https://github.com/JuliaMath/SpecialFunctions.jl))
 
 
 ### Log-logistic distribution
@@ -248,16 +248,43 @@ $$I(k,s) = \frac{\int_o^s t^{k-1}\exp(-t)dt}{\Gamma(k)}$$
 
 
 ## Semi-parametric partial likelihoods
-In the Cox model, the partial-likelihoods are used in place of the likelihood function. These models are are modeled directly in terms of hazard ratios, allowing that the baseline hazard can be an arbitrary distribution. The Cox models implemented here are semi-parametric because they include a combination of parametric (hazard ratios) and non-parametric (baseline hazard) components. Cox's original likelihood is used here, and, in place of tied survival times, two different options are implemented for addressing ties.
+In the Cox model, the partial-likelihoods are used in place of the likelihood function. These models are are modeled directly in terms of hazard ratios, allowing that the baseline hazard can be an arbitrary distribution. The Cox models implemented here are semi-parametric because they include a combination of parametric (hazard ratios) and non-parametric (baseline hazard) components. Cox's original likelihood is used here, and, in place of tied survival times, two different options are implemented for addressing ties. See the `survival`[^surv] package vignette for original citations and methods for baseline hazard and partial-likelihood calculations.
 
 ### Efron's partial likelihood
-This is the default in coxph
-Documentation in progress
+This is the default in coxph (documentation in progress)
+
+- Baseline hazard calculations are made using an analogue of the Fleming-Harrington estimator.
 
 
 ### Breslow's partial likelihood
 Documentation in progress
 
+- Baseline hazard calculations are made using an analogue of the Nelson-Aalen estimator. 
 
 ## Time-varying covariates
 Documentation in progress
+
+## Numerical algorithms
+Fitting algorithms include direct calculation, hard-coded Newton-Raphson algorithms, and optimization algorithms from the `Optim.jl` module:
+
+### Non-parametric analysis
+
+- Kaplan-Meier: direct calculation
+- Aalen-Johansen: direct calculation
+
+### Semi-parametric analysis
+
+- Cox model, Efron's partial likelihood: Newton-Raphson with analytic gradient and Hessian, utilizing step-halving if the infinite norm of the gradient increases in a step.  
+- Cox model, Breslow's partial likelihood: Newton-Raphson with analytic gradient and Hessian, utilizing step-halving if the infinite norm of the gradient increases in a step. 
+
+
+
+### Parametric analysis
+
+- AFT model (Weibull, Exponential, Log-normal): [`BFGS`](https://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/) algorithm from [`Optim.jl`](https://github.com/JuliaNLSolvers/Optim.jl/), supplemented with analytic gradient and Hessian using a Hager-Zhang line-search algorithm and static scaling of the P matrix
+- AFT model (Gamma, Generalized gamma): [`BFGS`](https://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/) algorithm from [`Optim.jl`](https://github.com/JuliaNLSolvers/Optim.jl/) utilizing forward differencing to calculate gradient and approximate Hessian using a quadratic backtracking line-search algorithm with an initial quadratic approximation for scaling the P matrix
+
+************
+
+[^kf]: Kalbfleisch, J. D., & Prentice, R. L. (2011). The statistical analysis of failure time data, 2nd ed. John Wiley & Sons.
+[^surv]: [https://cran.r-project.org/web/packages/survival/vignettes/validate.pdf](https://cran.r-project.org/web/packages/survival/vignettes/validate.pdf)
