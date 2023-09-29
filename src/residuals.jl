@@ -54,15 +54,16 @@ function StatsBase.residuals(m::M; type = "standard") where {M<:PSModel}
 end
 
 function resid_standard(m::M) where {M<:PSModel}
-    predict!(m)
+    #predict!(m)
+    xb = fitted(m)
     delta = m.R.y
     events = findall(m.R.y .> 0)
-    uncenstimes = hcat(m.R.exit[events], m.P._r[events])
-    resid = delta .* (log.(m.R.exit) .- m.P._r)
+    uncenstimes = hcat(m.R.exit[events], xb[events])
+    resid = delta .* (log.(m.R.exit) .- xb)
     for i in eachindex(resid)
         if m.R.y[i] == 0
             idx = findall(uncenstimes[:,2] .> m.R.exit[i])
-            resid[i] = length(idx)>0 ? mean(log.(uncenstimes[idx,1]) .- uncenstimes[idx,2]) : resid[i]
+            resid[i] = length(idx)>0 ? mean(log.(uncenstimes[idx,1]) .- uncenstimes[idx,2]) : (log(m.R.exit[i]) - xb[i])
         end
     end
     resid
