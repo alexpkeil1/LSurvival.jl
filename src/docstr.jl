@@ -481,7 +481,13 @@ using Random
 
 # Risk at x=1, z=0.5
  res3 = risk_from_coxphmodels([ft1, ft2], pred_profile=[1.0, 0.5])
+
+ # method using Aalen-Johansen analog (default)
+ res3 = risk_from_coxphmodels([ft1, ft2], pred_profile=[1.0, 0.5])
+ # method using Cheng, Fine and Wei's cumulative hazards based approach
+ res3b = risk_from_coxphmodels([ft1, ft2], pred_profile=[1.0, 0.5], method="cheng-fine-wei")
 ```
+Cheng SC, Fine JP, Wei LJ. Prediction of Cumulative Incidence Function under the Proportional Hazards Model. Biometrics. 1998;54:219–228.
 """
 
 DOC_E_YEARSOFLIFELOST = raw"""

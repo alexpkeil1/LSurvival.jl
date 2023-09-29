@@ -534,7 +534,7 @@ using Random, Tables
     rfromc = risk_from_coxphmodels(
         [ft1, ft2],
         coef_vectors = [coef(res), coef(res2)],
-        pred_profile = [0 0 -1],
+        pred_profile = [0 0 -1], method="che"
     )
     println(rfromc)
     refrisk = rfromc.risk

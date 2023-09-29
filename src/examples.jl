@@ -122,7 +122,7 @@ hcat(d[1:15], event[1:15])
 
 # cause-specific Cox models
 ft1 = fit(PHModel, X, int, outt, d .* (event .== 1))
-ft2 = fit(PHModel, X, int, outt, d .* (event .== 2))
+ft2 = fit(PHModel, X[findall(event .!== 1),:], int[findall(event .!== 1)], outt[findall(event .!== 1)], d .* (event .== 2)[findall(event .!== 1)])
 ft2_equivalent = fit(PHModel, X, int, outt, (event .== 2))
 
 
@@ -140,6 +140,7 @@ risk2 = aalen_johansen(int, outt, event)
 # risk at the baseline values of each covariate (note high risk inferred by both covariates being protective of both event types)
 fit(PHSurv, [ft1, ft2])
 risk1_ref = risk_from_coxphmodels([ft1, ft2])
+sum(risk1_ref.risk, dims=2)
 
 # risk at mean predictor values 
 Xpred = mean(X, dims = 1)  # (a "profile" for the average individual)

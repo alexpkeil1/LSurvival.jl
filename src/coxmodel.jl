@@ -778,10 +778,10 @@ end
 # fitting functions for PHSurv objects
 #####################################################################################################################
 
-function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing) where {M<:PHSurv}
+function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing, method="aalen-johansen") where {M<:PHSurv}
     hr = ones(Float64, length(m.eventtypes))
     ch::Float64 = 0.0
-    lsurv::Float64 = 1.0
+    surv_previous::Float64 = 1.0
     if (isnothing(coef_vectors))
         coef_vectors = [coef(fit) for fit in m.fitlist]
     end
@@ -795,14 +795,22 @@ function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing) where {M<:P
         @inbounds for (j, d) in enumerate(m.eventtypes)
             if m.event[i] == d
                 m.basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
-                m.risk[i, j] = lci[j] + m.basehaz[i] * lsurv
+                m.risk[i, j] = lci[j] + m.basehaz[i] * surv_previous
             else
                 m.risk[i, j] = lci[j]
             end
         end
-        ch += m.basehaz[i]
-        m.surv[i] = exp(-ch)
-        lsurv = m.surv[i]
+        if lowercase(method[1:3]) == "aal"
+            ## aalen-johansen
+            m.surv[i] = surv_previous - surv_previous * m.basehaz[i]
+        elseif lowercase(method[1:3]) == "che"
+            #Cheng, Fine and Wei
+            ch += m.basehaz[i]
+            m.surv[i] = exp(-ch)    
+        else
+            throw("method $method not recognized (use 'aalen-johansen' or 'cheng-fine-wei')")
+        end
+        surv_previous = m.surv[i]
         lci = m.risk[i, :]
     end
     m.fit = true
