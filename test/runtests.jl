@@ -1,6 +1,7 @@
 using Test
 using LSurvival
 using Random, Tables
+import StatsBase.cov
 #using DataFrames
 #using BenchmarkTools # add during testing
 
@@ -92,11 +93,15 @@ using Random, Tables
     ftint = survreg(@formula(Surv(time,status) ~ 1), dat1, contrasts = Dict(:x => CategoricalTerm))
     ftcox = coxph(@formula(Surv(time,status)~x), dat1)
     println(ftcox)
-    println(vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232)))
+    handcov = cov(bootstrap(MersenneTwister(1232), ftcox, 200))
+    vcovcov = vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232))
+    @test all(handcov .== vcovcov)
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
     # test, jackknife
     S = vcov(ft, type = "jackknife")
     @test !any(isnothing(S))
+    S2 = vcov(ft, type = "bootstrap", iter=10)
+    @test !any(isnothing(S2))
 
 
     #
