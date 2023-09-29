@@ -90,7 +90,9 @@ using Random, Tables
     
     ft = survreg(@formula(Surv(time,status) ~ x), dat1, contrasts = Dict(:x => CategoricalTerm))
     ftint = survreg(@formula(Surv(time,status) ~ 1), dat1, contrasts = Dict(:x => CategoricalTerm))
-    println(coxph(@formula(Surv(time,status)~x), dat1))
+    ftcox = coxph(@formula(Surv(time,status)~x), dat1)
+    println(ftcox)
+    println(vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232)))
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
     # test, jackknife
     S = vcov(ft, type = "jackknife")
@@ -525,6 +527,10 @@ using Random, Tables
     # TEST: does multi bootstrap return intended length of results
     @test size(bootstrap(MersenneTwister(123), ft1, 3)) == (3, length(coef(ft1)))
     @test size(bootstrap(MersenneTwister(123), ftparm, 3)) == (3, length(params(ftparm)))
+    
+    # TEST: pull in study data, make sure all rows are equal lengths
+    heartdata, heartmeta = survivaldata("heart");
+    reduce(hcat, heartdata)
 
 
     # TEST: do updated methods give the same answer as deprecated methods

@@ -1,12 +1,19 @@
 ######################################################################
-# residuals from fitted Cox models
+# residuals from fitted LSurvival models
 ######################################################################
 """
 $DOC_RESIDUALS
 """
 function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
-    valid_methods =
-        ["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld", "jackknife"]
+    valid_methods = [
+        "schoenfeld",
+        "score",
+        "martingale",
+        "dfbeta",
+        "dfbetas",
+        "scaled_schoenfeld",
+        "jackknife",
+    ]
     whichmethod = findall(valid_methods .== lowercase(type))
     thismethod = valid_methods[whichmethod][1]
     if thismethod == "martingale"
@@ -29,6 +36,38 @@ function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
     end
     return resid
 end
+
+function StatsBase.residuals(m::M; type = "standard") where {M<:PSModel}
+    valid_methods =
+    #["schoenfeld", "score", "martingale", "dfbeta", "dfbetas", "scaled_schoenfeld", "jackknife"]
+        ["standard" "jackknife"]
+    whichmethod = findall(valid_methods .== lowercase(type))
+    thismethod = valid_methods[whichmethod][1]
+    if thismethod == "standard"
+        resid = resid_standard(m)
+    elseif thismethod == "jackknife"
+        resid = resid_jackknife(m)
+    else
+        throw("Method $type not supported yet")
+    end
+    return resid
+end
+
+function resid_standard(m::M) where {M<:PSModel}
+    predict!(m)
+    delta = m.R.y
+    events = findall(m.R.y .> 0)
+    uncenstimes = hcat(m.R.exit[events], m.P._r[events])
+    resid = delta .* (log.(m.R.exit) .- m.P._r)
+    for i in eachindex(resid)
+        if m.R.y[i] == 0
+            idx = findall(uncenstimes[:,2] .> m.R.exit[i])
+            resid[i] = length(idx)>0 ? mean(log.(uncenstimes[idx,1]) .- uncenstimes[idx,2]) : resid[i]
+        end
+    end
+    resid
+end
+
 
 function resid_martingale(m::M) where {M<:PHModel}
     Nw = Float64.(m.R.y .> 0.0)
@@ -138,15 +177,20 @@ function resid_dfbeta(m::M) where {M<:PHModel}
     return dfbeta .* m.R.wts
 end
 
+function resid_jackknife(m::M) where {M<:PSModel}
+    jk = jackknife(m)
+    permutedims(jk' .- params(m))
+end
+
 function resid_jackknife(m::M) where {M<:PHModel}
-    jk = jackknife(m);
+    jk = jackknife(m)
     permutedims(jk' .- coef(m))
 end
 
 function robust_vcov(m::M) where {M<:PHModel}
-    dfbeta = residuals(m, type="dfbeta")
+    dfbeta = residuals(m, type = "dfbeta")
     id = values(m.R.id)
-    D = reduce(vcat, [sum(dfbeta[findall(id .== i),:], dims=1) for i in unique(id)])
+    D = reduce(vcat, [sum(dfbeta[findall(id .== i), :], dims = 1) for i in unique(id)])
     robVar = D'D
     return robVar
 end
@@ -188,7 +232,7 @@ function resid_Lmat_breslow(m::M) where {M<:PHModel}
     for j = 1:nxcols
         for i = 1:nobs
             if length(dM[i]) > 0
-                pr = (X[i, j] .- muX[di[i],j]) .* dM[i]
+                pr = (X[i, j] .- muX[di[i], j]) .* dM[i]
                 L[j][i, di[i]] .= pr
             end
         end
@@ -289,8 +333,8 @@ function muX_tE(m::M, whichbhindex) where {M<:PHModel}
 
     #muXE = fill([zeros(Int(j)) for j in nties], nxcols)
     #nX = fill([zeros(Int(j)) for j in nties], nxcols)
-    muXE = [[zeros(Int(j)) for j in nties] for n in 1:nxcols]
-    nX = [[zeros(Int(j)) for j in nties] for n in 1:nxcols]
+    muXE = [[zeros(Int(j)) for j in nties] for n = 1:nxcols]
+    nX = [[zeros(Int(j)) for j in nties] for n = 1:nxcols]
     for j = 1:nxcols
         for i in eachindex(whichbhindex)
             ties = nties[whichbhindex[i]]    # number of ties at each time index

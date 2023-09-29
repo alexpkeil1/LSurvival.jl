@@ -733,7 +733,7 @@ function StatsBase.stderror(m::M; kwargs...) where {M<:PSModel}
     sqrt.(diag(vcov(m; kwargs...)))
 end
 
-function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:PSModel}
+function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing, seed=nothing) where {M<:PSModel}
     mwarn(m)
     if type == "robust"
         #res = robust_vcov(m)
@@ -741,6 +741,8 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:P
     elseif type == "jackknife"
         res = jackknife_vcov(m)
         #throw("$type not implemented")
+    elseif type == "bootstrap"
+        res = bootstrap_vcov(m, seed=seed)
     else
         res = -inv(m.P._hess)
         if any(eigen(res).values .< 0.0)
@@ -754,6 +756,7 @@ function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:P
     end
     res
 end
+
 
 function StatsBase.weights(m::M) where {M<:PSModel}
     mwarn(m)

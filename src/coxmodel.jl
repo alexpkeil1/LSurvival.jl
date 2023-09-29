@@ -522,12 +522,14 @@ end
 """
 $DOC_VCOV
 """
-function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing) where {M<:AbstractPH}
+function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing, seed=nothing, iter=200) where {M<:AbstractPH}
     mwarn(m)
     if type == "robust"
         res = robust_vcov(m)
     elseif type == "jackknife"
         res = jackknife_vcov(m)
+    elseif type == "bootstrap"
+        res = bootstrap_vcov(m, iter, seed=seed)
     else
         res = -inv(m.P._hess)
         if any(eigen(res).values .< 0.0)
@@ -878,4 +880,4 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:PHSurv}
 end
 
 Base.show(m::M; kwargs...) where {M<:PHSurv} =
-    Base.show(stdout, m::M; kwargs...) where {M<:PHSurv}
+    Base.show(stdout, m; kwargs...)

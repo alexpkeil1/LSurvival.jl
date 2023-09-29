@@ -85,6 +85,18 @@ end
 bootstrap(m::PHModel, iter::Int; kwargs...) =
     bootstrap(MersenneTwister(), m, iter; kwargs...)
 
+function bootstrap_vcov(rng::MersenneTwister, m::M, iter::Int; seed::S=nothing, kwargs...) where {M<:Union{PHModel, PSModel}, S<:Union{Nothing, MersenneTwister}}
+    if !isnothing(seed)
+        rng = seed
+    end
+    res = bootstrap(rng, m, iter; kwargs...)
+    cov(res)
+end
+
+bootstrap_vcov(m::M, iter::Int; seed::S=nothing, kwargs...) where {M<:Union{PHModel, PSModel}, S<:Union{Nothing, MersenneTwister}} =
+  bootstrap_vcov(MersenneTwister(), m, iter; seed=seed, kwargs...)
+
+
 
 DOC_BOOTSTRAP_PSMODEL="""
 Bootstrap methods for parametric survival models
@@ -144,7 +156,6 @@ function bootstrap(rng::MersenneTwister, m::M, iter::Int; kwargs...) where {M<:K
 end
 bootstrap(m::M, iter::Int; kwargs...) where {M<:KMSurv} =
     bootstrap(MersenneTwister(), m, iter::Int; kwargs...)
-
 
 
 

@@ -3,7 +3,7 @@ Loading example survival analysis datasets
 
 ```julia
 using LSurvival, Plots # note Plots does not install by default
-heartdata = survivaldata("heart")
+heartdata, heartmeta = survivaldata("heart")
 ft = coxph(@formula(Surv(start, stop, event)~surgery), heartdata);
 # plot baseline cumulative hazard
 basehazplot(ft)
