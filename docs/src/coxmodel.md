@@ -378,4 +378,53 @@ Number of events (j=2):       54
 Number of unique event times:      106
 ```
 
+
+### Cox-model estimator: standard errors and confidence intervals
+Robust, jackknife (leave-on-out), and bootstrap standard errors are easily calculated from cox model fits (though they may be computationally demanding to calculate). For person-period data, each of these requires the `id` argument to be specified.
+
+```julia
+coxfit = coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, id=ID.(tab.id))
+show(coxfit)
+
+asym = stderror(coxfit)   # asymptotic approach based on information matrix
+rob = stderror(coxfit, type="robust")  # jackknife approach
+jack = stderror(coxfit, type="jackknife")  # jackknife approach
+boot = stderror(coxfit, type="bootstrap", iter=200, seed=MersenneTwister(12322)) # bootstrapping approach
+DataFrame("asym" => asym, "rob" => rob,"jack" => jack, "boot" => boot)
+```
+We can see in this dataset all standard error estimates are fairly similar
+
+```output
+3×4 DataFrame
+ Row │ asym      rob       jack      boot     
+     │ Float64   Float64   Float64   Float64  
+─────┼────────────────────────────────────────
+   1 │ 0.385794  0.34421   0.37397   0.365392
+   2 │ 0.30964   0.307867  0.326048  0.331512
+   3 │ 0.238453  0.238146  0.260687  0.240776
+```
+
+These methods are also available for `vcov` and `confint`, where confint uses variance estimates to create Wald-type confidence intervals (i.e. not bootstrap percentile confidence intervals)
+
+```julia
+asym = confint(coxfit)   # asymptotic approach based on information matrix
+rob = confint(coxfit, type="robust")  # jackknife approach
+jack = confint(coxfit, type="jackknife")  # jackknife approach
+boot = confint(coxfit, type="bootstrap", iter=200, seed=MersenneTwister(12322)) # bootstrapping approach
+DataFrame("asym" => asym[:,1], "rob" => rob[:,1],"jack" => jack[:,1], "boot" => boot[:,1])
+```
+
+Here are the lower 95% confidence bounds for each method:
+
+```output
+3×4 DataFrame
+ Row │ asym       rob        jack       boot      
+     │ Float64    Float64    Float64    Float64   
+─────┼────────────────────────────────────────────
+   1 │  0.872755   0.954257   0.895928   0.912742
+   2 │ -0.443074  -0.439597  -0.475232  -0.485941
+   3 │  1.32749    1.32809    1.28391    1.32294
+```
+
+
 [^cfw]: Cheng SC, Fine JP, Wei LJ. Prediction of Cumulative Incidence Function under the Proportional Hazards Model. Biometrics. 1998;54:219–228.

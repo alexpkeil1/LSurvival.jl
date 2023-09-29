@@ -97,7 +97,7 @@ import StatsBase.cov
     vcovcov = vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232))
     @test all(handcov .== vcovcov)
     println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
-    # test, jackknife
+    # test, jackknife, bootstrap variance
     S = vcov(ft, type = "jackknife")
     @test !any(isnothing(S))
     S2 = vcov(ft, type = "bootstrap", iter=10)
