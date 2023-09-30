@@ -172,6 +172,8 @@ savefig("lognormal_haz.svg")
 ```
 ![log-normal](fig/lognormal_haz.svg)
 
+Output: 
+
 ```output
 Maximum likelihood estimates (alpha=0.05):
 ─────────────────────────────────────────────────────────────────────
@@ -199,7 +201,7 @@ savefig("gamma_haz.svg")
 ```
 ![gamma](fig/gamma_haz.svg)
 
-
+Output: 
 
 ```output
 Maximum likelihood estimates (alpha=0.05):
@@ -243,6 +245,8 @@ aftdist!(ggammafit2, type="haz", covlevels=[1.0], color="red", label="X=1")
 savefig("gengamma_haz.svg")
 ```
 ![generalized-gamma](fig/gengamma_haz.svg)
+
+Output: 
 
 ```output
 ┌ Warning: Optimizer reports model did not converge. Gradient: [-0.30185255746883194, -92.76305273476676, -12.51874622578631]

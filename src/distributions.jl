@@ -1060,10 +1060,10 @@ end
 ##############################
 # Generalized Gamma distribution 
 ##############################
-struct GGamma{T<:Real} <: AbstractSurvDist
-    α::T   # shape: linear effects on this parameter
-    ρ::T   # scale
-    κ::T
+struct GGamma{R<:Real} <: AbstractSurvDist
+    α::R   # shape: linear effects on this parameter
+    ρ::R   # scale
+    κ::R
 end
 
 function GGamma(α::T, ρ::T, κ::T) where {T<:Int}
@@ -1081,6 +1081,19 @@ end
 function GGamma(α::R, ρ::T, κ::T) where {R<:Float64,T<:Int}
     GGamma(α, Float64(ρ), Float64(κ))
 end
+
+function GGamma(α::R, ρ::R, κ::T) where {R<:Float64,T<:Int}
+    GGamma(α, ρ, Float64(κ))
+end
+
+function GGamma(α::R, ρ::T, κ::R) where {R<:Float64,T<:Int}
+    GGamma(α, Float64(ρ), κ)
+end
+
+function GGamma(α::T, ρ::R, κ::R) where {R<:Float64,T<:Int}
+    GGamma(Float64(α), ρ, κ)
+end
+
 
 function GGamma()
     GGamma(ones(Float64, 3)...)
@@ -1466,7 +1479,7 @@ function dlsurv_reggamma(β, κ, t, x)
     dα = dαdβ(β, x)
     df = dlsurv_gamma(dot(β, x), κ, t)
     dfdβ = [dα[j] * df[1] for j = 1:length(β)]
-    dsdβ = vcat(dfdβ, df[2:3])
+    dsdβ = vcat(dfdβ, df[2])
     dsdβ
 end
 
@@ -1474,7 +1487,7 @@ function dlpdf_reggamma(β, κ, t, x)
     dα = dαdβ(β, x)
     df = dlpdf_gamma(dot(β, x), κ, t)
     dfdβ = [dα[j] * df[1] for j = 1:length(β)]
-    dfdβ = vcat(dfdβ, df[2:3])
+    dfdβ = vcat(dfdβ, df[2])
     dfdβ
 end
 

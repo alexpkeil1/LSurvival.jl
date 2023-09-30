@@ -93,7 +93,7 @@ function _fit!(m::AJSurv; keepy = true, eps = 0.00000001, atol = 0.00000001)
         for (jidx, j) in enumerate(dvalues)
             dij = sum(weightsR .* m.R.eventmatrix[R, jidx] .* (m.R.exit[R] .== tt))
             m.events[_i, jidx] = dij
-            m.risk[_i, jidx] = Sm1[_i] * dij / ni
+            m.risk[_i, jidx] = Sm1[_i] * dij / ni # f(t) = S(t)*h(t)
         end
     end
     for jidx = 1:nvals
@@ -141,9 +141,31 @@ fit(::Type{M}, exit, y; kwargs...) where {M<:KMSurv} =
 fit(::Type{M}, exit; kwargs...) where {M<:KMSurv} =
     fit(M, exit, ones(Int, length(exit)); kwargs...)
 
+
+function fit(
+    ::Type{M},
+    f::FormulaTerm,
+    data;
+    id::AbstractVector{<:AbstractLSurvivalID} = ID.(Int[]),
+    wts::AbstractVector{<:Real} = Float64[],
+    offset::AbstractVector{<:Real} = Float64[],
+    fitargs...,
+) where {M<:KMSurv}
+    f, (y, _) = modelframe(f, data, Dict{Symbol,Any}(), M)
+    if length(id) == 0
+        id = [ID(i) for i in eachindex(y)]
+    end
+    R = LSurvivalResp(y, wts, id)
+    survcheck(R)
+    res = M(R)
+    return fit!(res; fitargs...)
+end
+
+
 """
 $DOC_FIT_KMSURV
 """
+kaplan_meier(f::FormulaTerm, data; kwargs...) = fit(KMSurv, f::FormulaTerm, data; kwargs...)
 kaplan_meier(enter, exit, y; kwargs...) = fit(KMSurv, enter, exit, y; kwargs...)
 kaplan_meier(exit, y; kwargs...) = fit(KMSurv, exit, y; kwargs...)
 kaplan_meier(exit; kwargs...) = fit(KMSurv, exit; kwargs...)
@@ -164,6 +186,7 @@ function fit(
 ) where {M<:AJSurv,Y<:Union{Vector{<:Real},BitVector}}
 
     R = LSurvivalCompResp(enter, exit, y, wts, id)
+    survcheck(R)
     res = M(R)
 
     return fit!(res; fitargs...)
@@ -174,9 +197,30 @@ fit(::Type{M}, exit; kwargs...) where {M<:AJSurv} =
     fit(M, exit, ones(Int, length(exit)); kwargs...)
 
 
+function fit(
+    ::Type{M},
+    f::FormulaTerm,
+    data;
+    id::AbstractVector{<:AbstractLSurvivalID} = ID.(Int[]),
+    wts::AbstractVector{<:Real} = Float64[],
+    offset::AbstractVector{<:Real} = Float64[],
+    fitargs...,
+) where {M<:AJSurv}
+    f, (y, _) = modelframe(f, data, Dict{Symbol,Any}(), M)
+    if length(id) == 0
+        id = [ID(i) for i in eachindex(y)]
+    end
+    R = LSurvivalCompResp(y, wts, id)
+    survcheck(R)
+    res = M(R)
+    return fit!(res; fitargs...)
+end
+
+
 """
 $DOC_FIT_AJSURV
 """
+aalen_johansen(f::FormulaTerm, data; kwargs...) = fit(AJSurv, f::FormulaTerm, data; kwargs...)
 aalen_johansen(enter, exit, y; kwargs...) = fit(AJSurv, enter, exit, y; kwargs...)
 aalen_johansen(exit, y; kwargs...) = fit(AJSurv, exit, y; kwargs...)
 
@@ -202,7 +246,8 @@ function StatsBase.stderror(m::KMSurv; type = nothing)
         jk = jackknife(m)
         variance = var(jk, corrected = false) .* (N - 1)
     else
-        variance = m.surv .* m.surv .* cumsum(m.events ./ (m.riskset .* (m.riskset .- m.events)))
+        variance =
+            m.surv .* m.surv .* cumsum(m.events ./ (m.riskset .* (m.riskset .- m.events)))
     end
     sqrt.(variance)
 end

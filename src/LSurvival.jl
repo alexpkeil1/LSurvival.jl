@@ -108,6 +108,8 @@ export aic,
     params,
     isfitted,
     jackknife,
+    location,
+    locationscale,
     loglikelihood,
     logpartiallikelihood,
     lrtest, # re-exported

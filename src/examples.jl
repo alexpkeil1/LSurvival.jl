@@ -4,7 +4,7 @@
 # you may need to install some additional packages
 # import Pkg; Pkg.add("RCall")
 
-using LSurvival, LinearAlgebra, RCall, Random
+using LSurvival, LinearAlgebra, RCall, Random, StatsBase
 using BenchmarkTools # conflicts: LSurvival.params and BenchmarkTools.params
 using Plots
 
@@ -1036,8 +1036,15 @@ print(summary(cfit1))
 ft1.bh
 exp.(-cumsum(ft1.bh[:,1]))
 risk_from_coxphmodels([ft1], pred_profile=[0.0, 0.0], method = "che") # this is the method used in R::survival::survfit
+risk_from_coxphmodels([ft1], method = "che") # this is the method used in R::survival::survfit
 # OK!
 
+#pop avg risk, the hard way
+allrisk = risk_from_coxphmodels([ft1], hcat(dat.x,dat.z), method = "che") # this is the method used in R::survival::survfit
+
+risks = reduce(hcat, map(x -> x.risk, allrisk))
+1 .- mean(risks, dims=2)
+kaplan_meier(int, outt, event .== 1)
 
 
 ########## multistaate version of cox models
@@ -1056,3 +1063,9 @@ risk_from_coxphmodels([ft1,ft2ns]) # this is what survival uses
 cumsum(ft1.bh[:,1])
 cumsum(ft2ns.bh[:,1]) # this is the one that gets used in the multi-state model (keep competing events in the risk set)
 
+#population average risk
+allrisk = risk_from_coxphmodels([ft1, ft2], hcat(dat.x,dat.z), method = "che") # this is the method used in R::survival::survfit
+risks = [mean(reduce(hcat, map(x -> x.risk[:,col], allrisk)), dims=2) for col in 1:size(allrisk[1].risk,2)]
+hcat(allrisk[1].times, risks...)
+
+aalen_johansen(int, outt, event)

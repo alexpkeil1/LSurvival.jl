@@ -290,7 +290,7 @@ coxdx(fte)
     time = ft.bh[:, 1]
     nms = coefnames(ft)
     xlab --> "Time"
-    ylab --> "Schoenfeld residual"
+    ylab --> "Schoenfeld residuals ($(nms[par]))"
     res = residuals(ft, type = "schoenfeld")
     @series begin
         seriestype := :scatter
@@ -328,8 +328,15 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
     id = values(ft.R.id)
     nms = coefnames(ft)
     xlab --> "ID"
-    ylab --> "Residual"
+    ylab --> "Residuals ($(nms[par]))"
     res = residuals(ft, type = type)
+    if length(res[:,1]) != length(unique(id))
+        newres = zeros(length(unique(id)), size(res,2))
+        for r in 1:size(res,2)
+          newres[:,r] .= [sum(res[findall(id .== idval),r]) for idval in unique(id)]
+        end
+        res = newres
+    end
     grid --> false
     @series begin
         seriestype := :scatter
@@ -339,7 +346,7 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
         label --> type
         markesize --> 2
         markeralpha --> 0.5
-        id, res[:, par]
+        unique(id), res[:, par]
     end
     @series begin
         seriestype := :hline

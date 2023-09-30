@@ -498,6 +498,7 @@ function fit(
     end
 
     R = LSurvivalResp(enter, exit, y, wts, id)
+    survcheck(R)
     P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)
     start0 = LSurvival.setinits(res0)
@@ -553,6 +554,7 @@ function fit(
     f, (y, X) = modelframe(f, data, contrasts, M)
 
     R = LSurvivalResp(y, wts, id)
+    survcheck(R)
 
     P0 = PSParms(ones(size(X, 1), 1), extraparms = length(dist) - 1)
     res0 = M(R, P0, dist)

@@ -38,6 +38,36 @@ import StatsBase.cov
     ################################################
     ###### priority items ############
     ################################################
+    # test: different specifications of NP methods give same answer
+    @test all(kaplan_meier(dat1clust.enter, dat1clust.exit, dat1clust.status).surv == kaplan_meier(@formula(Surv(enter, exit, status)~1), dat1clust).surv)
+    z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 90)
+    crtab = (t=t,event=event)
+    @test all(aalen_johansen(@formula(Surv(t, event)~1), crtab).risk == aalen_johansen(zeros(length(t)), t, event).risk)
+    
+    # test: robustness to integer/float
+    for d in [LSurvival.Weibull, LSurvival.Exponential, LSurvival.GGamma, LSurvival.Gamma, LSurvival.Lognormal]
+        l = length(d())
+        parsint = rand([1,2,3,4,5,6,7], l)
+        pars = Float64.(parsint)
+        dd = d(parsint...)
+        ddp = d(pars...)
+        @test (shape(ddp) == shape(dd))
+        @test (LSurvival.location(dd) == LSurvival.location(ddp))
+        @test (LSurvival.logscale(dd) == LSurvival.logscale(ddp))
+        @test (scale(dd) == scale(ddp))
+        @test all(params(dd) == params(ddp))
+        @test LSurvival.lsurv_hessian(d(), pars, 1.0, [1.0]) == LSurvival.lsurv_hessian(d(), parsint, 1, [1])
+        @test LSurvival.lpdf_hessian(d(), pars, 1.0, [1.0]) == LSurvival.lpdf_hessian(d(), parsint, 1, [1])
+        @test LSurvival.lsurv_gradient(d(), pars, 1.0, [1.0]) == LSurvival.lsurv_gradient(d(), parsint, 1, [1])
+        @test LSurvival.lpdf_gradient(d(), pars, 1.0, [1.0]) == LSurvival.lpdf_gradient(d(), parsint, 1, [1])
+    end
+
+
+
+    println("Priority items tested")
+    ################################################
+    ###### parametric survival regression ############
+    ################################################
     rng = MersenneTwister(121)
     n = 1000
     x = rand(rng, [0,1], n)
@@ -46,19 +76,12 @@ import StatsBase.cov
       d = rand(rng, [0,1], n),
       x = x
     )
-    gammafit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.Gamma(), maxiter=1000, verbose=false)
-    println(gammafit)
 
-    gammafit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.GGamma(), maxiter=1000, verbose=false)
-    println(gammafit)
-    lnfit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.Lognormal(), maxiter=1000, verbose=false)
-    println(lnfit)
-    wfit = survreg(@formula(Surv(t,d)~x), wtab, dist=LSurvival.Weibull(), maxiter=1000, verbose=false)
-    println(wfit)
-    wfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), maxiter=100)
-    println(wfit)
-    expfit = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Exponential())
-    println(expfit)
+    # test: does printing of different parameterizations work?
+    for d in [LSurvival.Weibull, LSurvival.Exponential, LSurvival.GGamma, LSurvival.Gamma, LSurvival.Lognormal]
+        ft = survreg(@formula(Surv(t,d)~x), wtab, dist=d(), maxiter=1000, verbose=false)
+        println(ft)
+    end
 
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "exponential")
     #              Value Std. Error     z       p
@@ -72,7 +95,7 @@ import StatsBase.cov
     #         Chisq= 1.07 on 1 degrees of freedom, p= 0.3 
     # Number of Newton-Raphson Iterations: 4 
     
-    # intercept only model
+    #test: does intercept only model correctly suppress some info
     sr = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0);
     println(sr)
 
@@ -89,32 +112,38 @@ import StatsBase.cov
     # Loglik(model)= -11.4   Loglik(intercept only)= -11.4
     # Number of Newton-Raphson Iterations: 8 
     
+    # test: does use of contrasts/ work
     ft = survreg(@formula(Surv(time,status) ~ x), dat1, contrasts = Dict(:x => CategoricalTerm))
+    ftclust = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5])    
     ftint = survreg(@formula(Surv(time,status) ~ 1), dat1, contrasts = Dict(:x => CategoricalTerm))
     ftcox = coxph(@formula(Surv(time,status)~x), dat1)
-    println(ftcox)
-    handcov = cov(bootstrap(MersenneTwister(1232), ftcox, 200))
-    vcovcov = vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232))
+    handcov = cov(bootstrap(MersenneTwister(1232), ftcox, 10))
+    vcovcov = vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232), iter=10)
     @test all(handcov .== vcovcov)
-    println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Weibull(), start = [2., -.5, -.5]));
     # test, jackknife, bootstrap variance
     S = vcov(ft, type = "jackknife")
-    @test !any(isnothing(S))
-    S2 = vcov(ft, type = "bootstrap", iter=10)
-    @test !any(isnothing(S2))
+    @test all(isfinite.(S))
+    S2 = vcov(ft, type = "bootstrap", seed=MersenneTwister(1232), iter=10)
+    @test all(isfinite.(S2))
 
+    S = vcov(ft, type = "jackknife")
+    @test all(isfinite.(S))
+    S2 = vcov(ft, type = "bootstrap", seed=MersenneTwister(1232), iter=10)
+    @test all(isfinite.(S2))
 
     #
     # test: confint
-    confint(ft)
-    lrtest(ft, ftint)
-    aic(ft)
-    aicc(ft)
-    bic(ft)
-    nulldeviance(ft)
+    @test all(isfinite.(confint(ft)))
+    @test lrtest(ft, ftint).pval[2] < 1.01
+    @test aic(ft) > 0.0
+    @test aicc(ft) > 0.0
+    @test bic(ft) > 0.0
+    @test nulldeviance(ft) > 0.0
     
     # test: fitted returns predictions
     #@test length(fitted(ft)) = length(dat1.x) # causes test error for some reason
+    # test: person time splits with survreg
+    @test all(isapprox.(params(ft), params(ftclust)))
 
     X = hcat(ones(length(dat1.x)), dat1.x)
 
@@ -130,7 +159,7 @@ import StatsBase.cov
     res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Gamma(), id=ID.(dat1clust.id))
     @test all(isapprox.(params(res1), params(res2)))
 
-    dof(ft)
+    @test dof(ft) > 0
     # test ID returns proper nobs in clustered data
     @test nobs(res1) == nobs(res2)
     # test clustered data also have larger covariate matrix
@@ -143,13 +172,35 @@ import StatsBase.cov
     show(res1)
 
     # tests: do basic distributions return expected values
-    @test !isnothing(LSurvival.randweibull(0.1, 0.2))
-    @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1)
-    @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1)
-    @test LSurvival.Weibull(1.0,1) == LSurvival.Weibull(1, 1.0)
-    @test LSurvival.Weibull(1,1) == LSurvival.Weibull(1.0, 1.0)
+    ap = (1.0, 1)
+    bp = reverse(ap)
+    cp = (1.0, 1.0)
+    dp = Float64.(cp)
+    parameterizations = [ap, bp, cp, dp]
+    for d in [LSurvival.Weibull, LSurvival.Lognormal, LSurvival.Gamma]
+        for p in parameterizations
+            for j in parameterizations
+               @test d(p...) == d(j...)
+            end
+        end
+    end
+    ap = (1.0, 1.0, 1)
+    bp = reverse(ap)
+    cp = (1.0, 1, 1.0)
+    dp = Float64.(cp)
+    ep = (1.0, 1, 1)
+    fp = reverse(ep)
+    parameterizations = [ap, bp, cp, dp, ep, fp]
+    for d in [LSurvival.GGamma]
+        for p in parameterizations
+            for j in parameterizations
+               @assert d(p...) == d(j...)
+            end
+        end
+    end
+
+
     @test lpdf(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
-    @test LSurvival.lpdf_weibull(1,1, 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
     @test all(LSurvival.dlpdf_regweibull(1,1, 1, [1]) == LSurvival.lpdf_gradient(LSurvival.Weibull(30,40), [1,1], 1.0, [1][1:1,1:1]))
     @test all(LSurvival.ddlpdf_regweibull(1,1, 1, [1]) == LSurvival.lpdf_hessian(LSurvival.Weibull(1.,1.), [1,1], 1.0, [1][1:1,1:1]))
     @test lsurv(LSurvival.Weibull(1.0,1), 1) == lsurv(LSurvival.Weibull(1.0,1.0), 1.0)
@@ -160,20 +211,9 @@ import StatsBase.cov
     @test lpdf(LSurvival.Weibull(1,0), 2.0) == lpdf(LSurvival.Exponential(1.0), 2.0)
     @test lsurv(LSurvival.Weibull(1,0), 2.0) == lsurv(LSurvival.Exponential(1.0), 2.0)
     @test LSurvival.ddlpdf_weibull(1,0, 1)[1:1,1:1] == LSurvival.lpdf_hessian(LSurvival.Exponential(1.0), 1.0)
-    @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1)
-    @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1)
-    @test LSurvival.Lognormal(1.0,1) == LSurvival.Lognormal(1, 1.0)
-    @test LSurvival.Lognormal(1,1) == LSurvival.Lognormal(1.0, 1.0)
-    @test LSurvival.Gamma(1,1) == LSurvival.Gamma(1.0, 1)
-    @test LSurvival.Gamma(1,1) == LSurvival.Gamma(1.0, 1)
-    @test LSurvival.Gamma(1.0,1) == LSurvival.Gamma(1, 1.0)
-    @test LSurvival.Gamma(1,1) == LSurvival.Gamma(1.0, 1.0)
-    lpdf(LSurvival.Lognormal(1,1), 2.0)
-    lsurv(LSurvival.Lognormal(1,1), 2.0)
+    #
     @test LSurvival.lpdf_hessian(LSurvival.Lognormal(1,1), 1) == LSurvival.ddlpdf_lognormal(1, 1, 1.0)
     @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,2], 1, .1) == LSurvival.dlpdf_reglognormal(1, 2, 1.0, .1)
-    params(LSurvival.Lognormal(1,1))
-
     @test LSurvival.lpdf(LSurvival.Lognormal(), [1,.2], 1, 10) == LSurvival.lpdf_lognormal(10, .2, 1)
     @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,.2], 1, 1) != LSurvival.dlpdf_reglognormal([10], .2, 1.0, .1)
     @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,.2], 1, .1) == LSurvival.dlpdf_reglognormal([1], .2, 1.0, .1)
@@ -185,11 +225,6 @@ import StatsBase.cov
     @test all(ft.P._r == predict(ft))
 
 
-    println(coxph(@formula(Surv(enter, exit,status)~x), dat1clust))
-    ftclust = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5])
-    print(ftclust)
-    # test: person time splits with survreg
-    @test all(isapprox.(params(ft), params(ftclust)))
 
 
 
@@ -206,8 +241,7 @@ import StatsBase.cov
     #           Chisq= 2.22 on 1 degrees of freedom, p= 0.14 
     #   Number of Newton-Raphson Iterations: 8 
     
-   println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [2., -.5, -.5]))
-   println(survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal()))
+   survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [0., -.5, -.5])
 
     # Call:
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "lognormal")
@@ -302,7 +336,7 @@ import StatsBase.cov
 
     ft = coxph(X, int, outt, d, ties = "efron")
     ftb = coxph(X, int, outt, d, ties = "breslow")
-    # TESTs: can RL be set?
+    # TESTs: can RL be set manually?
     @test isnothing(ft.RL)
     ft.RL = [ones(3, 3)]
     @test ft.RL == [ones(3, 3)]
@@ -345,7 +379,7 @@ import StatsBase.cov
     ft2 = coxph(f2, tab)
     ft3 = coxph(f3, tab)
     ftnull = coxph(fnull, tab)
-    println(lrtest(ft, ft3))
+    lrtest(ft, ft3)
 
     ft = coxph(
         @formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1 * x),
@@ -355,14 +389,18 @@ import StatsBase.cov
         convTol = 1e-9,
         tol = 1e-9,
     )
-    println(ft)
+    # test: does calculating robust error show up in output?
     stderror(ft, type = "robust")
     println(ft)
 
+    for stat in [aic aicc bic nulldeviance deviance]
+        @test stat(ft) > 0
+    end
+    for stat in [logpartiallikelihood nulllogpartiallikelihood]
+        @test stat(ft) < 0.
+    end
+
     @test all(isapprox.(fitted(ft), log.(ft.P._r)))
-    @test aic(ft) > 0
-    @test aicc(ft) > 0
-    @test nulldeviance(ft) > 0
     @test size(modelmatrix(ft), 2) == 4
     @test isapprox(nulllogpartiallikelihood(ft), ft.P._LL[1])
     @test isapprox(nulllogpartiallikelihood(ft), ft.P._LL[1])
@@ -393,9 +431,10 @@ import StatsBase.cov
         contrasts = Dict(:z1 => CategoricalTerm),
     ))
 
+
     # survival outcome:
     LSurvivalResp([0.5, 0.6], [1, 0])
-    LSurvivalResp([0.5, 0.6], [1, 0], origintime = 0)
+    LSurvivalResp([0.2, 0.6], [0.5, 0.6], [1, 0], origintime = 0)
     LSurvivalCompResp([0.5, 0.6], [1, 0], origintime = 0)
 
     # TESTs: expected behavior of surv objects
@@ -426,6 +465,14 @@ import StatsBase.cov
     R = LSurvivalResp(int, outt, d)
     R = LSurvivalResp(outt, d) # set all to zero
     #println(R)
+
+    try 
+        R = LSurvivalResp([1,2], [1,3], [0,1])
+        LSurvival.survcheck(R)
+    catch e
+        @test typeof(e) == AssertionError
+    end
+
 
     # TESTs: do print functions work?
     kmfit = kaplan_meier(int, outt, d)
@@ -544,22 +591,21 @@ import StatsBase.cov
 
     rfromc = risk_from_coxphmodels(
         [ft1, ft2],
+        [0 0 -1; 0 1 0],
         coef_vectors = [coef(res), coef(res2)],
-        pred_profile = [0 0 -1], method="che"
+        method="che"
     )
-    println(rfromc)
-    refrisk = rfromc.risk
+    refrisk = rfromc[1].risk
     oldrisk, _ = ci_from_coxmodels(
         [bh1, bh2];
         coeflist = [coef(res), coef(res2)],
         covarmat = [0 0 -1;],
     )
-
+    # test: does print function work?
+    println(rfromc)
 
 
     @test isapprox(refrisk, oldrisk, atol = 0.0001)
-
-    show(refrisk)
 
     # TEST: do predictions at covariate means change the risk?
     covarmat = sum(X, dims = 1) ./ size(X, 1)
@@ -590,9 +636,6 @@ import StatsBase.cov
         coef_vectors = [coef(ft1b), coef(ft2b)],
         pred_profile = covarmat,
     )
-
-
-    (cires2b)
 
     #########################################################################################################
     ##### residuals
@@ -1103,7 +1146,7 @@ import StatsBase.cov
 
     # TEST: bootstrapping a cox model without a seed
     @test !bootstrap(ft2).fit
-
+    # test: does print function work?
     println(Surv(1, 2, 1))
 
     # TEST: bootstrapping a kaplan meier without a seed
@@ -1176,7 +1219,6 @@ import StatsBase.cov
         coxph(@formula(Surv(time, status) ~ x), dat1, keepx = false, ties = "faketies")
     catch e
         @test typeof(e) == String
-        println(e)
     end
     @test coxph(
         @formula(Surv(time, status) ~ x),

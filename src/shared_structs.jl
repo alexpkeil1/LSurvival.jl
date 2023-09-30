@@ -277,6 +277,20 @@ function LSurvivalCompResp(
 end
 
 function LSurvivalCompResp(
+    y::Vector{Y},
+    wts::W,
+    id::Vector{I};
+    kwargs...,
+) where {Y<:AbstractSurvTime,W<:Vector,I<:AbstractLSurvivalID}
+    enter = [yi.enter for yi in y]
+    exit = [yi.exit for yi in y]
+    event = [yi.y for yi in y]
+    return LSurvivalCompResp(enter, exit, event, wts, id; kwargs...)
+end
+
+
+
+function LSurvivalCompResp(
     enter::E,
     exit::X,
     y::Y,
@@ -286,6 +300,8 @@ function LSurvivalCompResp(
     wts = ones(Int, length(y))
     return LSurvivalCompResp(enter, exit, y, wts, id; kwargs...)
 end
+
+
 
 function LSurvivalCompResp(
     enter::E,
@@ -367,3 +383,7 @@ Base.show(x::T; kwargs...) where {T<:AbstractSurvTime} = Base.show(stdout, x; kw
 
 Base.length(x::LSurvivalCompResp) = length(x.exit)
 Base.length(x::LSurvivalResp) = length(x.exit)
+
+function survcheck(y::Y) where {Y<:AbstractLSurvivalResp}
+    @assert all(y.exit .> y.enter) "Error detected in survival times: some entry times are equal to or greater than exit times; expecting: (entry<exit)"
+end

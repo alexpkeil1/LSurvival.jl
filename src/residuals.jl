@@ -180,12 +180,12 @@ end
 
 function resid_jackknife(m::M) where {M<:PSModel}
     jk = jackknife(m)
-    permutedims(jk' .- params(m))
+    permutedims(coef(m) .- jk')
 end
 
 function resid_jackknife(m::M) where {M<:PHModel}
     jk = jackknife(m)
-    permutedims(jk' .- coef(m))
+    permutedims(coef(m) .- jk')
 end
 
 function robust_vcov(m::M) where {M<:PHModel}

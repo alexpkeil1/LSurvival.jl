@@ -303,6 +303,7 @@ function fit(
     end
 
     R = LSurvivalResp(enter, exit, y, wts, id)
+    survcheck(R)
     P = PHParms(X)
 
     res = M(R, P, ties)
@@ -316,7 +317,7 @@ function modelframe(
     data,
     contrasts::AbstractDict,
     ::Type{M},
-) where {M<:AbstractPH}
+) where {M<:Union{AbstractPH,AbstractNPSurv}}
     # closely adapted from GLM.jl
     Tables.istable(data) ||
         throw(ArgumentError("expected data in a Table, got $(typeof(data))"))
@@ -346,6 +347,7 @@ function fit(
         id = [ID(i) for i in eachindex(y)]
     end
     R = LSurvivalResp(y, wts, id)
+    survcheck(R)
     P = PHParms(X[:, :])
     res = M(R, P, f, ties)
     return fit!(res; fitargs...)
@@ -791,7 +793,7 @@ function _fit!(
     m::M;
     coef_vectors = nothing,
     pred_profile = nothing,
-    method = "aalen-johansen",
+    method = "cheng-fine-wei",
 ) where {M<:PHSurv}
     hr = ones(Float64, length(m.eventtypes))
     ch::Float64 = 0.0
@@ -801,6 +803,7 @@ function _fit!(
     end
     if (!isnothing(coef_vectors) && !isnothing(pred_profile))
         @inbounds for (j, d) in enumerate(m.eventtypes)
+            # hazard ratio for a predictor profile relative to unspecified baseline hazard at the referent levels of the predictors
             hr[j] = exp(dot(pred_profile, coef_vectors[j]))
         end
     end
@@ -809,16 +812,16 @@ function _fit!(
         @inbounds for (j, d) in enumerate(m.eventtypes)
             if m.event[i] == d
                 m.basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
-                m.risk[i, j] = lci[j] + m.basehaz[i] * surv_previous
+                m.risk[i, j] = lci[j] + surv_previous * m.basehaz[i]  # F(t) = int_0^t f(t) = int_0^t S(t) * h(t)
             else
                 m.risk[i, j] = lci[j]
             end
         end
         if lowercase(method[1:3]) == "aal"
-            ## aalen-johansen
+            ## aalen-johansen: increment the survival curve with a kaplan-meier jump
             m.surv[i] = surv_previous - surv_previous * m.basehaz[i]
         elseif lowercase(method[1:3]) == "che"
-            #Cheng, Fine and Wei
+            #Cheng, Fine and Wei: calculate the survival curve by exponentiating the cumulative hazard (basehaz = basehaz*hr from a previous step)
             ch += m.basehaz[i]
             m.surv[i] = exp(-ch)
         else
@@ -836,15 +839,25 @@ end
 """
 $DOC_FIT_PHSURV   
 """
-function fit(::Type{M}, fitlist::Vector{T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
+function fit(::Type{M}, fitlist::Vector{T}, ;  fitargs...) where {M<:PHSurv,T<:PHModel}
     res = M(fitlist)
     return fit!(res; fitargs...)
 end
 
-
-function fit(::Type{M}, fitlist::Vector{T}; fitargs...) where {M<:PHSurv,T<:PHModel}
-    res = M(fitlist)
-    return fit!(res; fitargs...)
+# fits with multiple covariate profiles
+function fit(::Type{M}, fitlist::Vector{T}, pred_profiles::Matrix; fitargs...) where {M<:PHSurv,T<:PHModel}
+    if size(pred_profiles,1)<1
+        throw("pred_profiles must be specified")
+    end
+    if haskey(fitargs, :pred_profile)
+        @warn "pred_profile argument not allowed when `pred_profiles` is used. Deleting keyword and continuing."
+        kwargs = [fitargs...]
+        ifitargs = [a for a in kwargs if a.first != :pred_profile]      
+    else
+        ifitargs=[fitargs...]
+    end
+    resall = [fit(M, fitlist, pred_profile=pred_profiles[i,:]; ifitargs...) for i in 1:size(pred_profiles,1)]
+    return resall
 end
 
 
