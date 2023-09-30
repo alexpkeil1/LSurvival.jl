@@ -342,11 +342,11 @@ function fit(
     fitargs...,
 ) where {M<:AbstractPH}
     f, (y, X) = modelframe(f, data, contrasts, M)
-    if length(id)==0 
-         id = [ID(i) for i in eachindex(y)]
+    if length(id) == 0
+        id = [ID(i) for i in eachindex(y)]
     end
     R = LSurvivalResp(y, wts, id)
-    P = PHParms(X[:,:])
+    P = PHParms(X[:, :])
     res = M(R, P, f, ties)
     return fit!(res; fitargs...)
 end
@@ -368,7 +368,7 @@ coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 formula(x::M) where {M<:AbstractPH} = x.formula
 
 StatsBase.coefnames(x::M) where {M<:AbstractPH} =
-    x.formula === nothing ? ["b$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)
+    x.formula === nothing ? ["β$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)
 
 function StatsBase.coef(m::M) where {M<:AbstractPH}
     mwarn(m)
@@ -522,19 +522,26 @@ end
 """
 $DOC_VCOV
 """
-function StatsBase.vcov(m::M; type::Union{String,Nothing} = nothing, seed=nothing, iter=200) where {M<:AbstractPH}
+function StatsBase.vcov(
+    m::M;
+    type::Union{String,Nothing} = nothing,
+    seed = nothing,
+    iter = 200,
+) where {M<:AbstractPH}
     mwarn(m)
     if type == "robust"
         res = robust_vcov(m)
     elseif type == "jackknife"
         res = jackknife_vcov(m)
     elseif type == "bootstrap"
-        res = bootstrap_vcov(m, iter, seed=seed)
+        res = bootstrap_vcov(m, iter, seed = seed)
     else
         res = -inv(m.P._hess)
         if any(eigen(res).values .< 0.0)
-            @warn("Covariance matrix is not positive semi-definite, model likely not converged")
-            if any(diag(res) .< 0.0) 
+            @warn(
+                "Covariance matrix is not positive semi-definite, model likely not converged"
+            )
+            if any(diag(res) .< 0.0)
                 res = zeros(size(m.P._hess))
             end
         end
@@ -567,7 +574,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     str *= String(take!(iob))
     str *= "Partial log-likelihood (null): $(@sprintf("%8g", llnull))\n"
     str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll))\n"
-    str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
+    str *= "LRT p-value (χ²=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
     str *= "Newton-Raphson iterations: $(length(m.P._LL)-1)"
     println(io, str)
 end
@@ -780,7 +787,12 @@ end
 # fitting functions for PHSurv objects
 #####################################################################################################################
 
-function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing, method="aalen-johansen") where {M<:PHSurv}
+function _fit!(
+    m::M;
+    coef_vectors = nothing,
+    pred_profile = nothing,
+    method = "aalen-johansen",
+) where {M<:PHSurv}
     hr = ones(Float64, length(m.eventtypes))
     ch::Float64 = 0.0
     surv_previous::Float64 = 1.0
@@ -808,9 +820,11 @@ function _fit!(m::M; coef_vectors = nothing, pred_profile = nothing, method="aal
         elseif lowercase(method[1:3]) == "che"
             #Cheng, Fine and Wei
             ch += m.basehaz[i]
-            m.surv[i] = exp(-ch)    
+            m.surv[i] = exp(-ch)
         else
-            throw("method $method not recognized (use 'aalen-johansen' or 'cheng-fine-wei')")
+            throw(
+                "method $method not recognized (use 'aalen-johansen' or 'cheng-fine-wei')",
+            )
         end
         surv_previous = m.surv[i]
         lci = m.risk[i, :]
@@ -823,11 +837,16 @@ end
 $DOC_FIT_PHSURV   
 """
 function fit(::Type{M}, fitlist::Vector{T}, ; fitargs...) where {M<:PHSurv,T<:PHModel}
-
     res = M(fitlist)
-
     return fit!(res; fitargs...)
 end
+
+
+function fit(::Type{M}, fitlist::Vector{T}; fitargs...) where {M<:PHSurv,T<:PHModel}
+    res = M(fitlist)
+    return fit!(res; fitargs...)
+end
+
 
 """
 $DOC_FIT_PHSURV
@@ -879,5 +898,4 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:PHSurv}
     println(io, str)
 end
 
-Base.show(m::M; kwargs...) where {M<:PHSurv} =
-    Base.show(stdout, m; kwargs...)
+Base.show(m::M; kwargs...) where {M<:PHSurv} = Base.show(stdout, m; kwargs...)

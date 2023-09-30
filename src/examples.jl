@@ -990,4 +990,69 @@ res = survreg(@formula(Surv(t,d)~x), wtab)
 bs = bootstrap(res, 200)
 stderror(res)
 sqrt.(sum((bs .- sum(bs, dims=1)./200).^2, dims=1)/200)
-    
+
+
+###################################################################
+# Checking aalen johansen
+###################################################################
+
+res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+int = zeros(length(d)) # no late entry
+X = hcat(z, x)
+
+dat = (id = 1:100, z=z[:,1],x=x[:,1],out=outt, int=int, d=Int.(d), e=event)
+
+
+
+
+
+######## Aalen-Johansen
+@rput dat
+R"""
+library(survival)
+cfit1 <- survfit(Surv(int,out, factor(e)) ~ 1, data = as.data.frame(dat),id=id)
+summary(cfit1)
+"""
+aalen_johansen(int, outt, event)
+
+
+
+# cause-specific Cox models
+ft1 = coxph(@formula(Surv(out,e==1)~x+z), dat, ties="efron")
+ft2 = coxph(@formula(Surv(out,e==2)~x+z), map(x -> x[findall(dat.e .!= 1)], dat), ties="efron")
+ft2ns = coxph(@formula(Surv(out,e==2)~x+z), dat, ties="efron")
+
+
+##### cause specific cox models treated as all cause
+@rput dat
+R"""
+library(survival)
+cfita = coxph(Surv(out,e==1) ~ x+z, data = dat,id=id, ties="efron")
+cfit1 <- survfit(cfita, newdata=data.frame(x=0,z=0))
+print(cfita)
+print(cfit1$cumhaz)
+print(summary(cfit1))
+"""
+ft1.bh
+exp.(-cumsum(ft1.bh[:,1]))
+risk_from_coxphmodels([ft1], pred_profile=[0.0, 0.0], method = "che") # this is the method used in R::survival::survfit
+# OK!
+
+
+
+########## multistaate version of cox models
+@rput dat
+R"""
+library(survival)
+cfit = coxph(Surv(int,out,factor(e)) ~ x+z, data = dat,id=id, ties="efron")
+print(cfit)
+cfit1 <- survfit(cfit, newdata=data.frame(x=0,z=0))
+print(cfit1$pstate)
+summary(cfit1)
+"""
+risk_from_coxphmodels([ft1,ft2], method="che")
+risk_from_coxphmodels([ft1,ft2], pred_profile=[0.,0.])
+risk_from_coxphmodels([ft1,ft2ns]) # this is what survival uses
+cumsum(ft1.bh[:,1])
+cumsum(ft2ns.bh[:,1]) # this is the one that gets used in the multi-state model (keep competing events in the risk set)
+

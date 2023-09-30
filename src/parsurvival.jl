@@ -587,7 +587,7 @@ formula(x::M) where {M<:PSModel} = x.formula
 scale(x::M) where {M<:PSModel} = x.P._S
 
 StatsBase.coefnames(x::M) where {M<:PSModel} =
-    x.formula === nothing ? ["b$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)
+    x.formula === nothing ? ["β$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)
 
 function StatsBase.coef(m::M) where {M<:PSModel}
     mwarn(m)
@@ -785,7 +785,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
         chi2 = 2 * (ll - llnull)
         lrtp = 1 - cdfchisq(df, chi2)
         str *= "Log-likelihood (Intercept only): $(@sprintf("%8g", llnull))\n"
-        str *= "LRT p-value (X^2=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
+        str *= "LRT p-value (χ²=$(round(chi2, digits=2)), df=$df): $(@sprintf("%.5g", lrtp))\n"
     end
     str *= "Solver iterations: $(length(m.P._LL)-1)"
     println(io, str)
