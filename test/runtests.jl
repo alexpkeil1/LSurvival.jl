@@ -39,15 +39,27 @@ import StatsBase.cov
     ###### priority items ############
     ################################################
     # test: different specifications of NP methods give same answer
-    @test all(kaplan_meier(dat1clust.enter, dat1clust.exit, dat1clust.status).surv == kaplan_meier(@formula(Surv(enter, exit, status)~1), dat1clust).surv)
+    @test all(
+        kaplan_meier(dat1clust.enter, dat1clust.exit, dat1clust.status).surv ==
+        kaplan_meier(@formula(Surv(enter, exit, status) ~ 1), dat1clust).surv,
+    )
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 90)
-    crtab = (t=t,event=event)
-    @test all(aalen_johansen(@formula(Surv(t, event)~1), crtab).risk == aalen_johansen(zeros(length(t)), t, event).risk)
-    
+    crtab = (t = t, event = event)
+    @test all(
+        aalen_johansen(@formula(Surv(t, event) ~ 1), crtab).risk ==
+        aalen_johansen(zeros(length(t)), t, event).risk,
+    )
+
     # test: robustness to integer/float
-    for d in [LSurvival.Weibull, LSurvival.Exponential, LSurvival.GGamma, LSurvival.Gamma, LSurvival.Lognormal]
+    for d in [
+        LSurvival.Weibull,
+        LSurvival.Exponential,
+        LSurvival.GGamma,
+        LSurvival.Gamma,
+        LSurvival.Lognormal,
+    ]
         l = length(d())
-        parsint = rand([1,2,3,4,5,6,7], l)
+        parsint = rand([1, 2, 3, 4, 5, 6, 7], l)
         pars = Float64.(parsint)
         dd = d(parsint...)
         ddp = d(pars...)
@@ -56,10 +68,14 @@ import StatsBase.cov
         @test (LSurvival.logscale(dd) == LSurvival.logscale(ddp))
         @test (scale(dd) == scale(ddp))
         @test all(params(dd) == params(ddp))
-        @test LSurvival.lsurv_hessian(d(), pars, 1.0, [1.0]) == LSurvival.lsurv_hessian(d(), parsint, 1, [1])
-        @test LSurvival.lpdf_hessian(d(), pars, 1.0, [1.0]) == LSurvival.lpdf_hessian(d(), parsint, 1, [1])
-        @test LSurvival.lsurv_gradient(d(), pars, 1.0, [1.0]) == LSurvival.lsurv_gradient(d(), parsint, 1, [1])
-        @test LSurvival.lpdf_gradient(d(), pars, 1.0, [1.0]) == LSurvival.lpdf_gradient(d(), parsint, 1, [1])
+        @test LSurvival.lsurv_hessian(d(), pars, 1.0, [1.0]) ==
+              LSurvival.lsurv_hessian(d(), parsint, 1, [1])
+        @test LSurvival.lpdf_hessian(d(), pars, 1.0, [1.0]) ==
+              LSurvival.lpdf_hessian(d(), parsint, 1, [1])
+        @test LSurvival.lsurv_gradient(d(), pars, 1.0, [1.0]) ==
+              LSurvival.lsurv_gradient(d(), parsint, 1, [1])
+        @test LSurvival.lpdf_gradient(d(), pars, 1.0, [1.0]) ==
+              LSurvival.lpdf_gradient(d(), parsint, 1, [1])
     end
 
 
@@ -70,16 +86,28 @@ import StatsBase.cov
     ################################################
     rng = MersenneTwister(121)
     n = 1000
-    x = rand(rng, [0,1], n)
+    x = rand(rng, [0, 1], n)
     wtab = (
-      t = [LSurvival.randweibull(rng, exp(1), exp((1-x[i]))) for i in 1:n],
-      d = rand(rng, [0,1], n),
-      x = x
+        t = [LSurvival.randweibull(rng, exp(1), exp((1 - x[i]))) for i = 1:n],
+        d = rand(rng, [0, 1], n),
+        x = x,
     )
 
     # test: does printing of different parameterizations work?
-    for d in [LSurvival.Weibull, LSurvival.Exponential, LSurvival.GGamma, LSurvival.Gamma, LSurvival.Lognormal]
-        ft = survreg(@formula(Surv(t,d)~x), wtab, dist=d(), maxiter=1000, verbose=false)
+    for d in [
+        LSurvival.Weibull,
+        LSurvival.Exponential,
+        LSurvival.GGamma,
+        LSurvival.Gamma,
+        LSurvival.Lognormal,
+    ]
+        ft = survreg(
+            @formula(Surv(t, d) ~ x),
+            wtab,
+            dist = d(),
+            maxiter = 1000,
+            verbose = false,
+        )
         println(ft)
     end
 
@@ -94,13 +122,20 @@ import StatsBase.cov
     # Loglik(model)= -11.7   Loglik(intercept only)= -12.2
     #         Chisq= 1.07 on 1 degrees of freedom, p= 0.3 
     # Number of Newton-Raphson Iterations: 4 
-    
+
     #test: does intercept only model correctly suppress some info
-    sr = survreg(@formula(Surv(time,status)~1), dat1, dist=LSurvival.Weibull(), verbose=true, start = [2.0, -.6], maxiter=0);
+    sr = survreg(
+        @formula(Surv(time, status) ~ 1),
+        dat1,
+        dist = LSurvival.Weibull(),
+        verbose = true,
+        start = [2.0, -0.6],
+        maxiter = 0,
+    )
     println(sr)
 
 
-        # Call:
+    # Call:
     # survreg(formula = Surv(time, status) ~ 1, data = dat1, dist = "weibull")
     #              Value Std. Error     z       p
     # (Intercept)  2.001      0.275  7.27 3.6e-13
@@ -111,24 +146,37 @@ import StatsBase.cov
     # Weibull distribution
     # Loglik(model)= -11.4   Loglik(intercept only)= -11.4
     # Number of Newton-Raphson Iterations: 8 
-    
+
     # test: does use of contrasts/ work
-    ft = survreg(@formula(Surv(time,status) ~ x), dat1, contrasts = Dict(:x => CategoricalTerm))
-    ftclust = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), start = [2., -.5, -.5])    
-    ftint = survreg(@formula(Surv(time,status) ~ 1), dat1, contrasts = Dict(:x => CategoricalTerm))
-    ftcox = coxph(@formula(Surv(time,status)~x), dat1)
+    ft = survreg(
+        @formula(Surv(time, status) ~ x),
+        dat1,
+        contrasts = Dict(:x => CategoricalTerm),
+    )
+    ftclust = survreg(
+        @formula(Surv(enter, exit, status) ~ x),
+        dat1clust,
+        dist = LSurvival.Weibull(),
+        start = [2.0, -0.5, -0.5],
+    )
+    ftint = survreg(
+        @formula(Surv(time, status) ~ 1),
+        dat1,
+        contrasts = Dict(:x => CategoricalTerm),
+    )
+    ftcox = coxph(@formula(Surv(time, status) ~ x), dat1)
     handcov = cov(bootstrap(MersenneTwister(1232), ftcox, 10))
-    vcovcov = vcov(ftcox, type="bootstrap", seed=MersenneTwister(1232), iter=10)
+    vcovcov = vcov(ftcox, type = "bootstrap", seed = MersenneTwister(1232), iter = 10)
     @test all(handcov .== vcovcov)
     # test, jackknife, bootstrap variance
     S = vcov(ft, type = "jackknife")
     @test all(isfinite.(S))
-    S2 = vcov(ft, type = "bootstrap", seed=MersenneTwister(1232), iter=10)
+    S2 = vcov(ft, type = "bootstrap", seed = MersenneTwister(1232), iter = 10)
     @test all(isfinite.(S2))
 
     S = vcov(ft, type = "jackknife")
     @test all(isfinite.(S))
-    S2 = vcov(ft, type = "bootstrap", seed=MersenneTwister(1232), iter=10)
+    S2 = vcov(ft, type = "bootstrap", seed = MersenneTwister(1232), iter = 10)
     @test all(isfinite.(S2))
 
     #
@@ -139,7 +187,7 @@ import StatsBase.cov
     @test aicc(ft) > 0.0
     @test bic(ft) > 0.0
     @test nulldeviance(ft) > 0.0
-    
+
     # test: fitted returns predictions
     #@test length(fitted(ft)) = length(dat1.x) # causes test error for some reason
     # test: person time splits with survreg
@@ -147,23 +195,44 @@ import StatsBase.cov
 
     X = hcat(ones(length(dat1.x)), dat1.x)
 
-    res1 = survreg(X, zeros(length(dat1.time)), dat1.time, dat1.status, dist=LSurvival.Weibull())
-    res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Weibull(), id=ID.(1:6))
+    res1 = survreg(
+        X,
+        zeros(length(dat1.time)),
+        dat1.time,
+        dat1.status,
+        dist = LSurvival.Weibull(),
+    )
+    res2 = survreg(
+        @formula(Surv(enter, exit, status) ~ x),
+        dat1clust,
+        dist = LSurvival.Weibull(),
+        id = ID.(1:6),
+    )
     @test all(isapprox.(params(res1), params(res2)))
 
-    res1 = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal())
-    res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Lognormal(), id=ID.(dat1clust.id))
+    res1 = survreg(@formula(Surv(time, status) ~ x), dat1, dist = LSurvival.Lognormal())
+    res2 = survreg(
+        @formula(Surv(enter, exit, status) ~ x),
+        dat1clust,
+        dist = LSurvival.Lognormal(),
+        id = ID.(dat1clust.id),
+    )
     @test all(isapprox.(params(res1), params(res2)))
 
-    res1 = survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Gamma())
-    res2 = survreg(@formula(Surv(enter, exit,status)~x), dat1clust, dist=LSurvival.Gamma(), id=ID.(dat1clust.id))
+    res1 = survreg(@formula(Surv(time, status) ~ x), dat1, dist = LSurvival.Gamma())
+    res2 = survreg(
+        @formula(Surv(enter, exit, status) ~ x),
+        dat1clust,
+        dist = LSurvival.Gamma(),
+        id = ID.(dat1clust.id),
+    )
     @test all(isapprox.(params(res1), params(res2)))
 
     @test dof(ft) > 0
     # test ID returns proper nobs in clustered data
     @test nobs(res1) == nobs(res2)
     # test clustered data also have larger covariate matrix
-    @test size(modelmatrix(res1),1) < size(modelmatrix(res2),1)
+    @test size(modelmatrix(res1), 1) < size(modelmatrix(res2), 1)
     @test length(response(res1)) < length(response(res2))
     # test: weights get set to 1.0
     @test isapprox(sum(weights(res1)), length(dat1.time))
@@ -180,7 +249,7 @@ import StatsBase.cov
     for d in [LSurvival.Weibull, LSurvival.Lognormal, LSurvival.Gamma]
         for p in parameterizations
             for j in parameterizations
-               @test d(p...) == d(j...)
+                @test d(p...) == d(j...)
             end
         end
     end
@@ -194,29 +263,42 @@ import StatsBase.cov
     for d in [LSurvival.GGamma]
         for p in parameterizations
             for j in parameterizations
-               @assert d(p...) == d(j...)
+                @assert d(p...) == d(j...)
             end
         end
     end
 
 
-    @test lpdf(LSurvival.Weibull(1,1), 1) == lpdf(LSurvival.Weibull(1,1.0), 1.0)
-    @test all(LSurvival.dlpdf_regweibull(1,1, 1, [1]) == LSurvival.lpdf_gradient(LSurvival.Weibull(30,40), [1,1], 1.0, [1][1:1,1:1]))
-    @test all(LSurvival.ddlpdf_regweibull(1,1, 1, [1]) == LSurvival.lpdf_hessian(LSurvival.Weibull(1.,1.), [1,1], 1.0, [1][1:1,1:1]))
-    @test lsurv(LSurvival.Weibull(1.0,1), 1) == lsurv(LSurvival.Weibull(1.0,1.0), 1.0)
-    @test LSurvival.lpdf_hessian(LSurvival.Weibull(1,1), 1) == LSurvival.ddlpdf_weibull(1, 1, 1.0)
+    @test lpdf(LSurvival.Weibull(1, 1), 1) == lpdf(LSurvival.Weibull(1, 1.0), 1.0)
+    @test all(
+        LSurvival.dlpdf_regweibull(1, 1, 1, [1]) ==
+        LSurvival.lpdf_gradient(LSurvival.Weibull(30, 40), [1, 1], 1.0, [1][1:1, 1:1]),
+    )
+    @test all(
+        LSurvival.ddlpdf_regweibull(1, 1, 1, [1]) ==
+        LSurvival.lpdf_hessian(LSurvival.Weibull(1.0, 1.0), [1, 1], 1.0, [1][1:1, 1:1]),
+    )
+    @test lsurv(LSurvival.Weibull(1.0, 1), 1) == lsurv(LSurvival.Weibull(1.0, 1.0), 1.0)
+    @test LSurvival.lpdf_hessian(LSurvival.Weibull(1, 1), 1) ==
+          LSurvival.ddlpdf_weibull(1, 1, 1.0)
     @test LSurvival.ddlpdf_weibull(1, 1, 1.0) == LSurvival.ddlpdf_weibull(1, 1.0, 1.0)
     @test LSurvival.ddlpdf_weibull(1, 1.0, 1.0) == LSurvival.ddlpdf_weibull(1.0, 1.0, 1.0)
     @test LSurvival.ddlpdf_weibull(1.0, 1, 1.0) == LSurvival.ddlpdf_weibull(1.0, 1.0, 1.0)
-    @test lpdf(LSurvival.Weibull(1,0), 2.0) == lpdf(LSurvival.Exponential(1.0), 2.0)
-    @test lsurv(LSurvival.Weibull(1,0), 2.0) == lsurv(LSurvival.Exponential(1.0), 2.0)
-    @test LSurvival.ddlpdf_weibull(1,0, 1)[1:1,1:1] == LSurvival.lpdf_hessian(LSurvival.Exponential(1.0), 1.0)
+    @test lpdf(LSurvival.Weibull(1, 0), 2.0) == lpdf(LSurvival.Exponential(1.0), 2.0)
+    @test lsurv(LSurvival.Weibull(1, 0), 2.0) == lsurv(LSurvival.Exponential(1.0), 2.0)
+    @test LSurvival.ddlpdf_weibull(1, 0, 1)[1:1, 1:1] ==
+          LSurvival.lpdf_hessian(LSurvival.Exponential(1.0), 1.0)
     #
-    @test LSurvival.lpdf_hessian(LSurvival.Lognormal(1,1), 1) == LSurvival.ddlpdf_lognormal(1, 1, 1.0)
-    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,2], 1, .1) == LSurvival.dlpdf_reglognormal(1, 2, 1.0, .1)
-    @test LSurvival.lpdf(LSurvival.Lognormal(), [1,.2], 1, 10) == LSurvival.lpdf_lognormal(10, .2, 1)
-    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,.2], 1, 1) != LSurvival.dlpdf_reglognormal([10], .2, 1.0, .1)
-    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1,.2], 1, .1) == LSurvival.dlpdf_reglognormal([1], .2, 1.0, .1)
+    @test LSurvival.lpdf_hessian(LSurvival.Lognormal(1, 1), 1) ==
+          LSurvival.ddlpdf_lognormal(1, 1, 1.0)
+    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1, 2], 1, 0.1) ==
+          LSurvival.dlpdf_reglognormal(1, 2, 1.0, 0.1)
+    @test LSurvival.lpdf(LSurvival.Lognormal(), [1, 0.2], 1, 10) ==
+          LSurvival.lpdf_lognormal(10, 0.2, 1)
+    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1, 0.2], 1, 1) !=
+          LSurvival.dlpdf_reglognormal([10], 0.2, 1.0, 0.1)
+    @test LSurvival.lpdf_gradient(LSurvival.Lognormal(), [1, 0.2], 1, 0.1) ==
+          LSurvival.dlpdf_reglognormal([1], 0.2, 1.0, 0.1)
 
     ftfitted = fitted(ft)
     @test all(predict(ft) == exp.(ftfitted))
@@ -240,8 +322,13 @@ import StatsBase.cov
     #   Loglik(model)= -10.3   Loglik(intercept only)= -11.4
     #           Chisq= 2.22 on 1 degrees of freedom, p= 0.14 
     #   Number of Newton-Raphson Iterations: 8 
-    
-   survreg(@formula(Surv(time,status)~x), dat1, dist=LSurvival.Lognormal(), start = [0., -.5, -.5])
+
+    survreg(
+        @formula(Surv(time, status) ~ x),
+        dat1,
+        dist = LSurvival.Lognormal(),
+        start = [0.0, -0.5, -0.5],
+    )
 
     # Call:
     # survreg(formula = Surv(time, status) ~ x, data = dat1, dist = "lognormal")
@@ -268,7 +355,7 @@ import StatsBase.cov
     d, X = data[:, 4], data[:, 1:3]
     wt = rand(length(d))
     wt ./= (sum(wt) / length(wt))
-    
+
 
     function jfun(int, outt, d, X, wt, i)
         i == 1 && println("Deprecated method")
@@ -351,6 +438,13 @@ import StatsBase.cov
     oldbeta, _ = coxmodel(int, outt, d, X, method = "efron")
     oldbetab, _ = coxmodel(int, outt, d, X, method = "breslow")
 
+    # note: these print functions are needed: otherwise the test fails on ubuntu
+    println(oldbeta)
+    println(coef(ft)z)
+    println(oldbetab)
+    println(coef(ftb))
+
+
     @test all(isapprox.(coef(ft), oldbeta))
     @test all(isapprox.(coef(ftb), oldbetab))
 
@@ -397,7 +491,7 @@ import StatsBase.cov
         @test stat(ft) > 0
     end
     for stat in [logpartiallikelihood nulllogpartiallikelihood]
-        @test stat(ft) < 0.
+        @test stat(ft) < 0.0
     end
 
     @test all(isapprox.(fitted(ft), log.(ft.P._r)))
@@ -466,8 +560,8 @@ import StatsBase.cov
     R = LSurvivalResp(outt, d) # set all to zero
     #println(R)
 
-    try 
-        R = LSurvivalResp([1,2], [1,3], [0,1])
+    try
+        R = LSurvivalResp([1, 2], [1, 3], [0, 1])
         LSurvival.survcheck(R)
     catch e
         @test typeof(e) == AssertionError
@@ -490,7 +584,7 @@ import StatsBase.cov
     z, x, t, d, event, wt = LSurvival.dgm_comprisk(MersenneTwister(1212), 1000)
 
     Xp = hcat(ones(length(d)))
-    m = survreg(Xp, zeros(length(d)), t, d, dist=LSurvival.GGamma())
+    m = survreg(Xp, zeros(length(d)), t, d, dist = LSurvival.GGamma())
     print(m)
 
 
@@ -561,14 +655,7 @@ import StatsBase.cov
         keepx = true,
         keepy = true,
     )
-    ftparm = fit(
-        PSModel,
-        X,
-        enter,
-        t,
-        (event .== 1),
-        dist=LSurvival.Weibull()
-    )
+    ftparm = fit(PSModel, X, enter, t, (event .== 1), dist = LSurvival.Weibull())
     # TEST: does the length function work?
     @test length(ft1.R.id) == 100
 
@@ -579,9 +666,9 @@ import StatsBase.cov
     # TEST: does multi bootstrap return intended length of results
     @test size(bootstrap(MersenneTwister(123), ft1, 3)) == (3, length(coef(ft1)))
     @test size(bootstrap(MersenneTwister(123), ftparm, 3)) == (3, length(params(ftparm)))
-    
+
     # TEST: pull in study data, make sure all rows are equal lengths
-    heartdata, heartmeta = survivaldata("heart");
+    heartdata, heartmeta = survivaldata("heart")
     reduce(hcat, heartdata)
 
 
@@ -593,7 +680,7 @@ import StatsBase.cov
         [ft1, ft2],
         [0 0 -1; 0 1 0],
         coef_vectors = [coef(res), coef(res2)],
-        method="che"
+        method = "che",
     )
     refrisk = rfromc[1].risk
     oldrisk, _ = ci_from_coxmodels(
@@ -605,7 +692,7 @@ import StatsBase.cov
     println(rfromc)
 
 
-    @test isapprox(refrisk, oldrisk, atol = 0.0001)
+    @test all(isapprox.(refrisk, oldrisk, atol = 0.0001))
 
     # TEST: do predictions at covariate means change the risk?
     covarmat = sum(X, dims = 1) ./ size(X, 1)
@@ -615,6 +702,9 @@ import StatsBase.cov
         pred_profile = covarmat,
     )
 
+    # note: these print functions are needed: otherwise the test fails on ubuntu
+    println(refrisk[end, :])
+    println(ciresb.risk[end, :])
     @test all(refrisk[end, :] .> ciresb.risk[end, :])
 
 
