@@ -440,7 +440,7 @@ import StatsBase.cov
 
     # note: these print functions are needed: otherwise the test fails on ubuntu
     println(oldbeta)
-    println(coef(ft)z)
+    println(coef(ft))
     println(oldbetab)
     println(coef(ftb))
 
