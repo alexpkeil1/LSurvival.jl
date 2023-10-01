@@ -185,7 +185,7 @@ function LSurvivalResp(
     return LSurvivalResp(enter, exit, y, wts; kwargs...)
 end
 
-function LSurvivalResp(exit::X, y::Y; kwargs...) where {X<:Vector,Y<:Vector}
+function LSurvivalResp(exit::X, y::Y; kwargs...) where {X<:Vector,Y<:Union{Vector{<:Real},BitVector}}
     enter = zeros(eltype(exit), length(exit))
     return LSurvivalResp(enter, exit, y; kwargs...)
 end

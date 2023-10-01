@@ -105,7 +105,8 @@ phfitinit = fit(PHModel, X, int, outt, d, wts = wt, start = [6.0, -2, 3.0])
 
 # Kaplan-Meier curve
 fit(KMSurv, int, outt, d, wts = wt)
-kfit = kaplan_meier(int, outt, d, wts = wt)
+kaplan_meier(int, outt, d, wts = wt)
+kfit = kaplan_meier(@formula(Surv(in, t, d)~1), (in=int, t=outt, d=d), wts = wt)
 
 isfitted(kfit)
 show(stdout, kfit, maxrows = 40)
@@ -113,7 +114,7 @@ show(stdout, kfit, maxrows = 40)
 ###################################################################
 # Competing risks: cause-specific Cox models, Aalen-Johansen estimator of cumulative incidence (risk)
 ###################################################################
-res = z, x, outt, d, event, weights = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
+res = z, x, outt, d, event, wts = LSurvival.dgm_comprisk(MersenneTwister(123123), 100)
 int = zeros(length(d)) # no late entry
 X = hcat(z, x)
 
@@ -133,7 +134,8 @@ coxph(X, int, outt, d .* (event .== 2), verbose = true)
 
 # Aalen-Johansen estimator (non-parametric) of marginal cause-specific risk in the sample
 fit(AJSurv, int, outt, event)
-risk2 = aalen_johansen(int, outt, event)
+aalen_johansen(int, outt, event)
+aalen_johansen(@formula(Surv(in,t, d)~1), (in=int, t=outt, d=event))
 
 
 # two equivalent methods for generating cumulative incidence/risk from a Cox model 
@@ -178,6 +180,7 @@ risk1d = risk_from_coxphmodels([ft1d, ft2d]) # compare with risk2 object
 R = LSurvivalResp(outt, d)         # specification if no late entry
 R = LSurvivalResp(int, outt, d)    # specification with  late entry
 R = LSurvivalResp(int, outt, d, weights)    # specification with  weights and late entry (no specification with weights and no late entry)
+
 
 # PH model predictors
 P = PHParms(X)

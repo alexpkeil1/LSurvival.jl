@@ -526,10 +526,14 @@ import StatsBase.cov
     ))
 
 
-    # survival outcome:
+    # survival outcome: test with different parameterizations (float, int, bitvector)
+    LSurvivalResp([0.5, 0.6], ([1, 0] .== 1))
+
     LSurvivalResp([0.5, 0.6], [1, 0])
     LSurvivalResp([0.2, 0.6], [0.5, 0.6], [1, 0], origintime = 0)
+    LSurvivalResp([0.2, 0.6], [0.5, 0.6], ([1, 0] .== 1), origintime = 0)
     LSurvivalCompResp([0.5, 0.6], [1, 0], origintime = 0)
+    LSurvivalCompResp([0.5, 0.6], ([1, 0] .== 1), origintime = 0)
 
     # TESTs: expected behavior of surv objects
     R = LSurvivalResp(int, outt, d, ID.(id))    # specification with ID only
