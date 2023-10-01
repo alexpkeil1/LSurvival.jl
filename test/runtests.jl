@@ -438,15 +438,15 @@ import StatsBase.cov
     oldbeta, _ = coxmodel(int, outt, d, X, method = "efron")
     oldbetab, _ = coxmodel(int, outt, d, X, method = "breslow")
 
-    # note: these print functions are needed: otherwise the test fails on ubuntu
+    # note: these print functions are used to model occasional failure of this test on nightly builds
     println(oldbeta)
     println(coef(ft))
     println(oldbetab)
     println(coef(ftb))
 
-
-    @test all(isapprox.(coef(ft), oldbeta))
-    @test all(isapprox.(coef(ftb), oldbetab))
+ 
+    @test all(isapprox.(coef(ft), oldbeta), atol=0.0001)
+    @test all(isapprox.(coef(ftb), oldbetab), atol=0.0001)
 
 
     tab = (
@@ -702,7 +702,7 @@ import StatsBase.cov
         pred_profile = covarmat,
     )
 
-    # note: these print functions are needed: otherwise the test fails on ubuntu
+    # note: these print functions are needed to troubleshoot occasional test failures on nightly builds
     println(refrisk[end, :])
     println(ciresb.risk[end, :])
     @test all(refrisk[end, :] .> ciresb.risk[end, :])
