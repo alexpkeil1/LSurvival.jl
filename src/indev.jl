@@ -166,7 +166,6 @@ function lsurv_weibull(θ, ρ, t)
     -exp(z)
 end
 
-=#
 # function for testing only
 
 function lpdf_gengamma(α, ρ, κ, t)
@@ -374,6 +373,7 @@ function survhess_symbol!(ˍ₋out, θ, ρ, t, x)
     end
     ˍ₋out
 end
+=#
 
 
 #=
