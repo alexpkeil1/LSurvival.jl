@@ -445,8 +445,8 @@ import StatsBase.cov
     println(coef(ftb))
 
  
-    @test all(isapprox.(coef(ft), oldbeta), atol=0.0001)
-    @test all(isapprox.(coef(ftb), oldbetab), atol=0.0001)
+    @test all(isapprox.(coef(ft), oldbeta, atol=0.0001))
+    @test all(isapprox.(coef(ftb), oldbetab, atol=0.0001))
 
 
     tab = (
