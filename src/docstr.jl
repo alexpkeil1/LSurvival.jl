@@ -530,6 +530,14 @@ DOC_FIT_ABSTRACPH = raw"""
 - `fitargs` arguments passed to other structs, which include
   - `id` cluster or individual level ID (defaults to a unique value for each row of data) see note below on ID
   - `contrasts` StatsModel style contrasts (dicts) that can be used for variable transformations/indicator variable creation (e.g. https://juliastats.org/StatsModels.jl/stable/contrasts/)
+- Arguments passed onto fitting routine:
+  - `eps` (default: Float64 = 1e-9) tolerance for declaring convergence. Model is determined to be converged when relative change in log-partial likelihood is < `eps` .
+  - `getbasehaz` (default: true): estimate baseline hazard
+  - `start` (default: nothing) nothing, or vector of floats corresponding to initial values for parameters. Note that this defaults to a vector of zeros when set to nothing, and setting to other values invalidates some of the test statistics reported by default with `coxph.`
+  - `keepx` (default: true) logical. Keep design matrix in AbstractPH object output (set to false for slight computational gain).
+  - `keepy` (default: true)logical.  Keep outcome in AbstractPH object output (set to false for slight computational gain).
+  - `bootstrap_sample` (default: false) Fit the model to a bootstrap sample of the data (not generally used by end-users, but provides some convenience toward bootstrap variance estimation).
+  - `bootstrap_rng` (default: Random.MersenneTwister()) Random number seed used when drawing a bootstrap sample of the data (not generally used by end-users, but provides some convenience toward bootstrap variance estimation).
 
   ## Signatures
 ```julia
@@ -1237,7 +1245,9 @@ DOC_RESIDUALS = raw"""
 - `schoenfeld`
 - `score`
 - `dfbeta`
-- `scaled_schoenfeld`
+- `jackknife`
+- `dfbetas` (scaled dfbeta)
+- `scaled_schoenfeld` or `schoenfelds`  (scaled Schoenfeld)
 
   Residuals from the residuals function are designed to exactly emulate those from the `survival` package in R. Currently, they are validated for single observation data (e.g. one data row per individual).
 
@@ -1306,6 +1316,7 @@ DOC_RESIDUALS = raw"""
   X = ft.P.X
   M = residuals(ft, type="martingale")
   S = residuals(ft, type="schoenfeld")[:]
+  Ss = residuals(ft, type="scaled_schoenfeld")[:]
 ```
 
   ####################################################################

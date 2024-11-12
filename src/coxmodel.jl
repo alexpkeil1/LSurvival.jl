@@ -168,7 +168,7 @@ function _fit!(
     m::PHModel;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    gtol::Float64 = 1e-8,
+    eps::Float64 = 1e-9,
     start = nothing,
     keepx = true,
     keepy = true,
@@ -210,7 +210,10 @@ function _fit!(
     while totiter < maxiter
         totiter += 1
         # check convergence using infinite norm of gradient
-        converged = (maximum(abs.(m.P._grad)) < gtol)
+        #converged = (maximum(abs.(m.P._grad)) < gtol)
+        # check convergence using log partial likelihood
+        #converged = (totiter > 1) && ((abs(_llhistory[end]-_llhistory[end-1])/abs(_llhistory[end-1]) < eps) || (abs(_llhistory[end]-_llhistory[end-1]) < sqrt(eps)))
+        converged = (totiter > 1) && (abs(1.0 - _llhistory[end]/_llhistory[end-1]) <= eps)
         if converged
             break
         end
@@ -255,7 +258,7 @@ function StatsBase.fit!(
     m::AbstractPH;
     verbose::Bool = false,
     maxiter::Integer = 500,
-    gtol::Float64 = 1e-8,
+    eps::Float64 = 1e-9,
     start = nothing,
     kwargs...,
 )
@@ -264,20 +267,24 @@ function StatsBase.fit!(
         maxiter = kwargs[:maxIter]
     end
     if haskey(kwargs, :convTol)
-        Base.depwarn("'convTol' argument is deprecated, use `gtol` instead", :fit!)
-        gtol = kwargs[:convTol]
+        Base.depwarn("'convTol' argument is deprecated, use `eps` instead", :fit!)
+        eps = kwargs[:convTol]
     end
     if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy, :getbasehaz))
         throw(ArgumentError("unsupported keyword argument in: $(kwargs...)"))
     end
     if haskey(kwargs, :tol)
-        Base.depwarn("`tol` argument is deprecated, use `gtol` instead", :fit!)
-        gtol = kwargs[:tol]
+        Base.depwarn("`tol` argument is deprecated, use `eps` instead", :fit!)
+        eps = kwargs[:tol]
+    end
+    if haskey(kwargs, :gtol)
+        Base.depwarn("`gtol` argument is deprecated, use `eps` instead", :fit!)
+        eps = kwargs[:gtol]
     end
 
     start = isnothing(start) ? zeros(Float64, m.P.p) : start
 
-    _fit!(m, verbose = verbose, maxiter = maxiter, gtol = gtol, start = start; kwargs...)
+    _fit!(m, verbose = verbose, maxiter = maxiter, eps = eps, start = start; kwargs...)
 end
 
 

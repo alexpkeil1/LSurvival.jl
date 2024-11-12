@@ -12,6 +12,7 @@ function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
         "dfbeta",
         "dfbetas",
         "scaled_schoenfeld",
+        "schoenfelds",
         "jackknife",
     ]
     whichmethod = findall(valid_methods .== lowercase(type))
@@ -27,7 +28,7 @@ function StatsBase.residuals(m::M; type = "martingale") where {M<:PHModel}
     elseif thismethod == "dfbetas"
         resid = resid_dfbeta(m)
         resid ./= stderror(m)'
-    elseif thismethod == "scaled_schoenfeld"
+    elseif (thismethod == "scaled_schoenfeld") || (thismethod == "schoenfelds")
         resid = resid_schoenfeld(m) * inv(m.P._hess)
     elseif thismethod == "jackknife"
         resid = resid_jackknife(m)

@@ -77,3 +77,50 @@ function dgm_comprisk(rng::MersenneTwister, n::Int)
     round.(weights, digits = 4)
 end
 dgm_comprisk(n) = dgm_comprisk(MersenneTwister(), n)
+
+"""
+Proportional hazards model from a Weibull distribution with
+scale parameter λ
+
+```
+dgm_phmodel(rng::MersenneTwister, n::Int; 
+    λ=1.25,
+    β=[0.0, 0.0]
+    )
+```
+keyword parameters:
+  - λ: Weibull scale parameter
+  - β: vector of regression coefficients
+
+```
+rng = MersenneTwister()
+X, t, d, _ = dgm_phmodel(2000; λ=1.25,β=[1.0, -0.5])
+coxph(@formula(Surv(t0,t,d)~x+z), (t=t,t0=t.*0,d=d,x=X[:,1],z=X[:,2]))
+```
+"""
+function dgm_phmodel(rng::MersenneTwister, n::Int; 
+    λ=1.25,
+    β=[0.0, 0.0]
+    )
+    X = rand(n, length(β))
+    r = (exp.(X * β)).^(-1/λ)
+    t0 = [LSurvival.randweibull(rng, λ, ri) for ri in r]
+    t = Array{Float64,1}(undef, n)
+    for i = 1:n
+        t[i] = t0[i] > 1.0 ? 1.0 : t0[i]
+    end
+    d = (t .== t0)
+    event = (t .== t0)
+    weightsu = rand(rng, n) .* 5.0
+    weights = weightsu ./ mean(weightsu)
+    #
+    X,
+    t,
+    d,
+    event,
+    round.(weights, digits = 4)
+end
+dgm_phmodel(n;kwargs...) = dgm_phmodel(MersenneTwister(), n;kwargs...)
+
+
+

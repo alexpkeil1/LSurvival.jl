@@ -75,6 +75,14 @@ calcp(z) = 1.0 - erf(abs(z) / sqrt(2))
 
 """
 Quantile function for the Weibull distribution
+    
+```math
+F(t) = \begin{cases}
+     1 - e^{{-t/ρ}^{α}}&, t ≥ 0\\
+     0&, t < 0
+\end{cases}
+Q(p) = ρ * (log(1/(1-p))^{1/α})
+```
 
 lightweight function used for simulation
 
@@ -121,7 +129,7 @@ randweibull(α, ρ) = randweibull(MersenneTwister(), α, ρ)
 
 # cross reference the approach in the Distributions package
 rand(Distributions.Weibull(.75, 1.1))
-randweibull(0.3, .75)
+randweibull(.75, 1.1)
 ```
 
 
