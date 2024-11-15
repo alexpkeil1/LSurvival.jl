@@ -441,6 +441,7 @@ import StatsBase.cov
     oldbetab, _ = coxmodel(int, outt, d, X, method = "breslow")
 
     # note: these print functions are used to model occasional failure of this test on nightly builds
+    println("Note: sometimes these fail on nightly builds")
     println(oldbeta)
     println(coef(ft))
     println(oldbetab)
@@ -712,6 +713,7 @@ import StatsBase.cov
     )
 
     # note: these print functions are needed to troubleshoot occasional test failures on nightly builds
+    println("Note: sometimes these fail on nightly builds")
     println(refrisk[end, :])
     println(ciresb.risk[end, :])
     @test all(refrisk[end, :] .> ciresb.risk[end, :])
