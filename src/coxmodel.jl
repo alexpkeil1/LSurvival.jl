@@ -260,18 +260,18 @@ function StatsBase.fit!(
     maxiter::Integer = 500,
     eps::Float64 = 1e-9,
     start = nothing,
-    kwargs...,
+    kwargs...
 )
-    if haskey(kwargs, :maxIter)
+if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :gtol, :keepx, :keepy, :getbasehaz))
+    throw(ArgumentError("unsupported keyword argument in: $(kwargs...)"))
+end
+if haskey(kwargs, :maxIter)
         Base.depwarn("'maxIter' argument is deprecated, use 'maxiter' instead", :fit!)
         maxiter = kwargs[:maxIter]
     end
     if haskey(kwargs, :convTol)
         Base.depwarn("'convTol' argument is deprecated, use `eps` instead", :fit!)
         eps = kwargs[:convTol]
-    end
-    if !issubset(keys(kwargs), (:maxIter, :convTol, :tol, :keepx, :keepy, :getbasehaz))
-        throw(ArgumentError("unsupported keyword argument in: $(kwargs...)"))
     end
     if haskey(kwargs, :tol)
         Base.depwarn("`tol` argument is deprecated, use `eps` instead", :fit!)
@@ -281,10 +281,11 @@ function StatsBase.fit!(
         Base.depwarn("`gtol` argument is deprecated, use `eps` instead", :fit!)
         eps = kwargs[:gtol]
     end
-
     start = isnothing(start) ? zeros(Float64, m.P.p) : start
+    banlist = [:maxIter, :convTol, :gtol, :tol]
+    kwvec =  [kw for kw in kwargs if !any(kw.first .== banlist)]
 
-    _fit!(m, verbose = verbose, maxiter = maxiter, eps = eps, start = start; kwargs...)
+    _fit!(m, verbose = verbose, maxiter = maxiter, eps = eps, start = start; kwvec...)
 end
 
 
