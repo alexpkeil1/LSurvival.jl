@@ -43,8 +43,16 @@ using Pkg; Pkg.add(url = "https://github.com/alexpkeil1/LSurvival.jl")
 
 ### Single event type: Cox model and Kaplan-Meier curve
 ```julia
+# generate some data under a discrete hazards model
+using Random
+id, int, out, data = LSurvival.dgm(MersenneTwister(1212), 100, 20)
+
+data[:, 1] = round.(data[:, 1], digits = 3)
+d, X = data[:, 4], data[:, 1:3]
 
 tab = ( in = int, out = out, d=d, x=X[:,1], z1=X[:,2], z2=X[:,3]) 
+wt = ones(length(d)) # weights of 1.0 just to demonstrate usage
+
 
 coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, ties = "efron", wts = wt)
 ```
@@ -52,16 +60,16 @@ coxph(@formula(Surv(in, out, d)~x+z1+z2), tab, ties = "efron", wts = wt)
 Output:
 ```
 Maximum partial likelihood estimates (alpha=0.05):
-─────────────────────────────────────────────────────────
-      ln(HR)    StdErr        LCI      UCI     Z  P(>|Z|)
-─────────────────────────────────────────────────────────
-x   1.60222   0.530118   0.563208  2.64123  3.02   0.0025
-z1  0.305929  0.43838   -0.55328   1.16514  0.70   0.4853
-z2  1.98011   0.325314   1.34251   2.61771  6.09   <1e-08
-─────────────────────────────────────────────────────────
-Partial log-likelihood (null): -150.162
-Partial log-likelihood (fitted): -131.512
-LRT p-value (X^2=37.3, df=3): 3.9773e-08
+───────────────────────────────────────────────────────────
+      ln(HR)    StdErr         LCI       UCI     Z  P(>|Z|)
+───────────────────────────────────────────────────────────
+x   1.12624   0.392651   0.356659   1.89582   2.87   0.0041
+z1  0.434587  0.27122   -0.0969944  0.966168  1.60   0.1091
+z2  1.70434   0.222878   1.26751    2.14117   7.65   <1e-13
+───────────────────────────────────────────────────────────
+Partial log-likelihood (null): -361.948
+Partial log-likelihood (fitted): -332.063
+LRT p-value (χ²=59.77, df=3): 6.5858e-13
 Newton-Raphson iterations: 5
 ```
 

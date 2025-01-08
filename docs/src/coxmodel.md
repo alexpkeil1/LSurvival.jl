@@ -9,7 +9,7 @@ id, int, out, data = LSurvival.dgm(MersenneTwister(1212), 100, 20)
 
 data[:, 1] = round.(data[:, 1], digits = 3)
 d, X = data[:, 4], data[:, 1:3]
-wt = ones(length(d)) # random weights just to demonstrate usage
+wt = ones(length(d)) # weights of 1.0 just to demonstrate usage
 
 
 # Fit a Cox model with `Tables.jl` and `StatsAPI.@formula` interface (similar to GLM.jl)
