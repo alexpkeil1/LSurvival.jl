@@ -411,9 +411,10 @@ function _fit!(
     end
 
     if nohess
-        f(beta) = parmupdate!(nothing, nothing, nothing, beta, m)
+        push!(m.P._LL, -10.0) # gets over-written
+        ff(beta) = parmupdate!(nothing, nothing, nothing, beta, m)
         fgh! = TwiceDifferentiable(
-            f,
+            ff,
             parms
         )
     else
@@ -449,7 +450,7 @@ function _fit!(
         m.P._grad = G
     end
     maxiter == 0 && @warn("maxiter=0: no fitting done")
-    !(res.f_converged || res.g_converged || res.x_converged ) &&
+    !converged(res) &&  # this line has been touchy!
         maxiter > 0 &&
         @warn("Optimizer reports model did not converge. Gradient: $(m.P._grad)")
 
@@ -551,8 +552,6 @@ function fit(
 ) where {M<:PSModel}
     f, (y, X) = modelframe(f, data, contrasts, M)
     
-    [ ID(i) for i in eachindex(y)]
-
     id = id === nothing ? [ ID(i) for i in eachindex(y) ] : id
     offset = offset === nothing ? similar(getindex(X,[1]), 0) : offset
     wts = wts === nothing ? similar(getindex(X,[1]), 0) : wts
