@@ -591,7 +591,7 @@ survreg(f::FormulaTerm, data; kwargs...) = fit(PSModel, f, data; kwargs...)
 params(m::M) where {M<:PSModel} = vcat(m.P._B, m.P._S)
 formula(x::M) where {M<:PSModel} = x.formula
 logscale(x::M) where {M<:PSModel} = x.P._S
-scale(x::M) where {M<:PSModel} = exp(logscale(x))
+scale(x::M) where {M<:PSModel} = exp.(logscale(x))
 
 StatsBase.coefnames(x::M) where {M<:PSModel} =
     x.formula === nothing ? ["β$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)
