@@ -542,9 +542,7 @@ function fit(
     f::FormulaTerm,
     data;
     dist = Weibull(),
-    id::AbstractVector{<:AbstractLSurvivalID} = [
-        ID(i) for i in eachindex(getindex(data, 1))
-    ],
+    id::Union{AbstractVector{<:AbstractLSurvivalID}, Nothing} = nothing,
     wts::Union{AbstractVector,Nothing} = nothing,
     offset::Union{AbstractVector,Nothing}= nothing,
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
@@ -553,7 +551,10 @@ function fit(
 ) where {M<:PSModel}
     f, (y, X) = modelframe(f, data, contrasts, M)
     
-    off = offset === nothing ? similar(getindex(X,[1]), 0) : offset
+    [ ID(i) for i in eachindex(y)]
+
+    id = id === nothing ? [ ID(i) for i in eachindex(y) ] : id
+    offset = offset === nothing ? similar(getindex(X,[1]), 0) : offset
     wts = wts === nothing ? similar(getindex(X,[1]), 0) : wts
 
 
