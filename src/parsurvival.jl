@@ -43,7 +43,7 @@ mutable struct PSParms{
     _LL::L                       # partial likelihood history
     _grad::G                     # gradient vector
     _hess::H                     # Hessian matrix
-    _S::S                         # Scale parameter(s)
+    _S::S                         # log(Scale) parameter(s)
     n::I                         # number of observations
     p::I                         # number of parameters
 end
@@ -590,7 +590,8 @@ survreg(f::FormulaTerm, data; kwargs...) = fit(PSModel, f, data; kwargs...)
 
 params(m::M) where {M<:PSModel} = vcat(m.P._B, m.P._S)
 formula(x::M) where {M<:PSModel} = x.formula
-scale(x::M) where {M<:PSModel} = x.P._S
+logscale(x::M) where {M<:PSModel} = x.P._S
+scale(x::M) where {M<:PSModel} = exp(logscale(x))
 
 StatsBase.coefnames(x::M) where {M<:PSModel} =
     x.formula === nothing ? ["β$i" for i = 1:length(coef(x))] : coefnames(formula(x).rhs)

@@ -1,7 +1,7 @@
 name = "LSurvival"
 uuid = "edbbf5c1-874b-40a5-8c9f-d8fc918aacaa"
 authors = ["Alex Keil"]
-version = "1.5.3"
+version = "1.5.4"
 
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
