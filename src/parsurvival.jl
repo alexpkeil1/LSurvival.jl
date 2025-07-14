@@ -545,13 +545,17 @@ function fit(
     id::AbstractVector{<:AbstractLSurvivalID} = [
         ID(i) for i in eachindex(getindex(data, 1))
     ],
-    wts::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
-    offset::AbstractVector{<:Real} = similar(getindex(data, 1), 0),
+    wts::Union{AbstractVector,Nothing} = nothing,
+    offset::Union{AbstractVector,Nothing}= nothing,
     contrasts::AbstractDict{Symbol} = Dict{Symbol,Any}(),
     fitint = true,
     fitargs...,
 ) where {M<:PSModel}
     f, (y, X) = modelframe(f, data, contrasts, M)
+    
+    off = offset === nothing ? similar(getindex(X,[1]), 0) : offset
+    wts = wts === nothing ? similar(getindex(X,[1]), 0) : wts
+
 
     R = LSurvivalResp(y, wts, id)
     survcheck(R)
