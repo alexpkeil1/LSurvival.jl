@@ -146,7 +146,7 @@ fit1 = fit(PHModel, X, enter, t, (event .== 1), ties = "breslow", wts = wt)
 fit2 = fit(PHModel, X, enter, t, (event .== 2), ties = "breslow", wts = wt)
 risk_from_coxphmodels([fit1, fit2])
 
-# this approach operates on left censored outcomes (which operate in the background in model fitting)
+# this approach operates on left truncated outcomes (which operate in the background in model fitting)
 LSurvivalResp(enter, t, d)
 LSurvivalCompResp(enter, t, event)
 
