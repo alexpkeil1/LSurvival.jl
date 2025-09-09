@@ -73,6 +73,7 @@ struct LSurvivalResp{
     enter::E
     "`exit`: Time at observation end"
     exit::X
+    #"`y`: event occurrence in observation (y=1: event, y=0: right censored, y=-1: left censored, y=-2: interval censored)"
     "`y`: event occurrence in observation"
     y::Y
     "`wts`: observation weights"
@@ -114,6 +115,9 @@ function LSurvivalResp(
         throw(DimensionMismatch("wts must have length $ny or length 0 but was $lw"))
     end
     eventtimes = sort(unique(exit[findall(y .> 0)]))
+    #=
+    leftcensortimes = sort(unique(exit[findall(y .< 0)]))
+    =#
     origin = isnothing(origintime) ? minimum(enter) : origintime
     if lw == 0
         wts = ones(Int, ny)
@@ -335,6 +339,10 @@ end
 
 function Base.show(io::IO, x::T; maxrows::Int = 10) where {T<:AbstractLSurvivalResp}
     lefttruncate = [e == x.origin ? "[" : "(" for e in x.enter]
+    #=
+    leftcensor = [y < 0 ? "(" : "]" for y in x.y]# notation needs work
+    # 
+    =#
     rightcensor = [y > 0 ? "]" : ")" for y in x.y]
     enter = [@sprintf("%.2g", e) for e in x.enter]
     exeunt = [@sprintf("%.2g", e) for e in x.exit]
@@ -370,6 +378,9 @@ Base.show(x::T; kwargs...) where {T<:AbstractLSurvivalResp} =
 
 function Base.show(io::IO, x::T) where {T<:AbstractSurvTime}
     lefttruncate = x.enter == x.origin ? "[" : "("
+    #=
+    leftcensor = x.y > x.origin ? "]" : ")"
+    =#
     rightcensor = x.y > x.origin ? "]" : ")"
     enter = @sprintf("%.2g", x.enter)
     exeunt = @sprintf("%.2g", x.exit)

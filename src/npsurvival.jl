@@ -383,12 +383,16 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:AJSurv}
         println(io, "Model not yet fitted")
         return nothing
     end
-    types = m.R.eventtypes[2:end]
+    if !isnothing(m.R)
+        types = m.R.eventtypes[2:end]
+    else
+        types = size(m.events,2)
+    end
     ev = ["# events (j=$jidx)" for (jidx, j) in enumerate(types)]
     rr = ["risk (j=$jidx)" for (jidx, j) in enumerate(types)]
-
     resmat = hcat(m.times, m.surv, m.events, m.riskset, m.risk)
     head = ["time", "survival", ev..., "at risk", rr...]
+
     nr = size(resmat)[1]
     rown = ["$i" for i = 1:nr]
 

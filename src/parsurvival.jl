@@ -111,10 +111,23 @@ Log likelihood contribution for an observation in a parametric survival model
 ```
 """
 function loglik(d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDist}
+    # left truncation
     ll = enter > 0 ? -lsurv(d, θ, enter, x) : 0 # (anti)-contribution for all in risk set (cumulative conditional survival at entry)
+    # event, right censoring
     ll +=
-        y == 1 ? lpdf(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
+        y > 0 ? lpdf(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
+    # interval censoring
+    # note this will add back the initial reduction from late entry if enter > 0
+    #=
+    # note: this needs to be integrated with the event/right censoring column
+    #   as written, it will cancel out the right censoring part
+    if y < 0
+        ll +=  -lsurv(d, θ, exit, x) + (
+            enter > 0 ? lsurv(d, θ, enter, x) : 1
+            )
+    end
+    =# 
     ll *= wts
     ll
 end
@@ -140,6 +153,15 @@ function dloglik!(gt, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvDi
     gt .+=
         y > 0 ? lpdf_gradient(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv_gradient(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
+    #=    left censoring
+    # note: this needs to be integrated with the event/right censoring column
+    #   as written, it will cancel out the right censoring part
+
+    gt .+=
+        y < 0 ? -lsurv_gradient(d, θ, exit, x) + (
+            enter > 0 ? lsurv_gradient(d, θ, enter, x) : 1
+            )        
+    =#
     gt .*= wts
     gt
 end
@@ -165,6 +187,15 @@ function ddloglik!(he, d::D, θ, enter, exit, y, x, wts) where {D<:AbstractSurvD
     he .+=
         y > 0 ? lpdf_hessian(d, θ, exit, x) : # extra contribution for events plus the log of the Jacobian of the transform on time
         lsurv_hessian(d, θ, exit, x) # extra contribution for censored (cumulative conditional survival at censoring)
+    #=    left censoring
+    # note: this needs to be integrated with the event/right censoring column
+    #   as written, it will cancel out the right censoring part
+
+    he .+=
+        y < 0 ? -lsurv_hessian(d, θ, exit, x) + (
+            enter > 0 ? lsurv_hessian(d, θ, enter, x) : 1
+            )        
+    =#
     he .*= wts
     he
 end
