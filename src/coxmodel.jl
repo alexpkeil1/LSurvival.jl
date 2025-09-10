@@ -377,6 +377,9 @@ coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 
 # x = m.P.X
 """
+Predicted probability of an outcome within a discrete window of time (absent competing risks)
+
+    using LSurvival
    dat1clust= (
        id = [1,2,3,3,4,4,5,5,6,6],
        enter = [0,0,0,1,0,1,0,1,0,1],
@@ -387,25 +390,29 @@ coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
    
    # use the `id` parameter with the ID struct
    ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
-   hcat(dat1clust.id, dat1clust.enter, dat1clust.exit, dat1clust.x, predict(ft2))
+   predict(ft2)
+   predict(ft2, [1,1,1,1,0,0][:,:], [0,5,0,0,0,1], [5,8,8,9,9,9])
+
+
 """
-function predict(m::M, x::X) where {M<:AbstractPH, X<:AbstractArray}
+function predict(m::M, x::X, entertime::V, exittime::V2) where {M<:AbstractPH, X<:AbstractArray, V<:AbstractVector, V2<:AbstractVector}
     basehaz = m.bh[:,1]
     bhtime =  m.bh[:,4]
     lnhrs = coef(m)
-    ex = hcat(m.R.enter, m.R.exit)
+    #ex = hcat(m.R.enter, m.R.exit)
+    ex = hcat(entertime, exittime)
     nobs= size(ex,1)
     p = zeros(nobs)
     for obs in 1:nobs
         bhidx = findall(ex[obs,1] .< bhtime .<= ex[obs,2])
-        hazobs = basehaz[bhidx] .* exp.(x[bhidx,:] * lnhrs)
+        hazobs = basehaz[bhidx] .* exp.(x[obs:obs,:] * lnhrs)
         p[obs] = 1-exp(-sum(hazobs))
     end    
     p
 end
 
 function predict(m::M) where {M<:AbstractPH}
-    predict(m, m.P.X)
+    predict(m, m.P.X, m.R.enter, m.R.exit)
 end
 
 
