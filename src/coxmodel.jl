@@ -375,6 +375,41 @@ coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 # summary functions for PHModel objects
 #####################################################################################################################
 
+# x = m.P.X
+"""
+   dat1clust= (
+       id = [1,2,3,3,4,4,5,5,6,6],
+       enter = [0,0,0,1,0,1,0,1,0,1],
+       exit = [1,1,1,6,1,6,1,8,1,9],
+       status = [1,0,0,1,0,1,0,0,0,1],
+       x = [1,1,1,1,0,0,0,0,0,0]
+   )
+   
+   # use the `id` parameter with the ID struct
+   ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
+   hcat(dat1clust.id, dat1clust.enter, dat1clust.exit, dat1clust.x, predict(ft2))
+"""
+function predict(m::M, x::X) where {M<:AbstractPH, X<:AbstractArray}
+    basehaz = m.bh[:,1]
+    bhtime =  m.bh[:,4]
+    lnhrs = coef(m)
+    ex = hcat(m.R.enter, m.R.exit)
+    nobs= size(ex,1)
+    p = zeros(nobs)
+    for obs in 1:nobs
+        bhidx = findall(ex[obs,1] .< bhtime .<= ex[obs,2])
+        hazobs = basehaz[bhidx] .* exp.(x[bhidx,:] * lnhrs)
+        p[obs] = 1-exp(-sum(hazobs))
+    end    
+    p
+end
+
+function predict(m::M) where {M<:AbstractPH}
+    predict(m, m.P.X)
+end
+
+
+
 formula(x::M) where {M<:AbstractPH} = x.formula
 
 StatsBase.coefnames(x::M) where {M<:AbstractPH} =
