@@ -81,6 +81,7 @@ export kaplan_meier,        # interface for estimating cumulative risk from non-
     coxph,                 # interface for Cox model
     survreg,                 # interface for parametric survival model
     risk_from_coxphmodels,  # interface for estimating cumulative risk from hazard specific Cox models
+    cumhaz,
     # deprecated
     coxmodel,            # (deprecated) interface for Cox model
     cox_summary,         # (deprecated) convenience function to summarize Cox model results
@@ -106,6 +107,7 @@ export aic,
     model_response,
     modelmatrix, #PValue
     params,
+    predict,
     isfitted,
     jackknife,
     location,

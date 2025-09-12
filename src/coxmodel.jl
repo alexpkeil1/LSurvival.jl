@@ -377,44 +377,138 @@ coxph(f::FormulaTerm, data; kwargs...) = fit(PHModel, f, data; kwargs...)
 
 # x = m.P.X
 """
-Predicted probability of an outcome within a discrete window of time (absent competing risks)
+Cumulative probability of an outcome by some discrete time t
 
+i.e. for a cox model λ(t|X) = λ_0(t)exp(Xβ)
+    estimate of  F(t | X=newX)
+     = 1 - exp(-Λ(t | X = newX))
+     = 1- exp(-∑ λ(t | X = newX)) 
+     = 1- exp(-∑ λ_0(t)exp(newXβ)) 
+      where λ_0(t) is an estimate of the baseline hazard 
+
+```julia
     using LSurvival
-   dat1clust= (
+    dat1clust= (
        id = [1,2,3,3,4,4,5,5,6,6],
        enter = [0,0,0,1,0,1,0,1,0,1],
        exit = [1,1,1,6,1,6,1,8,1,9],
        status = [1,0,0,1,0,1,0,0,0,1],
        x = [1,1,1,1,0,0,0,0,0,0]
-   )
+    )
    
-   # use the `id` parameter with the ID struct
-   ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
-   predict(ft2)
-   predict(ft2, [1,1,1,1,0,0][:,:], [0,5,0,0,0,1], [5,8,8,9,9,9])
+    # use the `id` parameter with the ID struct
+    ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dat1clust, id=ID.(dat1clust.id))
+    # use the `id` parameter with the ID struct
+    newids = ID.([1,2,3,4,5])
+    newX = [1,1,1,0,0][:,:]
+    entertime = [0,0,0,0,0]
+    exittime = [8,8,9,10,9]
 
+    try 
+        predict(ft2) # throws an error due to late entry in initial fit
+    catch e
+        println(e)
+    end
+    predict(ft2,newX,entertime,exittime,newids)[1] # warns about carrying forward covariate values
+    preds, times = predict(ft2,newX) # no warning
+    hcat(times, preds)
+
+    # id specific cumulative hazard 
+
+    # contrast with competing-risk methods from risk_from_coxphmodels,
+    #  which don't perform as well in small samples (overall survival is identical for cheng method)
+    risk_from_coxphmodels([ft2], pred_profile=[1][:,:], method="cheng")
+    risk_from_coxphmodels([ft2], pred_profile=[1][:,:], method="aalen")
+
+```
 
 """
-function predict(m::M, x::X, entertime::V, exittime::V2) where {M<:AbstractPH, X<:AbstractArray, V<:AbstractVector, V2<:AbstractVector}
+function StatsBase.predict(m::M, newX::X, entertime::V, exittime::V2, newids::Vector{<:I}) where {M<:AbstractPH, X<:AbstractArray, V<:AbstractVector, V2<:AbstractVector, I<:ID}
+    ch, times = cumhaz(m, newX, entertime, exittime, newids)
+    1.0 .- exp.(-ch), times
+end
+
+StatsBase.predict(m::M, newX, entertime, exittime) where {M <: AbstractPH} = StatsBase.predict(m, newX, entertime, exittime, ID.(1:size(newX,1)))
+StatsBase.predict(m::M, newX, exittime) where {M <: AbstractPH} = StatsBase.predict(m, newX, zeros(size(newX,1)), exittime, ID.(1:size(newX,1)))
+StatsBase.predict(m::M, newX) where {M <: AbstractPH} = StatsBase.predict(m, newX, zeros(size(newX,1)), fill(m.bh[end,4], size(newX,1)), ID.(1:size(newX,1)))
+StatsBase.predict(m::M) where {M <: AbstractPH} = StatsBase.predict(m, m.P.X, m.R.enter, m.R.exit, m.R.id)
+
+
+# cumulative hazard at values of newX
+"""
+Cumulative hazard functions for sets of covariate values.
+
+    i.e. for a cox model λ(t|X) = λ_0(t)exp(Xβ)
+    estimate of  Λ(t | X = newX)
+     = Λ(t | X = newX)
+     = ∑ λ(t | X = newX)
+     = ∑ λ_0(t)exp(newXβ)
+
+      where λ_0(t) is an estimate of the baseline hazard 
+
+
+This function does not accomodate late entry
+
+```julia
+    using LSurvival
+    dt = (
+       id = [1,2,3,3,4,4,5,5,6,6],
+       enter = [0,0,0,1,0,3,0,3,0,3],
+       exit = [1,1,1,6,1,6,1,8,1,9],
+       status = [1,1,0,1,0,1,0,1,0,0],
+       x = [1,1,1,1,0,0,0,0,0,0]
+    )
+   
+    # use the `id` parameter with the ID struct
+    ft2 = coxph(@formula(Surv(enter, exit, status) ~ x),dt, id=ID.(dt.id))
+    ft3 = coxph(@formula(Surv(enter, exit, status) ~ x),dt)
+    newids = ID.([1,2,3,4,5])
+    newX = [1,1,1,0,0][:,:]
+    entertime = [0,0,0,0,0]
+    exittime = [8,8,9,10,9]
+
+    try 
+        cumhaz(ft2) # throws an error due to late entry in initial fit
+    catch e
+        println(e)
+    end
+    cumhaz(ft2,newX,entertime,exittime,newids) # warns about carrying forward covariate values
+    cumhaz(ft2,newX) # no warning
+```
+
+"""
+function cumhaz(m::M, newX::X, entertime::V, exittime::V2, newids::Vector{<:I}) where {M<:AbstractPH, X<:AbstractArray, V<:AbstractVector, V2<:AbstractVector, I<:ID}
+    uids = unique(newids)
     basehaz = m.bh[:,1]
     bhtime =  m.bh[:,4]
+    if (length(unique(entertime)) > 1) || (length(newids) != length(uids))
+        error("cumhaz/predict functions do not accomodate late entry or person-period data structures")
+    end
+    if length(unique(exittime)) > 1
+        @warn "cumhaz/predict functions will carry forward covariate values after observed event/censoring times"
+        exittime = fill(bhtime[end], length(exittime))
+    end
     lnhrs = coef(m)
     #ex = hcat(m.R.enter, m.R.exit)
     ex = hcat(entertime, exittime)
-    nobs= size(ex,1)
-    p = zeros(nobs)
-    for obs in 1:nobs
-        bhidx = findall(ex[obs,1] .< bhtime .<= ex[obs,2])
-        hazobs = basehaz[bhidx] .* exp.(x[obs:obs,:] * lnhrs)
-        p[obs] = 1-exp(-sum(hazobs))
+    ntimes = size(bhtime,1)
+    nunits = length(uids)
+    hazmat = zeros(ntimes, nunits)
+    for i in 1:length(uids)
+        idv = values(uids)[i]
+        fidx = findall(values(newids) .== idv)
+        for fid in fidx
+            bhidx = findall(ex[fid,1] .< bhtime .<= ex[fid,2])
+            hazmat[bhidx,i] = basehaz[bhidx] .* exp.(newX[fid:fid,:] * lnhrs)
+        end
     end    
-    p
+    cumsum(hazmat, dims=1), bhtime
 end
 
-function predict(m::M) where {M<:AbstractPH}
-    predict(m, m.P.X, m.R.enter, m.R.exit)
-end
-
+cumhaz(m::M, newX, entertime, exittime) where {M <: AbstractPH} = cumhaz(m, newX, entertime, exittime, ID.(1:size(newX,1)))
+cumhaz(m::M, newX, exittime) where {M <: AbstractPH} = cumhaz(m, newX, zeros(size(newX,1)), exittime, ID.(1:size(newX,1)))
+cumhaz(m::M, newX) where {M <: AbstractPH} = cumhaz(m, newX, zeros(size(newX,1)), fill(m.bh[end,4], size(newX,1)), ID.(1:size(newX,1)))
+cumhaz(m::M) where {M <: AbstractPH} = cumhaz(m, m.P.X, m.R.enter, m.R.exit, m.R.id)
 
 
 formula(x::M) where {M<:AbstractPH} = x.formula
@@ -806,6 +900,7 @@ function basehaz!(m::M) where {M<:PHModel}
         _sumuwtriskset[j] = length(risksetidx)
         _sumuwtcase[j] = length(caseidx)
     end
+    # baseline hazard (increment of cum hazard), risk set size, numer of cases, time, repeated columns [2]
     if m.ties == "breslow"
         m.bh =
             [_sumwtcase ./ den _sumwtriskset _sumwtcase m.R.eventtimes _sumuwtriskset _sumuwtcase]
@@ -862,7 +957,11 @@ function _fit!(
         @inbounds for (j, d) in enumerate(m.eventtypes)
             if m.event[i] == d
                 m.basehaz[i] *= hr[j]                        # baseline hazard times hazard ratio
-                m.risk[i, j] = lci[j] + surv_previous * m.basehaz[i]  # F(t) = int_0^t f(t) = int_0^t S(t) * h(t)
+                if lowercase(method[1:3]) == "aal"
+                    m.risk[i, j] = lci[j] + surv_previous * m.basehaz[i]  # F(t) = int_0^t f(t) = int_0^t S(t) * h(t)
+                elseif lowercase(method[1:3]) == "che"
+                    m.risk[i, j] = lci[j] + surv_previous * (1-exp(-m.basehaz[i]))  # F(t) = int_0^t f(t) = int_0^t S(t) * [F(t)-F(t-)]
+                end
             else
                 m.risk[i, j] = lci[j]
             end

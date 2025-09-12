@@ -398,3 +398,11 @@ Base.length(x::LSurvivalResp) = length(x.exit)
 function survcheck(y::Y) where {Y<:AbstractLSurvivalResp}
     @assert all(y.exit .> y.enter) "Error detected in survival times: some entry times are equal to or greater than exit times; expecting: (entry<exit)"
 end
+
+function getids(m::M) where {M <: AbstractPH}
+    m.R.id
+end
+
+function getids(m::M) where {M <: AbstractPSModel}
+    m.R.id
+end
