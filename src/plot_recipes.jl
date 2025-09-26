@@ -34,8 +34,7 @@ plot([[R.enter[i], R.exit[i]] for i in eachindex(R.enter)], [[i, i] for i in val
     @series begin
         seriestype := :path
         markershape := :none
-        [[r.enter[i], r.exit[i]] for i = 1:length(r.enter[plidx])],
-        [[v, v] for v in values(r.id)[plidx]]
+        [[r.enter[i], r.exit[i]] for i = 1:length(r.enter[plidx])], [[v, v] for v in values(r.id)[plidx]]
     end
     @series begin
         seriestype := :scatter
@@ -216,8 +215,7 @@ lognlogplot(k)
         label := ""
         color := :gray
         style := :dash
-        [log(minT), log(maxT)],
-        [coef[1] + coef[2] * log(minT), coef[1] + coef[2] * log(maxT)]
+        [log(minT), log(maxT)], [coef[1] + coef[2] * log(minT), coef[1] + coef[2] * log(maxT)]
     end
 
 end
@@ -322,18 +320,17 @@ coxinfluence!(fte, type="dfbeta", color=:red, par=1)
 ```
 """
 @recipe function f(h::CoxInfluence; type = "dfbeta", par = 1)
-    !issubset([type], ["dfbeta", "dfbetas", "jackknife"]) &&
-        throw("type must be 'dfbeta', 'dfbetas' or 'jackknife'")
+    !issubset([type], ["dfbeta", "dfbetas", "jackknife"]) && throw("type must be 'dfbeta', 'dfbetas' or 'jackknife'")
     ft = h.args[1]
     id = values(ft.R.id)
     nms = coefnames(ft)
     xlab --> "ID"
     ylab --> "Residuals ($(nms[par]))"
     res = residuals(ft, type = type)
-    if length(res[:,1]) != length(unique(id))
-        newres = zeros(length(unique(id)), size(res,2))
-        for r in 1:size(res,2)
-          newres[:,r] .= [sum(res[findall(id .== idval),r]) for idval in unique(id)]
+    if length(res[:, 1]) != length(unique(id))
+        newres = zeros(length(unique(id)), size(res, 2))
+        for r = 1:size(res, 2)
+            newres[:, r] .= [sum(res[findall(id .== idval), r]) for idval in unique(id)]
         end
         res = newres
     end
