@@ -13,13 +13,15 @@ import SpecialFunctions: gamma_inc, erfinv, erf, gamma, loggamma, digamma
 @reexport using StatsModels # ModelFrame, modelframe
 #
 #import DataFrames: DataFrame
+import Pkg: TOML.parsefile
 using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
 import Base: length, size, popat!, push!
 #using Optim
-import Optim: BFGS, optimize, Options, OnceDifferentiable, TwiceDifferentiable, LineSearches, InitialHagerZhang, converged
+import Optim: BFGS, optimize, Options, OnceDifferentiable, TwiceDifferentiable, LineSearches, converged
+using Optim
 if pkgversion(Optim).major == 1
-    import Optim: only_fgh!
+    import Optim: only_fgh!, InitialHagerZhang
 else
     import NLSolverseBase: only_fgh!
 end
