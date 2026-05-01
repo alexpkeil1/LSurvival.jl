@@ -17,7 +17,13 @@ using StatsBase
 import StatsBase: CoefTable, StatisticalModel, RegressionModel
 import Base: length, size, popat!, push!
 #using Optim
-import Optim: BFGS, optimize, Options, OnceDifferentiable, TwiceDifferentiable, only_fgh!, LineSearches, InitialHagerZhang, converged
+import Optim: BFGS, optimize, Options, OnceDifferentiable, TwiceDifferentiable, LineSearches, InitialHagerZhang, converged
+if pkgversion(Optim).major == 1
+    import Optim: only_fgh!
+else
+    import NLSolverseBase: only_fgh!
+end
+
 
 import StatsBase:
     aic,
