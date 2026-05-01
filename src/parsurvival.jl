@@ -450,7 +450,7 @@ function _fit!(
         )
     else
         fgh! = TwiceDifferentiable(
-            Optim.only_fgh!((F, G, H, beta) -> parmupdate!(F, G, H, beta, m)),
+            only_fgh!((F, G, H, beta) -> parmupdate!(F, G, H, beta, m)),
             parms,
         )
     end
