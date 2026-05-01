@@ -1,6 +1,6 @@
 name = "LSurvival"
 uuid = "edbbf5c1-874b-40a5-8c9f-d8fc918aacaa"
-version = "1.7.3"
+version = "1.7.4"
 authors = ["Alex Keil"]
 
 [deps]
