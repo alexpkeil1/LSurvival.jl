@@ -523,8 +523,9 @@ end
 
 # quantile function for standard normal
 
-function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
-    mwarn(m)
+#function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
+function coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
+        mwarn(m)
     β = coef(m)
     std_err = stderror(m)
     #zcrit = quantile.(Normal(), [(1 - level) / 2, 1 - (1 - level) / 2])
@@ -551,7 +552,7 @@ function StatsBase.coeftable(m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     #rown = ["b$i" for i = 1:size(op)[1]]
     rown = coefnames(m)
     rown = typeof(rown) <: AbstractVector ? rown : [rown]
-    StatsBase.CoefTable(op, head, rown, pcol, zcol)
+    CoefTable(op, head, rown, pcol, zcol)
 end
 
 
@@ -559,8 +560,9 @@ end
 """
 $DOC_CONFINT
 """
-function StatsBase.confint(m::M; level::Float64 = 0.95, kwargs...) where {M<:AbstractPH}
-    mwarn(m)
+#function StatsBase.confint(m::M; level::Float64 = 0.95, kwargs...) where {M<:AbstractPH}
+function confint(m::M; level::Float64 = 0.95, kwargs...) where {M<:AbstractPH}
+        mwarn(m)
     beta = coef(m)
     std_err = stderror(m; kwargs...) # can have type="robust"
     z = beta ./ std_err
@@ -701,7 +703,7 @@ function StatsBase.weights(m::M) where {M<:AbstractPH}
 end
 
 
-function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
+function show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     if !m.fit
         println(io, "Model not yet fitted")
         return nothing
@@ -715,8 +717,10 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     #lrtp = 1 - cdf(Chisq(df), chi2)
     lrtp = 1 - cdfchisq(df, chi2)
     iob = IOBuffer()
-    println(iob, coeftab)
-    str = """\nMaximum partial likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
+    #println(iob, coeftab)
+    show(iob, "text/plain", coeftab)
+    println(iob, "")
+    str = """Maximum partial likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
     str *= String(take!(iob))
     str *= "Partial log-likelihood (null): $(@sprintf("%8g", llnull))\n"
     str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll))\n"
@@ -725,7 +729,7 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:AbstractPH}
     println(io, str)
 end
 
-Base.show(m::M; kwargs...) where {M<:AbstractPH} = Base.show(stdout, m; kwargs...)
+show(m::M; kwargs...) where {M<:AbstractPH} = show(stdout, m; kwargs...)
 
 ##################################################################################################################### 
 # helper functions
@@ -1039,7 +1043,8 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:PHSurv}
     op = CoefTable(resmat, head, rown)
     iob = IOBuffer()
     if nr < maxrows
-        println(iob, op)
+        #println(iob, op)
+        show(iob, "text/plain", op)
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
@@ -1047,16 +1052,19 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:PHSurv}
         op1.cols = [c[1:len] for c in op1.cols]
         op2.rownms = op2.rownms[(end-len+1):end]
         op2.cols = [c[(end-len+1):end] for c in op2.cols]
-        println(iob, op1)
-        println(iob, "...")
-        println(iob, op2)
+        #println(iob, op1)
+        show(iob, "text/plain", op1)
+        println(iob, "\n...")
+        #println(iob, op2)
+        show(iob, "text/plain", op2)
     end
+    println(iob, "")
     str = """\nCox-model based survival, risk, baseline cause-specific hazard\n"""
     str *= String(take!(iob))
     for (jidx, j) in enumerate(types)
         str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.event .== m.eventtypes[jidx])))\n"
     end
-    str *= "Number of unique event times: $(@sprintf("%8g", length(m.times)))\n"
+    str *= "Number of unique event times: $(@sprintf("%8g", length(m.times)))"
     println(io, str)
 end
 

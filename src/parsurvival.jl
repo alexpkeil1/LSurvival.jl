@@ -810,11 +810,13 @@ function Base.show(io::IO, m::M; level::Float64 = 0.95) where {M<:PSModel}
     # Coefficients
     coeftab = coeftable(m, level = level)
     iob = IOBuffer()
-    println(iob, coeftab)
+    #println(iob, coeftab)
+    show(iob, "text/plain", coeftab)
+    println(iob, "")
     # Model fit
     ll = loglikelihood(m)
     llnull = nullloglikelihood(m)
-    str = """\nMaximum likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
+    str = """Maximum likelihood estimates (alpha=$(@sprintf("%.2g", 1-level))):\n"""
     str *= String(take!(iob))
     str *= "$(nameof(typeof(m.d))) distribution\n"
     str *= "Log-likelihood (full): $(@sprintf("%8g", ll))\n"

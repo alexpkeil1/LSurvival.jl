@@ -487,6 +487,7 @@ import StatsBase.cov
         tol = 1e-9,
     )
     # test: does calculating robust error show up in output?
+    println("Robust SE")
     stderror(ft, type = "robust")
     println(ft)
 
@@ -505,11 +506,12 @@ import StatsBase.cov
     @test maximum(abs.(score(ft))) < 0.00000001
     @test weights(ft) == ft.R.wts
 
-    show(ft)
+    println("Proper printing for non-fitted models")
     ft.fit = false
     print(ft)
 
 
+    println("Using contrasts statements: expected printout")
     (coxph(
         @formula(Surv(entertime, exittime, death) ~ x + z1 + z2 + z1 * x),
         tab,
@@ -701,7 +703,9 @@ import StatsBase.cov
         covarmat = [0 0 -1;],
     )
     # test: does print function work?
-    println(rfromc)
+    println("Printing risk table from multi-Cox model fit: two separate covariate vectors [[0 0 -1],[0 1 0]]")
+    println(rfromc[1])
+    println(rfromc[2])
 
     
 
@@ -718,7 +722,9 @@ import StatsBase.cov
 
     # note: these print functions are needed to troubleshoot occasional test failures on nightly builds
     println("Note: sometimes these fail on nightly builds")
+    println("Risk at referent values")
     println(refrisk[end, :])
+    println("Risk at mean values")
     println(ciresb.risk[end, :])
     @test all(refrisk[end, :] .> ciresb.risk[end, :])
 
@@ -830,9 +836,9 @@ import StatsBase.cov
         ]
     @test all(isapprox.(resid, truth, atol = 0.000001))
 
-    show(ft.R.id)
+    println(ft.R.id)
 
-    show(ft.R.id[1])
+    println(ft.R.id[1])
 
     [length(i) for i in ft.R.id]
 
@@ -1318,6 +1324,7 @@ import StatsBase.cov
     io = IOBuffer()
     show(io, ftf)
     show(io, ftf.P)
+    println(String(take!(io)))
     show(ftf.P)
 
     # TESTs: error/warning check
@@ -1361,6 +1368,7 @@ import StatsBase.cov
     # TEST: deprecated functions
     args =
         coxmodel(dat1clust.enter, dat1clust.exit, dat1clust.status, dat1clust.x[1:end, :])
+    println("Testing deprecated summary function, may no longer print correctly")
     @test cox_summary(args)[1] == args[1][1]
 
     # TEST: jackknife functions of KM/AJ

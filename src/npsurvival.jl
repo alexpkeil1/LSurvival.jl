@@ -358,7 +358,8 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:KMSurv}
     op = CoefTable(resmat, head, rown)
     iob = IOBuffer()
     if nr < maxrows
-        println(iob, op)
+        #println(iob, op)
+        show(iob, "text/plain", op)
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
@@ -366,14 +367,17 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:KMSurv}
         op1.cols = [c[1:len] for c in op1.cols]
         op2.rownms = op2.rownms[(end-len+1):end]
         op2.cols = [c[(end-len+1):end] for c in op2.cols]
-        println(iob, op1)
-        println(iob, "...")
-        println(iob, op2)
+        #println(iob, op1)
+        show(iob, "text/plain", op1)
+        println(iob, "\n...")
+        #println(iob, op2)
+        show(iob, "text/plain", op2)
     end
-    str = """\nKaplan-Meier Survival\n"""
+    println(iob, "")
+    str = """Kaplan-Meier Survival\n"""
     str *= String(take!(iob))
     str *= "Number of events: $(@sprintf("%8g", sum(m.events)))\n"
-    str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))\n"
+    str *= "Number of unique event times: $(@sprintf("%8g", length(m.events)))"
     println(io, str)
 end
 
@@ -399,7 +403,8 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:AJSurv}
     op = CoefTable(resmat, head, rown)
     iob = IOBuffer()
     if nr < maxrows
-        println(iob, op)
+        #println(iob, op)
+        show(iob, "text/plain", op)
     else
         len = floor(Int, maxrows / 2)
         op1, op2 = deepcopy(op), deepcopy(op)
@@ -407,16 +412,19 @@ function Base.show(io::IO, m::M; maxrows = 20) where {M<:AJSurv}
         op1.cols = [c[1:len] for c in op1.cols]
         op2.rownms = op2.rownms[(end-len+1):end]
         op2.cols = [c[(end-len+1):end] for c in op2.cols]
-        println(iob, op1)
-        println(iob, "...")
-        println(iob, op2)
+        #println(iob, op1)
+        show(iob, "text/plain", op1)
+        println(iob, "\n...")
+        #println(iob, op2)
+        show(iob, "text/plain", op2)
     end
-    str = """\nKaplan-Meier Survival, Aalen-Johansen risk\n"""
+    println(iob, "")
+    str = """Kaplan-Meier Survival, Aalen-Johansen risk\n"""
     str *= String(take!(iob))
     for (jidx, j) in enumerate(types)
         str *= "Number of events (j=$j): $(@sprintf("%8g", sum(m.events[:,jidx])))\n"
     end
-    str *= "Number of unique event times: $(@sprintf("%8g", length(m.events[:,1])))\n"
+    str *= "Number of unique event times: $(@sprintf("%8g", length(m.events[:,1])))"
     println(io, str)
 end
 

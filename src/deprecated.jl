@@ -304,8 +304,10 @@ function cox_summary(args; alpha = 0.05, verbose = true)
     rown = ["b$i" for i = 1:size(op)[1]]
     coeftab = CoefTable(op, head, rown, 6, 5)
     iob = IOBuffer()
-    println(iob, coeftab)
-    str = """\nMaximum partial likelihood estimates (alpha=$alpha):\n"""
+    #println(iob, coeftab)
+    show(iob, "text/plain", coeftab)
+    println(iob, "")
+    str = """Maximum partial likelihood estimates (alpha=$alpha):\n"""
     str *= String(take!(iob))
     str *= "Partial log-likelihood (null): $(@sprintf("%8g", ll[1]))\n"
     str *= "Partial log-likelihood (fitted): $(@sprintf("%8g", ll[end]))\n"

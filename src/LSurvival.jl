@@ -14,7 +14,6 @@ import SpecialFunctions: gamma_inc, erfinv, erf, gamma, loggamma, digamma
 #
 #import DataFrames: DataFrame
 using StatsBase
-import StatsBase: CoefTable, StatisticalModel, RegressionModel
 import Base: length, size, popat!, push!
 #using Optim
 import Optim: BFGS, optimize, Options, OnceDifferentiable, TwiceDifferentiable, LineSearches, converged
@@ -27,6 +26,9 @@ end
 
 
 import StatsBase:
+    CoefTable, 
+    StatisticalModel, 
+    RegressionModel,
     aic,
     aicc,
     bic,
