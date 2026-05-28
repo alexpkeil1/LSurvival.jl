@@ -20,6 +20,15 @@ This module handles:
 - Bootstrap and jackknife methods for Cox models and AFT models
 - Plot recipes for diagnostics and visualizations
 
+
+### Installation (via Julia's package manager)
+```julia
+# first install "epiregistry" to get access to LSurvival and Qgcomp packages
+]registry add "https://github.com/alexpkeil1/EpiRegistry"
+]add LSurvival
+```
+
+### Installation of developmental version (not recommended)
 Add this package via Julia's package manager:
 
 `add https://github.com/alexpkeil1/LSurvival.jl`
@@ -27,7 +36,6 @@ Add this package via Julia's package manager:
 or directly in Julia
 
 `using Pkg; Pkg.add(url="https://github.com/alexpkeil1/LSurvival.jl")`
-
 
 
 ## Cox model
