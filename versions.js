@@ -13,24 +13,7 @@ var DOC_VERSIONS = [
   "v0.15",
   "v0.14",
   "v0.13",
-  "v1.7.2",
-  "v1.5.3",
-  "v1.5.1",
-  "v1.5.0",
-  "v1.3.0",
-  "v1.2.0",
-  "v1.1.0",
-  "v1.0.2",
-  "v1.0.0",
-  "v0.24.0",
-  "v0.22.0",
-  "v0.20.6",
-  "v0.19.2",
-  "v0.19.1",
-  "v0.15.0",
-  "v0.14.0",
-  "v0.13.2",
   "dev",
 ];
-var DOCUMENTER_NEWEST = "1.7.2";
+var DOCUMENTER_NEWEST = "v1.7.5";
 var DOCUMENTER_STABLE = "stable";
