@@ -177,6 +177,7 @@ function _fit!(
     getbasehaz = true,
     kwargs...,
 )
+    # NOTE: this is the workhorse function for fitting a Cox model
     m = bootstrap_sample ? bootstrap(bootstrap_rng, m) : m
     start = isnothing(start) ? zeros(length(m.P._B)) : start
     m.P._B = start
@@ -188,17 +189,14 @@ function _fit!(
     #
     totiter = 0
     oldQ = floatmax()
-    #lastLL = -floatmax()
     ne = length(m.R.eventtimes)
     risksetidxs, caseidxs =
         Array{Array{Int,1},1}(undef, ne), Array{Array{Int,1},1}(undef, ne)
-    #den, _sumwtriskset, _sumwtcase =
-    #    zeros(Float64, ne), zeros(Float64, ne), zeros(Float64, ne)
-    #@inbounds for j = 1:ne
     @inbounds @simd for j = 1:ne
         _outj = m.R.eventtimes[j]
-        fr = findall((m.R.enter .< _outj) .&& (m.R.exit .>= _outj))
-        fc = findall((m.R.y .> 0) .&& isapprox.(m.R.exit, _outj) .&& (m.R.enter .< _outj))
+        # risk set and case set defined for model outcome type - be cognizent of weaknesses of `isapprox` if times are very, very small
+        fr = findall(                 (m.R.enter .< _outj) .&&          (m.R.exit .>= _outj))
+        fc = findall((m.R.y .> 0) .&& (m.R.enter .< _outj) .&& isapprox.(m.R.exit, _outj))
         risksetidxs[j] = fr
         caseidxs[j] = fc
     end

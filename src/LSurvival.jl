@@ -21,6 +21,7 @@ using Optim
 if pkgversion(Optim).major == 1
     import Optim: only_fgh!
 else
+	using NLSolversBase
     import NLSolversBase: only_fgh!
 end
 
