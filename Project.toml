@@ -1,6 +1,6 @@
 name = "LSurvival"
 uuid = "edbbf5c1-874b-40a5-8c9f-d8fc918aacaa"
-version = "1.7.9"
+version = "1.7.10"
 authors = ["Alex Keil"]
 
 [deps]
@@ -28,7 +28,7 @@ SpecialFunctions = "2"
 StatsBase = "0.34 - 0.35"
 StatsModels = "0.7 - 0.8"
 Tables = "~1"
-julia = "1.9 - 2"
+julia = "1.9 - 1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
